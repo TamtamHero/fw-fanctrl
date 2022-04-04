@@ -45,7 +45,7 @@ After=multi-user.target
 [Service]
 Type=simple
 Restart=always
-ExecStart=/usr/bin/python3 /usr/local/bin/fanctrl.py --config /home/$(logname)/.config/fw-fanctrl/config.json
+ExecStart=/usr/bin/python3 /usr/local/bin/fanctrl.py --config /home/$(logname)/.config/fw-fanctrl/config.json --no-log
 [Install]
 WantedBy=multi-user.target
 
