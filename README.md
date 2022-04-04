@@ -1,6 +1,7 @@
 # fw-fanctrl
 
 This is a very simple script for Linux that pilots the FrameWork laptop's fan speed according to a configurable speed/temp curve.
+Its default configuration targets very silent fan operation, but it's easy to configure it for a different comfort/performance trade-off.
 
 Under the hood, it uses [fw-ectool](https://github.com/DHowett/fw-ectool) to change parameters in FrameWork's embedded controller (EC).
 
