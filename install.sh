@@ -15,6 +15,7 @@ if [ "$1" = "remove" ]; then
     sudo systemctl stop ${SERVICE_NAME//'.service'/} # remove the extension
     sudo systemctl disable ${SERVICE_NAME//'.service'/}
     rm /usr/local/bin/fanctrl.py
+    ectool --interface=lpc autofanctrl # restore default fan manager
     rm /usr/local/bin/ectool
     rm -rf /home/$(logname)/.config/fw-fanctrl
 
