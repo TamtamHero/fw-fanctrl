@@ -31,7 +31,17 @@ sudo ./install.sh remove
 
 # Configuration
 
-There is a single `config.json` file where you can configure the service. You need to run the install script again after editing this config, or you can directly edit the installed config at `/home/<user>/.config/fw-fanctrl/config.json`
+There is a single `config.json` file where you can configure the service. You need to run the install script again after editing this config, or you can directly edit the installed config at `/home/<user>/.config/fw-fanctrl/config.json` and restart the service with:
+
+```
+sudo service fw-fanctrl restart
+```
+
+It contains different strategies, ranked from the most silent to the noisiest. You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
+
+The strategy that will be run is the one stored in the `defaultStrategy` entry.
+
+Strategies can be configured with the following parameters:
 
 - **SpeedCurve**:
 
