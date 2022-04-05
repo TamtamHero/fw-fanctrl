@@ -28,7 +28,7 @@ class FanController:
 
     def setSpeed(self, speed):
         self.speed = speed
-        bashCommand = f"ectool --interface=lpc fanduty {speed}"
+        bashCommand = f"ectool fanduty {speed}"
         subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True)
 
     def adaptSpeed(self):
