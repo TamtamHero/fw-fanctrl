@@ -13,12 +13,15 @@ class FanController:
     temps = [0] * 100
     _tempIndex = 0
 
-    def __init__(self, configPath):
+    def __init__(self, configPath, strategy):
         with open(configPath, "r") as fp:
             config = json.load(fp)
-            self.speedCurve = config["speedCurve"]
-            self.fanSpeedUpdateFrequency = config["fanSpeedUpdateFrequency"]
-            self.movingAverageInterval = config["movingAverageInterval"]
+        if strategy == "":
+            strategy = config["defaultStrategy"]
+        strategy = config["strategies"][strategy]
+        self.speedCurve = strategy["speedCurve"]
+        self.fanSpeedUpdateFrequency = strategy["fanSpeedUpdateFrequency"]
+        self.movingAverageInterval = strategy["movingAverageInterval"]
         self.setSpeed(self.speedCurve[0]["speed"])
         self.updateTemperature()
         self.temps = [self.temps[self._tempIndex]] * 100
@@ -104,11 +107,17 @@ def main():
         "--config", type=str, help="Path to config file", default="./config.json"
     )
     parser.add_argument(
+        "--strategy",
+        type=str,
+        help='Name of the strategy to use e.g: "lazy" (check config.json for others)',
+        default="",
+    )
+    parser.add_argument(
         "--no-log", help="Print speed/temp/meanTemp to stdout", action="store_true"
     )
     args = parser.parse_args()
 
-    fan = FanController(configPath=args.config)
+    fan = FanController(configPath=args.config, strategy=args.strategy)
     fan.run(debug=not args.no_log)
 
 
