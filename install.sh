@@ -20,7 +20,7 @@ if [ "$1" = "remove" ]; then
     rm -rf /home/$(logname)/.config/fw-fanctrl
 
     echo "fw-fanctrl has been removed successfully from system"
-else
+elif [ -z $1 ]; then
 
     cp ./bin/ectool /usr/local/bin
     cp ./fanctrl.py /usr/local/bin
@@ -57,6 +57,8 @@ EOF
         sudo systemctl start ${SERVICE_NAME//'.service'/}
         echo "Service Started"
     fi
-
+else
+    echo "Unknown command $1"
+    exit
 fi
 exit 0
