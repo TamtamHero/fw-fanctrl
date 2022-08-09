@@ -5,10 +5,7 @@ import json
 
 
 class FanController:
-    ## constants
-    CORE_NUMBER = 4
-
-    ## state
+    # state
     speed = 0
     temps = [0] * 100
     _tempIndex = 0
@@ -34,7 +31,8 @@ class FanController:
     def adaptSpeed(self):
         currentTemp = self.temps[self._tempIndex]
         currentTemp = min(
-            currentTemp, self.getMovingAverageTemperature(self.movingAverageInterval)
+            currentTemp, self.getMovingAverageTemperature(
+                self.movingAverageInterval)
         )
         minPoint = self.speedCurve[0]
         maxPoint = self.speedCurve[-1]
@@ -51,7 +49,8 @@ class FanController:
             slope = (maxPoint["speed"] - minPoint["speed"]) / (
                 maxPoint["temp"] - minPoint["temp"]
             )
-            newSpeed = int(minPoint["speed"] + (currentTemp - minPoint["temp"]) * slope)
+            newSpeed = int(minPoint["speed"] +
+                           (currentTemp - minPoint["temp"]) * slope)
         self.setSpeed(newSpeed)
 
     def updateTemperature(self):
@@ -65,15 +64,15 @@ class FanController:
                 executable="/bin/bash",
             ).stdout
         )
-        for i in range(0, self.CORE_NUMBER):
-            sumCoreTemps += float(
-                sensorsOutput["coretemp-isa-0000"]["Core " + str(i)][
-                    "temp" + str(i + 2) + "_input"
-                ]
-            )
+        cores = 0
+        for k, v in sensorsOutput["coretemp-isa-0000"].items():
+            if k.startswith("Core "):
+                i = int(k.split(" ")[1])
+                cores += 1
+                sumCoreTemps += float(v["temp" + str(i + 2) + "_input"])
 
         self._tempIndex = (self._tempIndex + 1) % len(self.temps)
-        self.temps[self._tempIndex] = sumCoreTemps / self.CORE_NUMBER
+        self.temps[self._tempIndex] = sumCoreTemps / cores
 
     # return mean temperature over a given time interval (in seconds)
     def getMovingAverageTemperature(self, timeInterval):
@@ -102,7 +101,8 @@ class FanController:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Emulate Ledger Nano/Blue apps.")
+    parser = argparse.ArgumentParser(
+        description="Emulate Ledger Nano/Blue apps.")
     parser.add_argument(
         "--config", type=str, help="Path to config file", default="./config.json"
     )
