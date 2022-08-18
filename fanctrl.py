@@ -12,6 +12,7 @@ class FanController:
     speed = 0
     temps = [0] * 100
     _tempIndex = 0
+    discharging = False
 
     def __init__(self, configPath, strategy):
         with open(configPath, "r") as fp:
@@ -19,6 +20,8 @@ class FanController:
         if strategy == "":
             strategy = config["defaultStrategy"]
         strategy = config["strategies"][strategy]
+        self.switchOnDischarging = config["switchOnDischarging"]
+        self.strategyOnDischarging = config["strategyOnDischarging"]
         self.speedCurve = strategy["speedCurve"]
         self.fanSpeedUpdateFrequency = strategy["fanSpeedUpdateFrequency"]
         self.movingAverageInterval = strategy["movingAverageInterval"]
@@ -81,6 +84,16 @@ class FanController:
         for i in range(0, timeInterval):
             tempSum += self.temps[self._tempIndex - i]
         return tempSum / timeInterval
+    
+    # determine whether the battery is charging or discharging
+    # changing the strategy is not yet part of the code - help required
+    def getBatteryDischargingStatus():
+        with open("/sys/class/hwmon/hwmon2/device/status", "r") as fb:
+            batteryStatus = fb.readline().rstrip('\n')
+            if batteryStatus == "Discharging":
+                self.discharging = True
+            elif batteryStatus == "Charging":
+                self.discharging = False
 
     def printState(self):
         print(
