@@ -20,7 +20,6 @@ class FanController:
         if strategy == "":
             strategy = config["defaultStrategy"]
         strategy = config["strategies"][strategy]
-        self.switchOnDischarging = config["switchOnDischarging"]
         self.strategyOnDischarging = config["strategyOnDischarging"]
         self.speedCurve = strategy["speedCurve"]
         self.fanSpeedUpdateFrequency = strategy["fanSpeedUpdateFrequency"]
