@@ -12,21 +12,63 @@ class FanController:
     speed = 0
     temps = [0] * 100
     _tempIndex = 0
-    discharging = False
+    lastBatteryStatus = ""
 
     def __init__(self, configPath, strategy):
         with open(configPath, "r") as fp:
             config = json.load(fp)
+
         if strategy == "":
-            strategy = config["defaultStrategy"]
-        strategy = config["strategies"][strategy]
-        self.strategyOnDischarging = config["strategyOnDischarging"]
+            strategyOnCharging = config["defaultStrategy"]
+            self.strategyOnCharging = config["strategies"][strategyOnCharging]
+        else:
+            strategyOnCharging = strategy
+            self.strategyOnCharging = config["strategies"][strategyOnCharging]
+        
+        # if the user didnt specify a separate strategy for discharging, use the same strategy as for charging
+        strategyOnDischarging = config["strategyOnDischarging"]
+        if strategyOnDischarging == "":
+            self.strategyOnDischarging = self.strategyOnCharging
+        else:
+            self.strategyOnDischarging = config["strategies"][strategyOnDischarging]
+
+        self.updateStrategy()
+        self.setSpeed(self.speedCurve[0]["speed"])
+        self.updateTemperature()
+        self.temps = [self.temps[self._tempIndex]] * 100
+        
+
+    def getBatteryChargingStatus(self):
+        with open("/sys/class/hwmon/hwmon2/device/status", "r") as fb:
+            currentBatteryStatus = fb.readline().rstrip('\n')
+
+            if currentBatteryStatus == self.lastBatteryStatus:
+                return 0                # battery charging status hasnt change - dont switch fan curve
+            elif currentBatteryStatus != self.lastBatteryStatus:
+                self.lastBatteryStatus = currentBatteryStatus
+                if currentBatteryStatus == "Charging":
+                    return 1
+                elif currentBatteryStatus == "Discharging":
+                    return 2
+
+
+    def updateStrategy(self):
+        update = self.getBatteryChargingStatus()
+        if update == 0:
+            return      # if charging status unchanged to nothing
+        elif update == 1:
+            strategy = self.strategyOnCharging
+        elif update == 2:
+            strategy = self.strategyOnDischarging
+        
+        # load fan curve according to strategy
         self.speedCurve = strategy["speedCurve"]
         self.fanSpeedUpdateFrequency = strategy["fanSpeedUpdateFrequency"]
         self.movingAverageInterval = strategy["movingAverageInterval"]
         self.setSpeed(self.speedCurve[0]["speed"])
         self.updateTemperature()
         self.temps = [self.temps[self._tempIndex]] * 100
+
 
     def setSpeed(self, speed):
         self.speed = speed
@@ -83,24 +125,16 @@ class FanController:
         for i in range(0, timeInterval):
             tempSum += self.temps[self._tempIndex - i]
         return tempSum / timeInterval
-    
-    # determine whether the battery is charging or discharging
-    # changing the strategy is not yet part of the code - help required
-    def getBatteryDischargingStatus():
-        with open("/sys/class/hwmon/hwmon2/device/status", "r") as fb:
-            batteryStatus = fb.readline().rstrip('\n')
-            if batteryStatus == "Discharging":
-                self.discharging = True
-            elif batteryStatus == "Charging":
-                self.discharging = False
+            
 
     def printState(self):
         print(
-            f"speed: {self.speed}% temp: {self.temps[self._tempIndex]}°C movingAverage: {self.getMovingAverageTemperature(self.movingAverageInterval)}°C"
+            f"speed: {self.speed}% temp: {self.temps[self._tempIndex]}°C movingAverage: {round(self.getMovingAverageTemperature(self.movingAverageInterval), 2)}°C Battery: {self.lastBatteryStatus}"
         )
 
     def run(self, debug=True):
         while True:
+            self.updateStrategy()
             self.updateTemperature()
 
             # update fan speed every "fanSpeedUpdateFrequency" seconds
