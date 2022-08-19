@@ -1,5 +1,5 @@
 {
-    "defaultStrategy": "lazy",
+    "defaultStrategy": "medium",
     "strategyOnDischarging" : "lazyest",
     "strategies": {
         "lazyest": {
