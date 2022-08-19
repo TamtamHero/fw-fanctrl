@@ -14,7 +14,11 @@ sudo apt install lm-sensors
 yes | sudo sensors-detect
 ```
 
-You can either use the pre-compiled executable of `fw-ectool` in this repo, or recompile one from [this repo](https://github.com/DHowett/fw-ectool) and copy it in `./bin`.
+To communicate with the embedded controller the `fw-ectool` is needed. You can either use the pre-compiled executable of `fw-ectool` in this repo, or recompile one from [this repo](https://github.com/DHowett/fw-ectool) and copy it in `./bin`.
+
+The charging status of the battery is fetched from the following file:
+`/sys/class/hwmon/hwmon2/device/status`
+Make sure the charging status is stored under the same path on your machine. Otherwise edit the `fw-fanctrl.py` script.
 
 Then, simply run:
 ```
@@ -39,8 +43,7 @@ sudo service fw-fanctrl restart
 
 It contains different strategies, ranked from the most silent to the noisiest. You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
 
-The strategy that will be run during charging is the one stored in the `defaultStrategy` entry.
-The separate strategy during discharge is optional. It is stored in the `strategyOnDischarging` entry. If none is specified only the `defaultStrategy` is used.
+The strategy active by default is the one specified in the `defaultStrategy` entry. Additionally a separate strategy can be defined, which is only active during discharge of the battery. This one is optional and specified `strategyOnDischarging` entry. If none is specified only the `defaultStrategy` is used.
 
 Strategies can be configured with the following parameters:
 
