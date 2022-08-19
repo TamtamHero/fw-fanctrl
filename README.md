@@ -2,7 +2,7 @@
 
 This is a very simple Python service for Linux that drives the FrameWork laptop's fan speed according to a configurable speed/temp curve.
 Its default configuration targets very silent fan operation, but it's easy to configure it for a different comfort/performance trade-off.
-
+Its possible to specfify two separate fan curves depending on whether the Laptop is charging/discharging.
 Under the hood, it uses [fw-ectool](https://github.com/DHowett/fw-ectool) to change parameters in FrameWork's embedded controller (EC).
 
 # Install
@@ -39,7 +39,8 @@ sudo service fw-fanctrl restart
 
 It contains different strategies, ranked from the most silent to the noisiest. You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
 
-The strategy that will be run is the one stored in the `defaultStrategy` entry.
+The strategy that will be run during charging is the one stored in the `defaultStrategy` entry.
+The separate strategy during discharge is optional. It is stored in the `strategyOnDischarging` entry. If none is specified only the `defaultStrategy is used.
 
 Strategies can be configured with the following parameters:
 
