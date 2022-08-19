@@ -40,7 +40,7 @@ sudo service fw-fanctrl restart
 It contains different strategies, ranked from the most silent to the noisiest. You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
 
 The strategy that will be run during charging is the one stored in the `defaultStrategy` entry.
-The separate strategy during discharge is optional. It is stored in the `strategyOnDischarging` entry. If none is specified only the `defaultStrategy is used.
+The separate strategy during discharge is optional. It is stored in the `strategyOnDischarging` entry. If none is specified only the `defaultStrategy` is used.
 
 Strategies can be configured with the following parameters:
 
