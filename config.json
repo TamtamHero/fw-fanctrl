@@ -1,6 +1,7 @@
 {
     "defaultStrategy": "medium",
     "strategyOnDischarging" : "lazyest",
+    "batteryChargingStatusPath" : "",
     "strategies": {
         "lazyest": {
             "fanSpeedUpdateFrequency": 5,
