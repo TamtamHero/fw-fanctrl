@@ -1,5 +1,5 @@
 {
-    "defaultStrategy": "medium",
+    "defaultStrategy": "lazy",
     "strategyOnDischarging" : "lazyest",
     "batteryChargingStatusPath" : "",
     "strategies": {
