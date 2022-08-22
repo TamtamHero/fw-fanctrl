@@ -1,3 +1,5 @@
+#! /usr/bin/python3
+
 import argparse
 import subprocess
 from time import sleep
@@ -13,7 +15,8 @@ class FanController:
     temps = [0] * 100
     _tempIndex = 0
     lastBatteryStatus = ""
-
+    
+    
     def __init__(self, configPath, strategy):
         with open(configPath, "r") as fp:
             config = json.load(fp)
@@ -24,6 +27,10 @@ class FanController:
         else:
             strategyOnCharging = strategy
             self.strategyOnCharging = config["strategies"][strategyOnCharging]
+        
+        self.batteryChargingStatusPath = config["batteryChargingStatusPath"]
+        if self.batteryChargingStatusPath == "":
+            self.batteryChargingStatusPath = "/sys/class/power_supply/BAT1/status"
         
         # if the user didnt specify a separate strategy for discharging, use the same strategy as for charging
         strategyOnDischarging = config["strategyOnDischarging"]
@@ -37,20 +44,6 @@ class FanController:
         self.updateTemperature()
         self.temps = [self.temps[self._tempIndex]] * 100
         
-
-    def getBatteryChargingStatus(self):
-        with open("/sys/class/hwmon/hwmon2/device/status", "r") as fb:
-            currentBatteryStatus = fb.readline().rstrip('\n')
-
-            if currentBatteryStatus == self.lastBatteryStatus:
-                return 0                # battery charging status hasnt change - dont switch fan curve
-            elif currentBatteryStatus != self.lastBatteryStatus:
-                self.lastBatteryStatus = currentBatteryStatus
-                if currentBatteryStatus == "Charging":
-                    return 1
-                elif currentBatteryStatus == "Discharging":
-                    return 2
-
 
     def updateStrategy(self):
         update = self.getBatteryChargingStatus()
@@ -68,6 +61,20 @@ class FanController:
         self.setSpeed(self.speedCurve[0]["speed"])
         self.updateTemperature()
         self.temps = [self.temps[self._tempIndex]] * 100
+
+    
+    def getBatteryChargingStatus(self):
+        with open(self.batteryChargingStatusPath, "r") as fb:
+            currentBatteryStatus = fb.readline().rstrip('\n')
+
+            if currentBatteryStatus == self.lastBatteryStatus:
+                return 0                # battery charging status hasnt change - dont switch fan curve
+            elif currentBatteryStatus != self.lastBatteryStatus:
+                self.lastBatteryStatus = currentBatteryStatus
+                if currentBatteryStatus == "Charging":
+                    return 1
+                elif currentBatteryStatus == "Discharging":
+                    return 2
 
 
     def setSpeed(self, speed):
@@ -159,7 +166,7 @@ def main():
         default="",
     )
     parser.add_argument(
-        "--no-log", help="Print speed/temp/meanTemp to stdout", action="store_true"
+        "--no-log", help="Print speed/meanTemp to stdout", action="store_true"
     )
     args = parser.parse_args()
 
