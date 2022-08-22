@@ -1,6 +1,6 @@
 # fw-fanctrl
 
-This is a very simple Python service for Linux that drives the Framework Laptop's fan speed according to a configurable speed/temp curve.
+This is a simple Python service for Linux that drives the Framework Laptop's fan speed according to a configurable speed/temp curve.
 Its default configuration targets very silent fan operation, but it's easy to configure it for a different comfort/performance trade-off.
 Its possible to specfify two separate fan curves depending on whether the Laptop is charging/discharging.
 Under the hood, it uses [fw-ectool](https://github.com/DHowett/fw-ectool) to change parameters in FrameWork's embedded controller (EC).
@@ -17,11 +17,11 @@ yes | sudo sensors-detect
 
 To communicate with the embedded controller the `fw-ectool` is needed. You can either use the pre-compiled executable of `fw-ectool` in this repo, or recompile one from [this repo](https://github.com/DHowett/fw-ectool) and copy it in `./bin`.
 
-The charging status of the battery is fetched from the following file:
-`/sys/class/hwmon/hwmon2/device/status`
-Make sure the charging status is stored under the same path on your machine. Otherwise edit the `fw-fanctrl.py` script.
+The charging status of the battery is fetched from the following file by default:
+`/sys/class/power_supply/BAT1/status`
+The default path can be overwritten by entering a value for `batteryChargingStatusPath` inside the `config.json` file.
 
-Then, simply run:
+Then run:
 ```
 sudo ./install.sh
 ```
