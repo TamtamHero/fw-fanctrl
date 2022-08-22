@@ -4,7 +4,7 @@ This is a very simple Python service for Linux that drives the Framework Laptop'
 Its default configuration targets very silent fan operation, but it's easy to configure it for a different comfort/performance trade-off.
 Its possible to specfify two separate fan curves depending on whether the Laptop is charging/discharging.
 Under the hood, it uses [fw-ectool](https://github.com/DHowett/fw-ectool) to change parameters in FrameWork's embedded controller (EC).
-This is a fork of the [original version](https://github.com/TamtamHero/fw-fanctrl.git) of fw-fanctrl, which provides the same functionality without the automatic switching.
+This is a fork of the [original version](https://github.com/TamtamHero/fw-fanctrl.git) of fw-fanctrl. The orginal version provides the same functionality without the automatic switching of fan curves.
 
 # Install
 
