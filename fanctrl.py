@@ -31,8 +31,7 @@ class FanController:
     def adaptSpeed(self):
         currentTemp = self.temps[self._tempIndex]
         currentTemp = min(
-            currentTemp, self.getMovingAverageTemperature(
-                self.movingAverageInterval)
+            currentTemp, self.getMovingAverageTemperature(self.movingAverageInterval)
         )
         minPoint = self.speedCurve[0]
         maxPoint = self.speedCurve[-1]
@@ -49,8 +48,7 @@ class FanController:
             slope = (maxPoint["speed"] - minPoint["speed"]) / (
                 maxPoint["temp"] - minPoint["temp"]
             )
-            newSpeed = int(minPoint["speed"] +
-                           (currentTemp - minPoint["temp"]) * slope)
+            newSpeed = int(minPoint["speed"] + (currentTemp - minPoint["temp"]) * slope)
         self.setSpeed(newSpeed)
 
     def updateTemperature(self):
@@ -102,7 +100,8 @@ class FanController:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Emulate Ledger Nano/Blue apps.")
+        description="Control Framework's laptop fan with a speed curve"
+    )
     parser.add_argument(
         "--config", type=str, help="Path to config file", default="./config.json"
     )
