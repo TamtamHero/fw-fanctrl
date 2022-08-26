@@ -43,7 +43,7 @@ sudo service fw-fanctrl restart
 
 It contains different strategies, ranked from the most silent to the noisiest. You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
 
-The strategy active by default is the one specified in the `defaultStrategy` entry. Additionally a separate strategy can be defined, which is only active during discharge of the battery. This one is optional and specified in the `strategyOnDischarging` entry. If none is given only the `defaultStrategy` is used.
+The strategy active by default is the one specified in the `defaultStrategy` entry. Additionally a separate strategy can be defined, which is only active during discharge of the battery. This one is optional and specified in the `strategyOnDischarging` entry. If none is given only the `defaultStrategy` is used. By default the same fan curve is used during charging and discharging.
 
 Strategies can be configured with the following parameters:
 
