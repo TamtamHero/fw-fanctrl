@@ -141,7 +141,7 @@ class FanController:
 
     def printState(self):
         print(
-            f"speed: {self.speed}% temp: {self.temps[self._tempIndex]}°C movingAverage: {round(self.getMovingAverageTemperature(self.movingAverageInterval), 2)}°C Battery: {self.lastBatteryStatus}"
+            f"speed: {self.speed}% temp: {self.temps[self._tempIndex]}°C movingAverage: {round(self.getMovingAverageTemperature(self.movingAverageInterval), 2)}°C"
         )
 
     def run(self, debug=True):
