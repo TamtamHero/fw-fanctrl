@@ -1,6 +1,6 @@
 {
     "defaultStrategy": "lazy",
-    "strategyOnDischarging" : "lazyest",
+    "strategyOnDischarging" : "",
     "batteryChargingStatusPath" : "",
     "strategies": {
         "lazyest": {
