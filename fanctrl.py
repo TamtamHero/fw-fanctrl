@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 
 import argparse
+from http.client import SWITCHING_PROTOCOLS
 import subprocess
 from time import sleep
 import json
@@ -15,6 +16,7 @@ class FanController:
     temps = [0] * 100
     _tempIndex = 0
     lastBatteryStatus = ""
+    switchableFanCurve = False
     
     
     def __init__(self, configPath, strategy):
@@ -22,24 +24,27 @@ class FanController:
             config = json.load(fp)
 
         if strategy == "":
-            strategyOnCharging = config["defaultStrategy"]
-            self.strategyOnCharging = config["strategies"][strategyOnCharging]
+            strategyOnCharging = config["defaultStrategy"]  
         else:
             strategyOnCharging = strategy
-            self.strategyOnCharging = config["strategies"][strategyOnCharging]
         
-        self.batteryChargingStatusPath = config["batteryChargingStatusPath"]
-        if self.batteryChargingStatusPath == "":
-            self.batteryChargingStatusPath = "/sys/class/power_supply/BAT1/status"
-        
+        self.strategyOnCharging = config["strategies"][strategyOnCharging]
         # if the user didnt specify a separate strategy for discharging, use the same strategy as for charging
         strategyOnDischarging = config["strategyOnDischarging"]
         if strategyOnDischarging == "":
+            self.switchableFanCurve = False
             self.strategyOnDischarging = self.strategyOnCharging
         else:
             self.strategyOnDischarging = config["strategies"][strategyOnDischarging]
+            self.switchableFanCurve = True
+            self.batteryChargingStatusPath = config["batteryChargingStatusPath"]
+            if self.batteryChargingStatusPath == "":
+                self.batteryChargingStatusPath = "/sys/class/power_supply/BAT1/status"
 
-        self.updateStrategy()
+        #self.updateStrategy()
+        self.speedCurve = self.strategyOnCharging["speedCurve"]
+        self.fanSpeedUpdateFrequency = self.strategyOnCharging["fanSpeedUpdateFrequency"]
+        self.movingAverageInterval = self.strategyOnCharging["movingAverageInterval"]
         self.setSpeed(self.speedCurve[0]["speed"])
         self.updateTemperature()
         self.temps = [self.temps[self._tempIndex]] * 100
@@ -48,7 +53,7 @@ class FanController:
     def updateStrategy(self):
         update = self.getBatteryChargingStatus()
         if update == 0:
-            return      # if charging status unchanged to nothing
+            return      # if charging status unchanged do nothing
         elif update == 1:
             strategy = self.strategyOnCharging
         elif update == 2:
@@ -141,7 +146,8 @@ class FanController:
 
     def run(self, debug=True):
         while True:
-            self.updateStrategy()
+            if self.switchableFanCurve:
+                self.updateStrategy()
             self.updateTemperature()
 
             # update fan speed every "fanSpeedUpdateFrequency" seconds
