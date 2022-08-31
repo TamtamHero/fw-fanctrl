@@ -41,9 +41,10 @@ There is a single `config.json` file where you can configure the service. You ne
 sudo service fw-fanctrl restart
 ```
 
-It contains different strategies, ranked from the most silent to the noisiest. You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
+It contains different strategies, ranked from the most silent to the noisiest. It is possible to specify two different strategies for charging/discharging allowing for different optimization goals. On discharging one could have fan curve optimized for low fan speeds in order to save power while accepting a bit more heat. On charging one could have a fan curve that focuses on keeping the CPU from throttling and the system cool, at the expense of fan noise.
+You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
 
-The strategy active by default is the one specified in the `defaultStrategy` entry. Additionally a separate strategy can be defined, which is only active during discharge of the battery. This one is optional and specified in the `strategyOnDischarging` entry. If none is given only the `defaultStrategy` is used. By default the same fan curve is used during charging and discharging.
+The strategy active by default is the one specified in the `defaultStrategy` entry. Optionally a separate strategy only active during discharge can be defined, using the `strategyOnDischarging` entry. By default no extra strategy for discharging is provided, the default stratgy is active during all times.
 
 Strategies can be configured with the following parameters:
 
