@@ -1,4 +1,7 @@
+#! /usr/bin/python3
+
 import argparse
+from http.client import SWITCHING_PROTOCOLS
 import subprocess
 from time import sleep
 import json
@@ -9,19 +12,72 @@ class FanController:
     speed = 0
     temps = [0] * 100
     _tempIndex = 0
-
+    lastBatteryStatus = ""
+    switchableFanCurve = False
+    
+    
     def __init__(self, configPath, strategy):
         with open(configPath, "r") as fp:
             config = json.load(fp)
+
         if strategy == "":
-            strategy = config["defaultStrategy"]
-        strategy = config["strategies"][strategy]
+            strategyOnCharging = config["defaultStrategy"]  
+        else:
+            strategyOnCharging = strategy
+        
+        self.strategyOnCharging = config["strategies"][strategyOnCharging]
+        # if the user didnt specify a separate strategy for discharging, use the same strategy as for charging
+        strategyOnDischarging = config["strategyOnDischarging"]
+        if strategyOnDischarging == "":
+            self.switchableFanCurve = False
+            self.strategyOnDischarging = self.strategyOnCharging
+        else:
+            self.strategyOnDischarging = config["strategies"][strategyOnDischarging]
+            self.switchableFanCurve = True
+            self.batteryChargingStatusPath = config["batteryChargingStatusPath"]
+            if self.batteryChargingStatusPath == "":
+                self.batteryChargingStatusPath = "/sys/class/power_supply/BAT1/status"
+
+        #self.updateStrategy()
+        self.speedCurve = self.strategyOnCharging["speedCurve"]
+        self.fanSpeedUpdateFrequency = self.strategyOnCharging["fanSpeedUpdateFrequency"]
+        self.movingAverageInterval = self.strategyOnCharging["movingAverageInterval"]
+        self.setSpeed(self.speedCurve[0]["speed"])
+        self.updateTemperature()
+        self.temps = [self.temps[self._tempIndex]] * 100
+        
+
+    def updateStrategy(self):
+        update = self.getBatteryChargingStatus()
+        if update == 0:
+            return      # if charging status unchanged do nothing
+        elif update == 1:
+            strategy = self.strategyOnCharging
+        elif update == 2:
+            strategy = self.strategyOnDischarging
+        
+        # load fan curve according to strategy
         self.speedCurve = strategy["speedCurve"]
         self.fanSpeedUpdateFrequency = strategy["fanSpeedUpdateFrequency"]
         self.movingAverageInterval = strategy["movingAverageInterval"]
         self.setSpeed(self.speedCurve[0]["speed"])
         self.updateTemperature()
         self.temps = [self.temps[self._tempIndex]] * 100
+
+    
+    def getBatteryChargingStatus(self):
+        with open(self.batteryChargingStatusPath, "r") as fb:
+            currentBatteryStatus = fb.readline().rstrip('\n')
+
+            if currentBatteryStatus == self.lastBatteryStatus:
+                return 0                # battery charging status hasnt change - dont switch fan curve
+            elif currentBatteryStatus != self.lastBatteryStatus:
+                self.lastBatteryStatus = currentBatteryStatus
+                if currentBatteryStatus == "Charging":
+                    return 1
+                elif currentBatteryStatus == "Discharging":
+                    return 2
+
 
     def setSpeed(self, speed):
         self.speed = speed
@@ -78,14 +134,17 @@ class FanController:
         for i in range(0, timeInterval):
             tempSum += self.temps[self._tempIndex - i]
         return tempSum / timeInterval
+            
 
     def printState(self):
         print(
-            f"speed: {self.speed}% temp: {self.temps[self._tempIndex]}°C movingAverage: {self.getMovingAverageTemperature(self.movingAverageInterval)}°C"
+            f"speed: {self.speed}% temp: {self.temps[self._tempIndex]}°C movingAverage: {round(self.getMovingAverageTemperature(self.movingAverageInterval), 2)}°C"
         )
 
     def run(self, debug=True):
         while True:
+            if self.switchableFanCurve:
+                self.updateStrategy()
             self.updateTemperature()
 
             # update fan speed every "fanSpeedUpdateFrequency" seconds
@@ -112,7 +171,7 @@ def main():
         default="",
     )
     parser.add_argument(
-        "--no-log", help="Print speed/temp/meanTemp to stdout", action="store_true"
+        "--no-log", help="Print speed/meanTemp to stdout", action="store_true"
     )
     args = parser.parse_args()
 

@@ -1,8 +1,8 @@
 # fw-fanctrl
 
-This is a very simple Python service for Linux that drives the FrameWork laptop's fan speed according to a configurable speed/temp curve.
+This is a simple Python service for Linux that drives the Framework Laptop's fan speed according to a configurable speed/temp curve.
 Its default configuration targets very silent fan operation, but it's easy to configure it for a different comfort/performance trade-off.
-
+Its possible to specify two separate fan curves depending on whether the Laptop is charging/discharging.
 Under the hood, it uses [fw-ectool](https://github.com/DHowett/fw-ectool) to change parameters in FrameWork's embedded controller (EC).
 
 # Install
@@ -14,9 +14,13 @@ sudo apt install lm-sensors
 yes | sudo sensors-detect
 ```
 
-You can either use the pre-compiled executable of `fw-ectool` in this repo, or recompile one from [this repo](https://github.com/DHowett/fw-ectool) and copy it in `./bin`.
+To communicate with the embedded controller the `fw-ectool` is needed. You can either use the pre-compiled executable of `fw-ectool` in this repo, or recompile one from [this repo](https://github.com/DHowett/fw-ectool) and copy it in `./bin`.
 
-Then, simply run:
+The charging status of the battery is fetched from the following file by default:
+`/sys/class/power_supply/BAT1/status`
+The default path can be overwritten by entering a value for `batteryChargingStatusPath` inside the `config.json` file.
+
+Then run:
 ```
 sudo ./install.sh
 ```
@@ -37,9 +41,10 @@ There is a single `config.json` file where you can configure the service. You ne
 sudo service fw-fanctrl restart
 ```
 
-It contains different strategies, ranked from the most silent to the noisiest. You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
+It contains different strategies, ranked from the most silent to the noisiest. It is possible to specify two different strategies for charging/discharging allowing for different optimization goals. On discharging one could have fan curve optimized for low fan speeds in order to save power while accepting a bit more heat. On charging one could have a fan curve that focuses on keeping the CPU from throttling and the system cool, at the expense of fan noise.
+You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
 
-The strategy that will be run is the one stored in the `defaultStrategy` entry.
+The strategy active by default is the one specified in the `defaultStrategy` entry. Optionally a separate strategy only active during discharge can be defined, using the `strategyOnDischarging` entry. By default no extra strategy for discharging is provided, the default stratgy is active during all times.
 
 Strategies can be configured with the following parameters:
 
