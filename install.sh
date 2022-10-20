@@ -14,7 +14,7 @@ if [ "$1" = "remove" ]; then
 
     sudo systemctl stop ${SERVICE_NAME//'.service'/} # remove the extension
     sudo systemctl disable ${SERVICE_NAME//'.service'/}
-    rm /usr/local/bin/fanctrl.py
+    rm /usr/local/bin/fw-fanctrl
     ectool --interface=lpc autofanctrl # restore default fan manager
     rm /usr/local/bin/ectool
     rm -rf /home/$(logname)/.config/fw-fanctrl
@@ -22,10 +22,16 @@ if [ "$1" = "remove" ]; then
     echo "fw-fanctrl has been removed successfully from system"
 elif [ -z $1 ]; then
 
+    pip3 install -r requirements.txt
     cp ./bin/ectool /usr/local/bin
-    cp ./fanctrl.py /usr/local/bin
+    cp ./fanctrl.py /usr/local/bin/fw-fanctrl
+    chmod +x /usr/local/bin/fw-fanctrl
+    chown $(logname):$(logname) /usr/local/bin/fw-fanctrl
     mkdir -p /home/$(logname)/.config/fw-fanctrl
     cp config.json /home/$(logname)/.config/fw-fanctrl/
+
+    # cleaning legacy file
+    rm /usr/local/bin/fanctrl.py 2> /dev/null || true
 
     # check if service is active
     IS_ACTIVE=$(sudo systemctl is-active  $SERVICE_NAME)
@@ -45,7 +51,7 @@ After=multi-user.target
 [Service]
 Type=simple
 Restart=always
-ExecStart=/usr/bin/python3 /usr/local/bin/fanctrl.py --config /home/$(logname)/.config/fw-fanctrl/config.json --no-log
+ExecStart=/usr/bin/python3 /usr/local/bin/fw-fanctrl --config /home/$(logname)/.config/fw-fanctrl/config.json --no-log
 [Install]
 WantedBy=multi-user.target
 

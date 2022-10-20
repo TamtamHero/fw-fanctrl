@@ -26,7 +26,7 @@ sudo ./install.sh
 ```
 
 This bash script is going to create and enable a service that runs this repo's main script, `fanctrl.py`.
-It will copy `fanctrl.py` and `./bin/ectool` to `/usr/local/bin` and create a config file in `/home/<user>/.config/fw-fanctrl/config.json`
+It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool` to `/usr/local/bin` and create a config file in `/home/<user>/.config/fw-fanctrl/config.json`
 
 # Uninstall
 ```
@@ -62,3 +62,11 @@ Strategies can be configured with the following parameters:
 - **MovingAverageInterval**:
 
     Number of seconds on which the moving average of temperature is computed. Increase it, and the fan speed will change more gradually. Lower it, and it will gain in reactivity. Defaults to 30 seconds.
+
+# Misc
+
+It is possible to hot swap the current strategy with another one by running the command
+```
+fw-fanctrl strategyName
+```
+where `strategyName is one of the strategies described in the config file.

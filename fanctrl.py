@@ -1,10 +1,27 @@
 #! /usr/bin/python3
 
 import argparse
-from http.client import SWITCHING_PROTOCOLS
 import subprocess
 from time import sleep
 import json
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+
+class FileModifiedHandler(FileSystemEventHandler):
+    def __init__(self, path, file_name, callback):
+        self.file_name = file_name
+        self.callback = callback
+
+        # set observer to watch for changes in the directory
+        self.observer = Observer()
+        self.observer.schedule(self, path, recursive=False)
+        self.observer.start()
+
+    def on_modified(self, event):
+        # only act on the change that we're looking for
+        if not event.is_directory and event.src_path.endswith(self.file_name):
+            self.callback()  # call callback
 
 
 class FanController:
@@ -14,49 +31,36 @@ class FanController:
     _tempIndex = 0
     lastBatteryStatus = ""
     switchableFanCurve = False
-    
-    
-    def __init__(self, configPath, strategy):
-        with open(configPath, "r") as fp:
-            config = json.load(fp)
 
+    def __init__(self, configPath, strategy):
+        # parse config file
+        with open(configPath, "r") as fp:
+            self.config = json.load(fp)
         if strategy == "":
-            strategyOnCharging = config["defaultStrategy"]  
+            strategyOnCharging = self.config["defaultStrategy"]
         else:
             strategyOnCharging = strategy
-        
-        self.strategyOnCharging = config["strategies"][strategyOnCharging]
+
+        self.strategyOnCharging = self.config["strategies"][strategyOnCharging]
         # if the user didnt specify a separate strategy for discharging, use the same strategy as for charging
-        strategyOnDischarging = config["strategyOnDischarging"]
+        strategyOnDischarging = self.config["strategyOnDischarging"]
         if strategyOnDischarging == "":
             self.switchableFanCurve = False
             self.strategyOnDischarging = self.strategyOnCharging
         else:
-            self.strategyOnDischarging = config["strategies"][strategyOnDischarging]
+            self.strategyOnDischarging = self.config["strategies"][
+                strategyOnDischarging
+            ]
             self.switchableFanCurve = True
-            self.batteryChargingStatusPath = config["batteryChargingStatusPath"]
+            self.batteryChargingStatusPath = self.config["batteryChargingStatusPath"]
             if self.batteryChargingStatusPath == "":
                 self.batteryChargingStatusPath = "/sys/class/power_supply/BAT1/status"
 
-        #self.updateStrategy()
-        self.speedCurve = self.strategyOnCharging["speedCurve"]
-        self.fanSpeedUpdateFrequency = self.strategyOnCharging["fanSpeedUpdateFrequency"]
-        self.movingAverageInterval = self.strategyOnCharging["movingAverageInterval"]
-        self.setSpeed(self.speedCurve[0]["speed"])
-        self.updateTemperature()
-        self.temps = [self.temps[self._tempIndex]] * 100
-        
+        self.setStrategy(self.strategyOnCharging)
 
-    def updateStrategy(self):
-        update = self.getBatteryChargingStatus()
-        if update == 0:
-            return      # if charging status unchanged do nothing
-        elif update == 1:
-            strategy = self.strategyOnCharging
-        elif update == 2:
-            strategy = self.strategyOnDischarging
-        
-        # load fan curve according to strategy
+        FileModifiedHandler("/tmp/", ".fw-fanctrl.tmp", self.strategyLiveUpdate)
+
+    def setStrategy(self, strategy):
         self.speedCurve = strategy["speedCurve"]
         self.fanSpeedUpdateFrequency = strategy["fanSpeedUpdateFrequency"]
         self.movingAverageInterval = strategy["movingAverageInterval"]
@@ -64,20 +68,40 @@ class FanController:
         self.updateTemperature()
         self.temps = [self.temps[self._tempIndex]] * 100
 
-    
+    def switchStrategy(self):
+        update = self.getBatteryChargingStatus()
+        if update == 0:
+            return  # if charging status unchanged do nothing
+        elif update == 1:
+            strategy = self.strategyOnCharging
+        elif update == 2:
+            strategy = self.strategyOnDischarging
+
+        # load fan curve according to strategy
+        self.setStrategy(strategy)
+
+    def strategyLiveUpdate(self):
+        with open("/tmp/.fw-fanctrl.tmp", "r+") as fp:
+            strategy = fp.read()
+            fp.seek(0)
+            fp.truncate
+            if strategy in self.config["strategies"]:
+                self.setStrategy(self.config["strategies"][strategy])
+            else:
+                fp.write("unknown strategy")
+
     def getBatteryChargingStatus(self):
         with open(self.batteryChargingStatusPath, "r") as fb:
-            currentBatteryStatus = fb.readline().rstrip('\n')
+            currentBatteryStatus = fb.readline().rstrip("\n")
 
             if currentBatteryStatus == self.lastBatteryStatus:
-                return 0                # battery charging status hasnt change - dont switch fan curve
+                return 0  # battery charging status hasnt change - dont switch fan curve
             elif currentBatteryStatus != self.lastBatteryStatus:
                 self.lastBatteryStatus = currentBatteryStatus
                 if currentBatteryStatus == "Charging":
                     return 1
                 elif currentBatteryStatus == "Discharging":
                     return 2
-
 
     def setSpeed(self, speed):
         self.speed = speed
@@ -134,7 +158,6 @@ class FanController:
         for i in range(0, timeInterval):
             tempSum += self.temps[self._tempIndex - i]
         return tempSum / timeInterval
-            
 
     def printState(self):
         print(
@@ -144,7 +167,7 @@ class FanController:
     def run(self, debug=True):
         while True:
             if self.switchableFanCurve:
-                self.updateStrategy()
+                self.switchStrategy()
             self.updateTemperature()
 
             # update fan speed every "fanSpeedUpdateFrequency" seconds
@@ -159,11 +182,14 @@ class FanController:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Control Framework's laptop fan with a speed curve"
+        description="Control Framework's laptop fan with a speed curve",
     )
     parser.add_argument(
-        "--config", type=str, help="Path to config file", default="./config.json"
+        "new_strategy",
+        nargs="?",
+        help="Switches the strategy of a currently running fw-fanctrl instance",
     )
+    parser.add_argument("--config", type=str, help="Path to config file", default=".")
     parser.add_argument(
         "--strategy",
         type=str,
@@ -175,8 +201,16 @@ def main():
     )
     args = parser.parse_args()
 
-    fan = FanController(configPath=args.config, strategy=args.strategy)
-    fan.run(debug=not args.no_log)
+    if args.new_strategy:
+        with open("/tmp/.fw-fanctrl.tmp", "w") as fp:
+            fp.write(args.new_strategy)
+        sleep(0.1)
+        with open("/tmp/.fw-fanctrl.tmp", "r") as fp:
+            if fp.read() == "unknown strategy":
+                print("Error: unknown strategy")
+    else:
+        fan = FanController(configPath=args.config, strategy=args.strategy)
+        fan.run(debug=not args.no_log)
 
 
 if __name__ == "__main__":
