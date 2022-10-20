@@ -22,8 +22,11 @@ if [ "$1" = "remove" ]; then
     echo "fw-fanctrl has been removed successfully from system"
 elif [ -z $1 ]; then
 
+    pip3 install -r requirements.txt
     cp ./bin/ectool /usr/local/bin
-    cp ./fanctrl.py /usr/local/bin
+    cp ./fanctrl.py /usr/local/bin/fw-fanctrl
+    chmod +x /usr/local/bin/fw-fanctrl
+    chown $(logname):$(logname) /usr/local/bin/fw-fanctrl
     mkdir -p /home/$(logname)/.config/fw-fanctrl
     cp config.json /home/$(logname)/.config/fw-fanctrl/
 
@@ -45,7 +48,7 @@ After=multi-user.target
 [Service]
 Type=simple
 Restart=always
-ExecStart=/usr/bin/python3 /usr/local/bin/fanctrl.py --config /home/$(logname)/.config/fw-fanctrl/config.json --no-log
+ExecStart=/usr/bin/python3 /usr/local/bin/fw-fanctrl --config /home/$(logname)/.config/fw-fanctrl/config.json --no-log
 [Install]
 WantedBy=multi-user.target
 
