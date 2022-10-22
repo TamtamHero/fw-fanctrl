@@ -3,6 +3,13 @@
     "strategyOnDischarging" : "",
     "batteryChargingStatusPath" : "",
     "strategies": {
+        "sleep": {
+            "fanSpeedUpdateFrequency": 5,
+            "movingAverageInterval": 40,
+            "speedCurve": [
+                { "temp": 0, "speed": 0 }
+            ]
+        },
         "lazyest": {
             "fanSpeedUpdateFrequency": 5,
             "movingAverageInterval": 40,

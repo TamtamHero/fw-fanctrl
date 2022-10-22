@@ -85,6 +85,10 @@ class FanController:
             strategy = fp.read()
             fp.seek(0)
             fp.truncate
+
+            if strategy == "defaultStrategy":
+                strategy = self.config["defaultStrategy"]
+
             if strategy in self.config["strategies"]:
                 self.setStrategy(self.config["strategies"][strategy])
             else:
