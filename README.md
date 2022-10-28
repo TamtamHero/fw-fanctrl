@@ -8,6 +8,7 @@ Under the hood, it uses [fw-ectool](https://github.com/DHowett/fw-ectool) to cha
 # Install
 
 ## Dependancies
+
 This tool depends on `lm-sensors` to fetch CPU temperature:
 ```
 sudo apt install lm-sensors
@@ -16,10 +17,6 @@ yes | sudo sensors-detect
 
 To communicate with the embedded controller the `fw-ectool` is needed. You can either use the pre-compiled executable of `fw-ectool` in this repo, or recompile one from [this repo](https://github.com/DHowett/fw-ectool) and copy it in `./bin`.
 
-The charging status of the battery is fetched from the following file by default:
-`/sys/class/power_supply/BAT1/status`
-The default path can be overwritten by entering a value for `batteryChargingStatusPath` inside the `config.json` file.
-
 Then run:
 ```
 sudo ./install.sh
@@ -27,6 +24,11 @@ sudo ./install.sh
 
 This bash script is going to create and enable a service that runs this repo's main script, `fanctrl.py`.
 It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool` to `/usr/local/bin` and create a config file in `/home/<user>/.config/fw-fanctrl/config.json`
+
+# Update
+
+To install an update, you can just pull the latest commit on the `main` branch of this repository, and run the install script again.
+It will overwrite the config file, so you might want to back it up if you have a custom one !
 
 # Uninstall
 ```
@@ -44,8 +46,6 @@ sudo service fw-fanctrl restart
 It contains different strategies, ranked from the most silent to the noisiest. It is possible to specify two different strategies for charging/discharging allowing for different optimization goals. On discharging one could have fan curve optimized for low fan speeds in order to save power while accepting a bit more heat. On charging one could have a fan curve that focuses on keeping the CPU from throttling and the system cool, at the expense of fan noise.
 You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
 
-The strategy active by default is the one specified in the `defaultStrategy` entry. Optionally a separate strategy only active during discharge can be defined, using the `strategyOnDischarging` entry. By default no extra strategy for discharging is provided, the default stratgy is active during all times.
-
 Strategies can be configured with the following parameters:
 
 - **SpeedCurve**:
@@ -62,6 +62,13 @@ Strategies can be configured with the following parameters:
 - **MovingAverageInterval**:
 
     Number of seconds on which the moving average of temperature is computed. Increase it, and the fan speed will change more gradually. Lower it, and it will gain in reactivity. Defaults to 30 seconds.
+
+## Charging/Discharging strategies
+
+The strategy active by default is the one specified in the `defaultStrategy` entry. Optionally a separate strategy only active during discharge can be defined, using the `strategyOnDischarging` entry. By default no extra strategy for discharging is provided, the default stratgy is active during all times.
+The charging status of the battery is fetched from the following file by default:
+`/sys/class/power_supply/BAT1/status`
+The default path can be overwritten by entering a value for `batteryChargingStatusPath` inside the `config.json` file.
 
 # Misc
 
