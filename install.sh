@@ -34,18 +34,20 @@ elif [ -z $1 ]; then
     # cleaning legacy file
     rm /usr/local/bin/fanctrl.py 2> /dev/null || true
 
+
     # check if service is active
     IS_ACTIVE=$(sudo systemctl is-active  $SERVICE_NAME)
     if [ "$IS_ACTIVE" == "active" ]; then
         # restart the service
         echo "Service is running"
-        echo "Restarting service"
-        sudo systemctl restart $SERVICE_NAME
-        echo "Service restarted"
-    else
-        # create service file
-        echo "Creating service file"
-        sudo cat > /etc/systemd/system/${SERVICE_NAME//'"'/}.service << EOF
+        echo "Stoping service"
+        sudo systemctl stop $SERVICE_NAME
+        echo "Service stoped"
+    fi
+
+    # create service file
+    echo "Creating service file"
+    sudo cat > /etc/systemd/system/${SERVICE_NAME//'"'/}.service << EOF
 [Unit]
 Description=FrameWork Fan Controller
 After=multi-user.target
@@ -58,10 +60,10 @@ WantedBy=multi-user.target
 
 EOF
 
-        # create suspend hooks
-        echo "Creating suspend hooks"
+    # create suspend hooks
+    echo "Creating suspend hooks"
 
-        sudo cat > /lib/systemd/system-sleep/fw-fanctrl-suspend << EOF
+    sudo cat > /lib/systemd/system-sleep/fw-fanctrl-suspend << EOF
 #!/bin/sh
 
 case \$1 in
@@ -71,16 +73,15 @@ esac
 
 EOF
         
-        # make the suspend hook executable
-        sudo chmod +x /lib/systemd/system-sleep/fw-fanctrl-suspend
+    # make the suspend hook executable
+    sudo chmod +x /lib/systemd/system-sleep/fw-fanctrl-suspend
 
-        # restart daemon, enable and start service
-        echo "Reloading daemon and enabling service"
-        sudo systemctl daemon-reload
-        sudo systemctl enable ${SERVICE_NAME//'.service'/} # remove the extension
-        sudo systemctl start ${SERVICE_NAME//'.service'/}
-        echo "Service Started"
-    fi
+    # restart daemon, enable and start service
+    echo "Reloading daemon and enabling service"
+    sudo systemctl daemon-reload
+    sudo systemctl enable ${SERVICE_NAME//'.service'/} # remove the extension
+    sudo systemctl start ${SERVICE_NAME//'.service'/}
+    echo "Service Started"
 else
     echo "Unknown command $1"
     exit
