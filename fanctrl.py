@@ -142,6 +142,11 @@ class FanController:
                 executable="/bin/bash",
             ).stdout
         )
+
+        # sensors -j does not return the core temperatures at startup
+        if "coretemp-isa-0000" not in sensorsOutput.keys():
+            return
+
         cores = 0
         for k, v in sensorsOutput["coretemp-isa-0000"].items():
             if k.startswith("Core "):
