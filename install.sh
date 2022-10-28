@@ -18,6 +18,7 @@ if [ "$1" = "remove" ]; then
     ectool --interface=lpc autofanctrl # restore default fan manager
     rm /usr/local/bin/ectool
     rm -rf /home/$(logname)/.config/fw-fanctrl
+    rm /usr/lib/systemd/system-sleep/fw-fanctrl-suspend
 
     echo "fw-fanctrl has been removed successfully from system"
 elif [ -z $1 ]; then
@@ -56,6 +57,23 @@ ExecStart=/usr/bin/python3 /usr/local/bin/fw-fanctrl --config /home/$(logname)/.
 WantedBy=multi-user.target
 
 EOF
+
+        # create suspend hooks
+        echo "Creating suspend hooks"
+
+        sudo cat > /lib/systemd/system-sleep/fw-fanctrl-suspend << EOF
+#!/bin/sh
+
+case \$1 in
+    pre)  runuser -l $(logname) -c "fw-fanctrl sleep" ;;
+    post) runuser -l $(logname) -c "fw-fanctrl defaultStrategy" ;;
+esac
+
+EOF
+        
+        # make the suspend hook executable
+        sudo chmod +x /lib/systemd/system-sleep/fw-fanctrl-suspend
+
         # restart daemon, enable and start service
         echo "Reloading daemon and enabling service"
         sudo systemctl daemon-reload
