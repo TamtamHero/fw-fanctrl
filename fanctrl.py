@@ -156,7 +156,7 @@ class FanController:
             if k.startswith("Core "):
                 i = int(k.split(" ")[1])
                 cores += 1
-                sumCoreTemps += float(v["temp" + str(i + 2) + "_input"])
+                sumCoreTemps += float(v[[key for key in v.keys() if key.endswith("_input")][0]])
 
         self._tempIndex = (self._tempIndex + 1) % len(self.temps)
         self.temps[self._tempIndex] = sumCoreTemps / cores
