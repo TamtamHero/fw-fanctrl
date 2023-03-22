@@ -100,12 +100,11 @@ class FanController:
 
             if currentBatteryStatus == self.lastBatteryStatus:
                 return 0  # battery charging status hasnt change - dont switch fan curve
-            elif currentBatteryStatus != self.lastBatteryStatus:
-                self.lastBatteryStatus = currentBatteryStatus
-                if currentBatteryStatus == "Charging":
-                    return 1
-                elif currentBatteryStatus == "Discharging":
-                    return 2
+            self.lastBatteryStatus = currentBatteryStatus
+            if currentBatteryStatus == "Discharging":
+                return 2
+            # Battery is not discharging
+            return 1
 
     def setSpeed(self, speed):
         self.speed = speed
