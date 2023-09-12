@@ -138,7 +138,7 @@ class FanController:
         sumCoreTemps = 0
         sensorsOutput = json.loads(
             subprocess.run(
-                "sensors -j",
+                "sensors -j &> /dev/null",
                 stdout=subprocess.PIPE,
                 shell=True,
                 text=True,
