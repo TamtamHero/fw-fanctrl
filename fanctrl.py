@@ -56,9 +56,19 @@ class FanController:
             if self.batteryChargingStatusPath == "":
                 self.batteryChargingStatusPath = "/sys/class/power_supply/BAT1/status"
 
+        cpuinfo = subprocess.run(
+                "cat /proc/cpuinfo",
+                stdout=subprocess.PIPE,
+                shell=True,
+                text=True,
+                executable="/bin/bash",
+            ).stdout
+        self.cpu_type = "Intel" if "GenuineIntel" in cpuinfo else "AMD"
+
         self.setStrategy(self.strategyOnCharging)
 
         FileModifiedHandler("/tmp/", ".fw-fanctrl.tmp", self.strategyLiveUpdate)
+
 
     def setStrategy(self, strategy):
         self.speedCurve = strategy["speedCurve"]
@@ -136,26 +146,39 @@ class FanController:
 
     def updateTemperature(self):
         sumCoreTemps = 0
-        sensorsOutput = json.loads(
-            subprocess.run(
-                "sensors -j 2> /dev/null",
-                stdout=subprocess.PIPE,
-                shell=True,
-                text=True,
-                executable="/bin/bash",
-            ).stdout
-        )
-
-        # sensors -j does not return the core temperatures at startup
-        if "coretemp-isa-0000" not in sensorsOutput.keys():
-            return
-
         cores = 0
-        for k, v in sensorsOutput["coretemp-isa-0000"].items():
-            if k.startswith("Core "):
-                i = int(k.split(" ")[1])
-                cores += 1
-                sumCoreTemps += float(v[[key for key in v.keys() if key.endswith("_input")][0]])
+
+        sensorsOutput = json.loads(
+                subprocess.run(
+                    "sensors -j 2> /dev/null",
+                    stdout=subprocess.PIPE,
+                    shell=True,
+                    text=True,
+                    executable="/bin/bash",
+                ).stdout
+            )
+
+        if self.cpu_type == "Intel":
+            # sensors -j does not return the core temperatures at startup
+            if "coretemp-isa-0000" not in sensorsOutput.keys():
+                return
+
+            for k, v in sensorsOutput["coretemp-isa-0000"].items():
+                if k.startswith("Core "):
+                    cores += 1
+                    sumCoreTemps += float(v[[key for key in v.keys() if key.endswith("_input")][0]])
+
+        elif self.cpu_type == "AMD":
+             # sensors -j does not return the core temperatures at startup
+            if "acpitz-acpi-0" not in sensorsOutput.keys():
+                return
+
+            for k, v in sensorsOutput["acpitz-acpi-0"].items():
+                if k.startswith("temp"):
+                    cores += 1
+                    sumCoreTemps += float(v[[key for key in v.keys() if key.endswith("_input")][0]])
+        else:
+            print("Unsupported cpu type: " + self.cpu_type)
 
         self._tempIndex = (self._tempIndex + 1) % len(self.temps)
         self.temps[self._tempIndex] = sumCoreTemps / cores
