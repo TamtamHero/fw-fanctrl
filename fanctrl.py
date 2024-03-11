@@ -219,6 +219,8 @@ class FanController:
         )
 
     def run(self, debug=True):
+        if debug:
+            print(f"model: {self.laptop_model}, cpu_type: {self.cpu_type}, fan_count: {self.fan_count}")
         while True:
             if self.switchableFanCurve:
                 self.switchStrategy()
