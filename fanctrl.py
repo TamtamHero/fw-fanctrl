@@ -65,6 +65,17 @@ class FanController:
             ).stdout
         self.cpu_type = "Intel" if "GenuineIntel" in cpuinfo else "AMD"
 
+
+        faninfo = subprocess.run(
+                "ectool pwmgetfanrpm",
+                stdout=subprocess.PIPE,
+                shell=True,
+                text=True,
+                executable="/bin/bash",
+            ).stdout
+        self.fan_count = faninfo.count("Fan")
+        self.laptop_model = "Framework laptop 16" if self.fan_count > 1 else "Framework laptop 13"
+
         self.setStrategy(self.strategyOnCharging)
 
         FileModifiedHandler("/tmp/", ".fw-fanctrl.tmp", self.strategyLiveUpdate)
@@ -174,14 +185,26 @@ class FanController:
                 return
 
             for k, v in sensorsOutput["acpitz-acpi-0"].items():
-                if k.startswith("temp"):
+                # temp3 is the socket temperature, we don't have individual core temperatures when cpu is AMD
+                if k.startswith("temp3"):
                     cores += 1
-                    sumCoreTemps += float(v[[key for key in v.keys() if key.endswith("_input")][0]])
+                    sumCoreTemps = float(v[[key for key in v.keys() if key.endswith("_input")][0]])
+                    print(sumCoreTemps)
         else:
             print("Unsupported cpu type: " + self.cpu_type)
 
+        measurement = sumCoreTemps / cores
+
+        # if we're running on a 16 AND there's a discrete GPU, compare both temperature and take the highest
+        if self.laptop_model == "16":
+            for k, v in sensorsOutput.items():
+                if "junction" in v and "edge" in v:
+                    dGpuTemp = v["edge"]["temp1_input"]
+                    if dGpuTemp > measurement:
+                        measurement = dGpuTemp
+
         self._tempIndex = (self._tempIndex + 1) % len(self.temps)
-        self.temps[self._tempIndex] = sumCoreTemps / cores
+        self.temps[self._tempIndex] = measurement
 
     # return mean temperature over a given time interval (in seconds)
     def getMovingAverageTemperature(self, timeInterval):
