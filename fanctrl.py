@@ -56,9 +56,30 @@ class FanController:
             if self.batteryChargingStatusPath == "":
                 self.batteryChargingStatusPath = "/sys/class/power_supply/BAT1/status"
 
+        cpuinfo = subprocess.run(
+                "cat /proc/cpuinfo",
+                stdout=subprocess.PIPE,
+                shell=True,
+                text=True,
+                executable="/bin/bash",
+            ).stdout
+        self.cpu_type = "Intel" if "GenuineIntel" in cpuinfo else "AMD"
+
+
+        faninfo = subprocess.run(
+                "ectool pwmgetfanrpm",
+                stdout=subprocess.PIPE,
+                shell=True,
+                text=True,
+                executable="/bin/bash",
+            ).stdout
+        self.fan_count = faninfo.count("Fan")
+        self.laptop_model = "Framework laptop 16" if self.fan_count > 1 else "Framework laptop 13"
+
         self.setStrategy(self.strategyOnCharging)
 
         FileModifiedHandler("/tmp/", ".fw-fanctrl.tmp", self.strategyLiveUpdate)
+
 
     def setStrategy(self, strategy):
         self.speedCurve = strategy["speedCurve"]
@@ -136,29 +157,54 @@ class FanController:
 
     def updateTemperature(self):
         sumCoreTemps = 0
-        sensorsOutput = json.loads(
-            subprocess.run(
-                "sensors -j 2> /dev/null",
-                stdout=subprocess.PIPE,
-                shell=True,
-                text=True,
-                executable="/bin/bash",
-            ).stdout
-        )
-
-        # sensors -j does not return the core temperatures at startup
-        if "coretemp-isa-0000" not in sensorsOutput.keys():
-            return
-
         cores = 0
-        for k, v in sensorsOutput["coretemp-isa-0000"].items():
-            if k.startswith("Core "):
-                i = int(k.split(" ")[1])
-                cores += 1
-                sumCoreTemps += float(v[[key for key in v.keys() if key.endswith("_input")][0]])
+
+        sensorsOutput = json.loads(
+                subprocess.run(
+                    "sensors -j 2> /dev/null",
+                    stdout=subprocess.PIPE,
+                    shell=True,
+                    text=True,
+                    executable="/bin/bash",
+                ).stdout
+            )
+
+        if self.cpu_type == "Intel":
+            # sensors -j does not return the core temperatures at startup
+            if "coretemp-isa-0000" not in sensorsOutput.keys():
+                return
+
+            for k, v in sensorsOutput["coretemp-isa-0000"].items():
+                if k.startswith("Core "):
+                    cores += 1
+                    sumCoreTemps += float(v[[key for key in v.keys() if key.endswith("_input")][0]])
+
+        elif self.cpu_type == "AMD":
+             # sensors -j does not return the core temperatures at startup
+            if "acpitz-acpi-0" not in sensorsOutput.keys():
+                return
+
+            for k, v in sensorsOutput["acpitz-acpi-0"].items():
+                # temp3 is the socket temperature, we don't have individual core temperatures when cpu is AMD
+                if k.startswith("temp3"):
+                    cores += 1
+                    sumCoreTemps = float(v[[key for key in v.keys() if key.endswith("_input")][0]])
+                    print(sumCoreTemps)
+        else:
+            print("Unsupported cpu type: " + self.cpu_type)
+
+        measurement = sumCoreTemps / cores
+
+        # if we're running on a 16 AND there's a discrete GPU, compare both temperature and take the highest
+        if self.laptop_model == "16":
+            for k, v in sensorsOutput.items():
+                if "junction" in v and "edge" in v:
+                    dGpuTemp = v["edge"]["temp1_input"]
+                    if dGpuTemp > measurement:
+                        measurement = dGpuTemp
 
         self._tempIndex = (self._tempIndex + 1) % len(self.temps)
-        self.temps[self._tempIndex] = sumCoreTemps / cores
+        self.temps[self._tempIndex] = measurement
 
     # return mean temperature over a given time interval (in seconds)
     def getMovingAverageTemperature(self, timeInterval):
@@ -173,6 +219,8 @@ class FanController:
         )
 
     def run(self, debug=True):
+        if debug:
+            print(f"model: {self.laptop_model}, cpu_type: {self.cpu_type}, fan_count: {self.fan_count}")
         while True:
             if self.switchableFanCurve:
                 self.switchStrategy()
