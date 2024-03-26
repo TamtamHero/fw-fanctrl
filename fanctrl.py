@@ -196,7 +196,7 @@ class FanController:
         measurement = sumCoreTemps / cores
 
         # if we're running on a 16 AND there's a discrete GPU, compare both temperature and take the highest
-        if self.laptop_model == "16":
+        if "16" in self.laptop_model:
             for k, v in sensorsOutput.items():
                 if "junction" in v and "edge" in v:
                     dGpuTemp = v["edge"]["temp1_input"]
