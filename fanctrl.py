@@ -31,6 +31,7 @@ class FanController:
     _tempIndex = 0
     lastBatteryStatus = ""
     switchableFanCurve = False
+    readAttempts = 0 # only used for AMD CPUs
 
     def __init__(self, configPath, strategy):
         # parse config file
@@ -181,17 +182,26 @@ class FanController:
 
         elif self.cpu_type == "AMD":
              # sensors -j does not return the core temperatures at startup
-            if "acpitz-acpi-0" not in sensorsOutput.keys():
-                return
-
-            for k, v in sensorsOutput["acpitz-acpi-0"].items():
-                # temp3 is the socket temperature, we don't have individual core temperatures when cpu is AMD
-                if k.startswith("temp3"):
+            if "acpitz-acpi-0" in sensorsOutput.keys():
+                for k, v in sensorsOutput["acpitz-acpi-0"].items():
+                    # temp3 is the socket temperature, we don't have individual core temperatures when cpu is AMD
+                    if k.startswith("temp3"):
+                        cores += 1
+                        sumCoreTemps = float(v[[key for key in v.keys() if key.endswith("_input")][0]])
+            # sometimes, acpitz-acpi-0 is not available at all, but we can fallback on k10temp-pci-00c3
+            elif self.readAttempts > 30:
+                if "k10temp-pci-00c3" in sensorsOutput.keys():
                     cores += 1
-                    sumCoreTemps = float(v[[key for key in v.keys() if key.endswith("_input")][0]])
-                    print(sumCoreTemps)
+                    sumCoreTemps = float(sensorsOutput["k10temp-pci-00c3"]["Tctl"]["temp1_input"])
+                else:
+                    print("Neither acpitz-acpi-0 or k10temp-pci-00c3 are available, please report this issue")
+                    exit()
+            else:
+                self.readAttempts += 1
+                return
         else:
             print("Unsupported cpu type: " + self.cpu_type)
+            exit()
 
         measurement = sumCoreTemps / cores
 
