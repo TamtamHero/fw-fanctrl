@@ -44,9 +44,12 @@ python3Packages.buildPythonPackage rec{
     python3
   ];
 
+  buildInputs = [
+    lm_sensors
+  ];
+
   propagatedBuildInputs = with python3Packages; [
     watchdog
-    lm_sensors
   ];
 
   doCheck = false;
