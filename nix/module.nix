@@ -36,7 +36,6 @@ in
     systemd.services.fw-fanctrl = {
       description = "Framework Fan Controller";
       after = "multi-user.target";
-      type = "simple";
       unitConfig = ''
         Type=simple
         Restart=always
