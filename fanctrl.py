@@ -255,7 +255,7 @@ def main():
         nargs="?",
         help="Switches the strategy of a currently running fw-fanctrl instance",
     )
-    parser.add_argument("--config", type=str, help="Path to config file", default=".")
+    parser.add_argument("--config", type=str, help="Path to config file", default="/etc/fw-fanctrl/config.json")
     parser.add_argument(
         "--strategy",
         type=str,

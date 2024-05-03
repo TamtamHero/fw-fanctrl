@@ -45,13 +45,10 @@ python3Packages.buildPythonPackage rec{
     python3
   ];
 
-  buildInputs = [
-    lm_sensors
-  ];
-
   propagatedBuildInputs = with python3Packages; [
     watchdog
     fw-ectool
+    lm_sensors
   ];
 
   doCheck = false;
