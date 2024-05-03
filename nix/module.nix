@@ -55,6 +55,5 @@ in
           post) ${pkgs.util-linux}/bin/runuser -l $(${pkgs.coreutils}/bin/logname) -c "${package}/bin/fw-fanctrl defaultStrategy" ;;
         esac
       '';
-    };
   };
 }
