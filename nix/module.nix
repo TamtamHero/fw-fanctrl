@@ -36,7 +36,7 @@ in
     systemd.services.fw-fanctrl = {
       description = "Framework Fan Controller";
       after = [ "multi-user.target" ];
-      unitConfig = {
+      serviceConfig = {
         Type = "simple";
         Restart = "always";
         ExecStart = "${package}/bin/fw-fanctrl --config /etc/fw-fanctrl/config.json --no-log";
