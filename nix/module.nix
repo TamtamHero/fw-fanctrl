@@ -21,12 +21,11 @@ in
       description = ''
         Config json that creates the config in /etc/fw-fanctrl/config.json.
       '';
-
     };
   };
 
   config = mkIf cfg.enable {
-    environment.systemPackage = [
+    environment.systemPackages = [
       package
     ];
 
