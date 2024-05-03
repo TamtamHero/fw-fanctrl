@@ -17,5 +17,7 @@
         currentSystem = "x86_64-linux";
         localSystem = "x86_64-linux";
       }).pkgs.callPackage ./nix/package.nix {};
+
+    nixosModules.default = import ./nix/module.nix;
   };
 }
