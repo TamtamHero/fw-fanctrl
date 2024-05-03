@@ -1,10 +1,10 @@
-{ options, config, lib, self, ... }:
+{ options, config, lib, pkgs, ... }:
 
 with lib;
 with lib.types;
 let
   cfg = config.programs.fw-fanctrl;
-  package = self.packages.x86_64-linux.default;
+  package = pkgs.callPackage ./package.nix {};
 in
 {
   options.programs.fw-fanctrl = {
