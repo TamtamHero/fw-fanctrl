@@ -29,22 +29,22 @@ in
     environment.systemPackage = [
       package
     ];
-  };
 
-  environment.etc."fw-fanctrl/config.json" = {
-    text = cfg.config;
-  };
+    environment.etc."fw-fanctrl/config.json" = {
+      text = cfg.config;
+    };
 
-  systemd.services.fw-fanctrl = {
-    description = "Framework Fan Controller";
-    after = "multi-user.target";
-    type = "simple";
-    unitConfig = ''
-      Type=simple
-      Restart=always
-    '';
-    script = "${package}/bin/fw-fanctrl --config /etc/fw-fanctrl/config.json --no-log";
-    enable = true;
-    wantedBy = "multi-user.target";
+    systemd.services.fw-fanctrl = {
+      description = "Framework Fan Controller";
+      after = "multi-user.target";
+      type = "simple";
+      unitConfig = ''
+        Type=simple
+        Restart=always
+      '';
+      script = "${package}/bin/fw-fanctrl --config /etc/fw-fanctrl/config.json --no-log";
+      enable = true;
+      wantedBy = "multi-user.target";
+    };
   };
 }
