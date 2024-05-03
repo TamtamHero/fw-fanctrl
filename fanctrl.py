@@ -265,8 +265,15 @@ def main():
     parser.add_argument(
         "--no-log", help="Print speed/meanTemp to stdout", action="store_true"
     )
+    parser.add_argument(
+        "--query", "-q", help="Query the currently active strategy", action="store_true"
+    )
     args = parser.parse_args()
 
+    if args.query:
+        with open("/tmp/.fw-fanctrl.tmp", "r") as fp:
+            print("Current stragety: ", fp.read())
+            exit(0)
     if args.new_strategy:
         with open("/tmp/.fw-fanctrl.tmp", "w") as fp:
             fp.write(args.new_strategy)
