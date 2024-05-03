@@ -51,7 +51,7 @@ in
     # Create suspend config
     environment.etc."systemd/system-sleep/fw-fanctrl-suspend.sh".source =
         pkgs.writeShellScript "fw-fanctrl-suspend.sh" ''
-          case \$1 in
+          case $1 in
             pre)  ${pkgs.util-linux}/bin/runuser -l $(${pkgs.coreutils}/bin/logname) -c "${package}/bin/fw-fanctrl sleep" ;;
             post) ${pkgs.util-linux}/bin/runuser -l $(${pkgs.coreutils}/bin/logname) -c "${package}/bin/fw-fanctrl defaultStrategy" ;;
           esac
