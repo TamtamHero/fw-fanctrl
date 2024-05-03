@@ -1,6 +1,7 @@
 { 
 lib,
 lm_sensors,
+fw-ectool,
 python3Packages,
 python3,
 bash
@@ -50,6 +51,7 @@ python3Packages.buildPythonPackage rec{
 
   propagatedBuildInputs = with python3Packages; [
     watchdog
+    fw-ectool
   ];
 
   doCheck = false;
@@ -62,7 +64,6 @@ python3Packages.buildPythonPackage rec{
 
   installPhase = ''
     mkdir -p $out/bin 
-    mv ./bin/ectool $out/bin/ectool
     mv ./fanctrl.py $out/bin/fw-fanctrl
     chmod 755 $out/bin/fw-fanctrl
   '';
