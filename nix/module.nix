@@ -25,14 +25,17 @@ in
   };
 
   config = mkIf cfg.enable {
+    # Install package
     environment.systemPackages = [
       package
     ];
 
+    # Create config
     environment.etc."fw-fanctrl/config.json" = {
       text = cfg.config;
     };
 
+    # Create Service
     systemd.services.fw-fanctrl = {
       description = "Framework Fan Controller";
       after = [ "multi-user.target" ];
@@ -43,6 +46,15 @@ in
       };
       enable = true;
       wantedBy = [ "multi-user.target" ];
+    };
+
+    # Create suspend config
+    environment.etc."systemd/system-sleep/fw-fanctrl-suspend.sh".source = pkgs.writeShellScript ''
+        case \$1 in
+          pre)  ${pkgs.util-linux}/bin/runuser -l $(${pkgs.coreutils}/bin/logname) -c "${package}/bin/fw-fanctrl sleep" ;;
+          post) ${pkgs.util-linux}/bin/runuser -l $(${pkgs.coreutils}/bin/logname) -c "${package}/bin/fw-fanctrl defaultStrategy" ;;
+        esac
+      '';
     };
   };
 }

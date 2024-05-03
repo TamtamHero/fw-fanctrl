@@ -9,6 +9,8 @@ It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs and w
 
 # Install
 
+**This discripes how to install fw-fanctrl on every distro that is not NixOS! If you want to use it on NixOS show [here](#nixos)**
+
 ## Dependancies
 
 This tool depends on `lm-sensors` to fetch CPU temperature:
@@ -79,3 +81,41 @@ It is possible to hot swap the current strategy with another one by running the 
 fw-fanctrl strategyName
 ```
 where `strategyName is one of the strategies described in the config file.
+
+
+# NixOS
+
+For NixOS this repo contains an Flake. You could add it to your config like this:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+    fw-fanctrl = {
+      url = "github:TamtamHero/fw-fanctrl/main; # This is NOT a stable tested version
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+  outputs = {nixpkgs, fw-fanctrl}: {
+    nixosConfigurations.foo = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+          fw-fanctrl.nixosModules.default
+          configuration.nix
+      ];
+    };
+  }
+}
+```
+and then add in your *configuration.nix*:
+```nix
+# Enable fw-fanctrl
+programs.fw-fanctrl.enable = true;
+
+# Add a custom config
+programs.fw-fanctrl.config = ''
+    {
+     ...
+    }
+'';
+```
