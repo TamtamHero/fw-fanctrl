@@ -1,19 +1,33 @@
 {
   stdenv,
-  lib
+  lib,
+  autoPatchelfHook,
+  libusb1,
+  libftdi1
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   version = "20-04-2024";
   name = "fw-ectool";
   src = ../../.;
 
   outputs = [ "out" ];
 
+  nativeBuildInputs = [
+    autoPatchelfHook
+  ];
+
+  propagatedBuildInputs = [
+    libusb1
+    libftdi1
+  ];
+
   installPhase = ''
-    mkdir -p $out/bin/
-    mv ./bin/ectool $out/bin/ectool
+    mkdir -p $out/bin
+    runHook preInstall
+    install -m755 ./bin/ectool $out/bin/ectool
     ln -s $out/bin/ectool $out/bin/fw-ectool
+    chmod -R 755 $out/bin/*
   '';
 
   doCheck = false;

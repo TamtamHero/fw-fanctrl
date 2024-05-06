@@ -32,6 +32,7 @@ python3Packages.buildPythonPackage rec{
       description="${description}",
       url="${url}",
       platforms=["linux"],
+      py_modules=[],
 
       install_requires=install_requires,
       scripts=[
@@ -47,7 +48,7 @@ python3Packages.buildPythonPackage rec{
 
   propagatedBuildInputs = with python3Packages; [
     watchdog
-    ( callPackage ./fw-ectool.nix {} )
+    (callPackage ./fw-ectool.nix {})
     lm_sensors
   ];
 
