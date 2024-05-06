@@ -1,10 +1,11 @@
-{ options, config, lib, pkgs, ... }:
+{ options, config, lib, pkgs, self, ... }:
 
 with lib;
 with lib.types;
 let
   cfg = config.programs.fw-fanctrl;
-  package = pkgs.callPackage ./package.nix {};
+  fw-ectool = self.packages.x86_64-linux.fw-ectool;
+  fw-fanctrl = self.packages.x86_64-linux.fw-fanctrl;
 in
 {
   options.programs.fw-fanctrl = {
@@ -27,7 +28,8 @@ in
   config = mkIf cfg.enable {
     # Install package
     environment.systemPackages = [
-      package
+      fw-fanctrl
+      fw-ectool
     ];
 
     # Create config
@@ -42,7 +44,7 @@ in
       serviceConfig = {
         Type = "simple";
         Restart = "always";
-        ExecStart = "${package}/bin/fw-fanctrl --config /etc/fw-fanctrl/config.json --no-log";
+        ExecStart = "${fw-fanctrl}/bin/fw-fanctrl --config /etc/fw-fanctrl/config.json --no-log";
       };
       enable = true;
       wantedBy = [ "multi-user.target" ];
@@ -52,8 +54,8 @@ in
     environment.etc."systemd/system-sleep/fw-fanctrl-suspend.sh".source =
         pkgs.writeShellScript "fw-fanctrl-suspend.sh" ''
           case $1 in
-            pre)  ${pkgs.util-linux}/bin/runuser -l $(${pkgs.coreutils}/bin/logname) -c "${package}/bin/fw-fanctrl sleep" ;;
-            post) ${pkgs.util-linux}/bin/runuser -l $(${pkgs.coreutils}/bin/logname) -c "${package}/bin/fw-fanctrl defaultStrategy" ;;
+            pre)  ${pkgs.util-linux}/bin/runuser -l $(${pkgs.coreutils}/bin/logname) -c "${fw-fanctrl}/bin/fw-fanctrl sleep" ;;
+            post) ${pkgs.util-linux}/bin/runuser -l $(${pkgs.coreutils}/bin/logname) -c "${fw-fanctrl}/bin/fw-fanctrl defaultStrategy" ;;
           esac
       '';
   };

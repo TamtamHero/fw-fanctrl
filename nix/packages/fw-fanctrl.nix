@@ -1,10 +1,10 @@
 { 
 lib,
 lm_sensors,
-fw-ectool,
 python3Packages,
 python3,
-bash
+bash,
+self
 }:
 
 let
@@ -16,7 +16,7 @@ python3Packages.buildPythonPackage rec{
   pname = "fw-fanctrl";
   version = pversion;
 
-  src = ../.;
+  src = ../../.;
 
   outputs = [ "out" ];
 
@@ -47,7 +47,7 @@ python3Packages.buildPythonPackage rec{
 
   propagatedBuildInputs = with python3Packages; [
     watchdog
-    fw-ectool
+    self.packages.x86_64-linux.fw-ectool
     lm_sensors
   ];
 
@@ -71,6 +71,6 @@ python3Packages.buildPythonPackage rec{
     description = description;
     platforms = with platforms; linux;
     license = licenses.bsd3;
-    maintainers = with maintainers; [ "TamtamHero" ];
+    maintainers = with maintainers; [ "Svenum" ];
   };
 }

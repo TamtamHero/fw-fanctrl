@@ -12,11 +12,17 @@
 
   outputs = { self, nixpkgs, flake-compat }: {
 
-    packages.x86_64-linux.default = (
+    packages.x86_64-linux.fw-fanctrl = (
       import nixpkgs {
         currentSystem = "x86_64-linux";
         localSystem = "x86_64-linux";
-      }).pkgs.callPackage ./nix/package.nix {};
+      }).pkgs.callPackage ./nix/packages/fw-fanctrl.nix { inherit self; };
+
+    packages.x86_64-linux.fw-ectool = (
+      import nixpkgs {
+        currentSystem = "x86_64-linux";
+        localSystem = "x86_64-linux";
+      }).pkgs.callPackage ./nix/packages/fw-ectool.nix {};
 
     nixosModules.default = import ./nix/module.nix;
   };
