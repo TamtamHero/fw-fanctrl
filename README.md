@@ -17,7 +17,7 @@ sudo apt install lm-sensors
 yes | sudo sensors-detect
 ```
 
-To communicate with the embedded controller the `fw-ectool` is needed. You can either use the pre-compiled executable of `fw-ectool` in this repo, or recompile one from [this repo](https://github.com/DHowett/fw-ectool) and copy it in `./bin`.
+To communicate with the embedded controller the `fw-ectool` is needed. You can either use the pre-compiled executable of `fw-ectool` in this repo, or recompile one from [this repo](https://gitlab.howett.net/DHowett/ectool) and copy it in `./bin`.
 
 Then run:
 ```
