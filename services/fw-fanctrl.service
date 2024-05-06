@@ -1,0 +1,9 @@
+[Unit]
+Description=FrameWork Fan Controller
+After=multi-user.target
+[Service]
+Type=simple
+Restart=always
+ExecStart=/usr/bin/python3 /usr/local/bin/fw-fanctrl --config "$HOME/.config/fw-fanctrl/config.json" --no-log
+[Install]
+WantedBy=multi-user.target
