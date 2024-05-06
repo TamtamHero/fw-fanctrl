@@ -3,7 +3,7 @@
 This is a simple Python service for Linux that drives Framework Laptop's fan(s) speed according to a configurable speed/temp curve.
 Its default configuration targets very silent fan operation, but it's easy to configure it for a different comfort/performance trade-off.
 Its possible to specify two separate fan curves depending on whether the Laptop is charging/discharging.
-Under the hood, it uses [fw-ectool](https://github.com/DHowett/fw-ectool) to change parameters in FrameWork's embedded controller (EC).
+Under the hood, it uses [ectool](https://gitlab.howett.net/DHowett/ectool) to change parameters in FrameWork's embedded controller (EC).
 
 It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs and with or without discrete GPU.
 
@@ -19,7 +19,7 @@ sudo apt install lm-sensors
 yes | sudo sensors-detect
 ```
 
-To communicate with the embedded controller the `fw-ectool` is needed. You can either use the pre-compiled executable of `fw-ectool` in this repo, or recompile one from [this repo](https://github.com/DHowett/fw-ectool) and copy it in `./bin`.
+To communicate with the embedded controller the `fw-ectool` is needed. You can either use the pre-compiled executable of `fw-ectool` in this repo, or recompile one from [this repo](https://gitlab.howett.net/DHowett/ectool) and copy it in `./bin`.
 
 Then run:
 ```
@@ -32,7 +32,6 @@ It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool
 # Update
 
 To install an update, you can just pull the latest commit on the `main` branch of this repository, and run the install script again.
-It will overwrite the config file, so you might want to back it up if you have a custom one !
 
 # Uninstall
 ```

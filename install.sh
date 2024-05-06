@@ -1,89 +1,123 @@
-#!/usr/bin/bash
-
-# Copy fanctrl.py to /usr/local/bin and creates a service to run it
-# Adapted from https://gist.github.com/ahmedsadman/2c1f118a02190c868b33c9c71835d706
+#!/bin/bash
 
 if [ "$EUID" -ne 0 ]
-  then echo "Please run as root"
-  exit
+  then echo "This program requires root permissions"
+  exit 1
 fi
 
-SERVICE_NAME="fw-fanctrl"
+LOGNAME="$(logname)"
+USER="$LOGNAME"
+HOME="$(eval echo "~$USER")"
 
-if [ "$1" = "remove" ]; then
+SERVICES_DIR="./services"
+SERVICE_EXTENSION=".service"
 
-    sudo systemctl stop ${SERVICE_NAME//'.service'/} # remove the extension
-    sudo systemctl disable ${SERVICE_NAME//'.service'/}
-    rm /usr/local/bin/fw-fanctrl
-    ectool --interface=lpc autofanctrl # restore default fan manager
-    rm /usr/local/bin/ectool
-    rm -rf /home/$(logname)/.config/fw-fanctrl
-    rm /usr/lib/systemd/system-sleep/fw-fanctrl-suspend
+SERVICES="$(cd "$SERVICES_DIR" && find . -maxdepth 1 -maxdepth 1 -type f -name "*$SERVICE_EXTENSION" -exec basename {} "$SERVICE_EXTENSION" \;)"
+SERVICES_SUBCONFIGS="$(cd "$SERVICES_DIR" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
 
-    echo "fw-fanctrl has been removed successfully from system"
-elif [ -z $1 ]; then
+function sanitizePath() {
+    local SANITIZED_PATH="$1"
+    local SANITIZED_PATH=${SANITIZED_PATH//..\//}
+    local SANITIZED_PATH=${SANITIZED_PATH#./}
+    local SANITIZED_PATH=${SANITIZED_PATH#/}
+    echo "$SANITIZED_PATH"
+}
 
-    pip3 install -r requirements.txt
-    cp ./bin/ectool /usr/local/bin
-    cp ./fanctrl.py /usr/local/bin/fw-fanctrl
-    chmod +x /usr/local/bin/fw-fanctrl
-    chown $(logname):$(logname) /usr/local/bin/fw-fanctrl
-    mkdir -p /home/$(logname)/.config/fw-fanctrl
-    cp config.json /home/$(logname)/.config/fw-fanctrl/
+function uninstall() {
+    # remove program services based on the services present in the './services' folder
+    echo "removing services"
+    for SERVICE in $SERVICES ; do
+        # be EXTRA CAREFUL about the validity of the paths (dont wanna delete something important, right?... O_O)
+        SERVICE=$(sanitizePath "$SERVICE")
+        sudo systemctl daemon-reload
+        echo "stopping [$SERVICE]"
+        sudo systemctl stop "$SERVICE"
+        echo "disabling [$SERVICE]"
+        sudo systemctl disable "$SERVICE"
+        echo "removing '/etc/systemd/system/$SERVICE$SERVICE_EXTENSION'"
+        (cd "/etc/systemd/system/" && sudo rm -rf "$SERVICE$SERVICE_EXTENSION")
+    done
+
+    # remove program services sub-configurations based on the sub-configurations present in the './services' folder
+    echo "removing services sub-configurations"
+    for SERVICE in $SERVICES_SUBCONFIGS ; do
+        SERVICE=$(sanitizePath "$SERVICE")
+        echo "removing sub-configurations for [$SERVICE]"
+        SUBCONFIGS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -type f)"
+        for SUBCONFIG in $SUBCONFIGS ; do
+            SUBCONFIG=$(sanitizePath "$SUBCONFIG")
+            echo "removing '/usr/lib/systemd/$SERVICE/$SUBCONFIG'"
+            (cd "/usr/lib/systemd/" && cd "$SERVICE" && rm -rf "$SUBCONFIG")
+        done
+    done
+
+    rm "/usr/local/bin/fw-fanctrl"
+    ectool autofanctrl # restore default fan manager
+    rm "/usr/local/bin/ectool"
+    rm -rf "$HOME/.config/fw-fanctrl"
+}
+
+function install() {
+    if [ "$1" != "--no-requirements" ]; then
+        pip3 install -r requirements.txt || exit 1
+    fi
+    cp "./bin/ectool" "/usr/local/bin"
+    cp "./fanctrl.py" "/usr/local/bin/fw-fanctrl"
+    chmod +x "/usr/local/bin/fw-fanctrl"
+    chown "$LOGNAME:$LOGNAME" "/usr/local/bin/fw-fanctrl"
+    mkdir -p "$HOME/.config/fw-fanctrl"
+    cp -n "./config.json" "$HOME/.config/fw-fanctrl/" || true
 
     # cleaning legacy file
-    rm /usr/local/bin/fanctrl.py 2> /dev/null || true
+    rm "/usr/local/bin/fanctrl.py" 2> "/dev/null" || true
 
+    # create program services based on the services present in the './services' folder
+    echo "creating services"
+    for SERVICE in $SERVICES ; do
+        SERVICE=$(sanitizePath "$SERVICE")
+        if [ "$(sudo systemctl is-active "$SERVICE")" == "active" ]; then
+            echo "stopping [$SERVICE]"
+            sudo systemctl stop "$SERVICE"
+        fi
+        echo "creating '/etc/systemd/system/$SERVICE$SERVICE_EXTENSION'"
+        # 'envsubst' replace environment variables in the service file
+        envsubst < "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sudo tee "/etc/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
+        sudo systemctl daemon-reload
+        echo "enabling [$SERVICE]"
+        sudo systemctl enable "$SERVICE"
+        echo "starting [$SERVICE]"
+        sudo systemctl start "$SERVICE"
+    done
 
-    # check if service is active
-    IS_ACTIVE=$(sudo systemctl is-active  $SERVICE_NAME)
-    if [ "$IS_ACTIVE" == "active" ]; then
-        # restart the service
-        echo "Service is running"
-        echo "Stoping service"
-        sudo systemctl stop $SERVICE_NAME
-        echo "Service stoped"
-    fi
+    # add program services sub-configurations based on the sub-configurations present in the './services' folder
+    echo "adding services sub-configurations"
+    for SERVICE in $SERVICES_SUBCONFIGS ; do
+        SERVICE=$(sanitizePath "$SERVICE")
+        echo "adding sub-configurations for [$SERVICE]"
+        SUBCONFIG_FOLDERS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
+        # ensure folders exists
+        for SUBCONFIG_FOLDER in $SUBCONFIG_FOLDERS ; do
+            SUBCONFIG_FOLDER=$(sanitizePath "$SUBCONFIG_FOLDER")
+            echo "creating '/usr/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER'"
+            (cd "/usr/lib/systemd/" && cd "$SERVICE" && sudo mkdir -p "$SUBCONFIG_FOLDER")
+        done
+        SUBCONFIGS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -type f)"
+        # add sub-configurations
+        for SUBCONFIG in $SUBCONFIGS ; do
+            SUBCONFIG=$(sanitizePath "$SUBCONFIG")
+            echo "adding '/usr/lib/systemd/$SERVICE/$SUBCONFIG'"
+            sudo cp -f "$SERVICES_DIR/$SERVICE/$SUBCONFIG" "/usr/lib/systemd/$SERVICE/$SUBCONFIG"
+            sudo chmod +x "/usr/lib/systemd/$SERVICE/$SUBCONFIG"
+        done
+    done
+}
 
-    # create service file
-    echo "Creating service file"
-    sudo cat > /etc/systemd/system/${SERVICE_NAME//'"'/}.service << EOF
-[Unit]
-Description=FrameWork Fan Controller
-After=multi-user.target
-[Service]
-Type=simple
-Restart=always
-ExecStart=/usr/bin/python3 /usr/local/bin/fw-fanctrl --config /home/$(logname)/.config/fw-fanctrl/config.json --no-log
-[Install]
-WantedBy=multi-user.target
-
-EOF
-
-    # create suspend hooks
-    echo "Creating suspend hooks"
-
-    sudo cat > /lib/systemd/system-sleep/fw-fanctrl-suspend << EOF
-#!/bin/sh
-
-case \$1 in
-    pre)  runuser -l $(logname) -c "fw-fanctrl sleep" ;;
-    post) runuser -l $(logname) -c "fw-fanctrl defaultStrategy" ;;
-esac
-
-EOF
-        
-    # make the suspend hook executable
-    sudo chmod +x /lib/systemd/system-sleep/fw-fanctrl-suspend
-
-    # restart daemon, enable and start service
-    echo "Reloading daemon and enabling service"
-    sudo systemctl daemon-reload
-    sudo systemctl enable ${SERVICE_NAME//'.service'/} # remove the extension
-    sudo systemctl start ${SERVICE_NAME//'.service'/}
-    echo "Service Started"
+if [ "$1" = "remove" ]; then
+    uninstall
+elif [[ "$1" =~ ^$|^-- ]]; then
+    install "$1"
 else
-    echo "Unknown command $1"
-    exit
+    echo "Unknown command '$1'"
+    exit 1
 fi
 exit 0
