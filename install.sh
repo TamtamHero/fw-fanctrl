@@ -7,7 +7,7 @@ fi
 
 LOGNAME="$(logname)"
 USER="$LOGNAME"
-HOME="$(eval "~$USER")"
+HOME="$(eval echo "~$USER")"
 
 SERVICES_DIR="./services"
 SERVICE_EXTENSION=".service"
@@ -52,7 +52,7 @@ function uninstall() {
     done
 
     rm "/usr/local/bin/fw-fanctrl"
-    ectool --interface=lpc autofanctrl # restore default fan manager
+    ectool autofanctrl # restore default fan manager
     rm "/usr/local/bin/ectool"
     rm -rf "$HOME/.config/fw-fanctrl"
 }
