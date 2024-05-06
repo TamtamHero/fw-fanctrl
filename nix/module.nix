@@ -1,11 +1,11 @@
-{ options, config, lib, pkgs, self, ... }:
+{ options, config, lib, pkgs, ... }:
 
 with lib;
 with lib.types;
 let
   cfg = config.programs.fw-fanctrl;
-  fw-ectool = self.packages.x86_64-linux.fw-ectool;
-  fw-fanctrl = self.packages.x86_64-linux.fw-fanctrl;
+  fw-ectool = pkgs.callPackage ./packages/fw-ectool.nix {};
+  fw-fanctrl = pkgs.callPackage ./packages/fw-fanctrl.nix {};
 in
 {
   options.programs.fw-fanctrl = {

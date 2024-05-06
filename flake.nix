@@ -11,8 +11,7 @@
   };
 
   outputs = { self, nixpkgs, flake-compat }: {
-    inherit self;
-
+    packages.x86_64-linux.default = self.packages.x86_64-linux.fw-fanctrl;
     packages.x86_64-linux.fw-fanctrl = (
       import nixpkgs {
         currentSystem = "x86_64-linux";
