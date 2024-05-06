@@ -4,7 +4,7 @@ lm_sensors,
 python3Packages,
 python3,
 bash,
-self
+callPackage
 }:
 
 let
@@ -47,7 +47,7 @@ python3Packages.buildPythonPackage rec{
 
   propagatedBuildInputs = with python3Packages; [
     watchdog
-    self.packages.x86_64-linux.fw-ectool
+    ( callPackage ./fw-ectool.nix {} )
     lm_sensors
   ];
 

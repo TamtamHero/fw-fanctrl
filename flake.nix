@@ -16,7 +16,7 @@
       import nixpkgs {
         currentSystem = "x86_64-linux";
         localSystem = "x86_64-linux";
-      }).pkgs.callPackage ./nix/packages/fw-fanctrl.nix { inherit self; };
+      }).pkgs.callPackage ./nix/packages/fw-fanctrl.nix {};
 
     packages.x86_64-linux.fw-ectool = (
       import nixpkgs {
