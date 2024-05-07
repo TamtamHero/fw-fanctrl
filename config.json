@@ -1,7 +1,6 @@
 {
     "defaultStrategy": "lazy",
     "strategyOnDischarging" : "",
-    "batteryChargingStatusPath" : "",
     "strategies": {
         "sleep": {
             "fanSpeedUpdateFrequency": 5,

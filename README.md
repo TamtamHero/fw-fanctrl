@@ -64,9 +64,6 @@ Strategies can be configured with the following parameters:
 ## Charging/Discharging strategies
 
 The strategy active by default is the one specified in the `defaultStrategy` entry. Optionally a separate strategy only active during discharge can be defined, using the `strategyOnDischarging` entry. By default no extra strategy for discharging is provided, the default stratgy is active during all times.
-The charging status of the battery is fetched from the following file by default:
-`/sys/class/power_supply/BAT1/status`
-The default path can be overwritten by entering a value for `batteryChargingStatusPath` inside the `config.json` file.
 
 # Commands
 

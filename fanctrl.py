@@ -70,12 +70,6 @@ class Configuration:
     def getDischargingStrategy(self):
         return self.getStrategy("strategyOnDischarging")
 
-    def batteryChargingStatusPath(self):
-        batteryChargingStatusPath = self.data["batteryChargingStatusPath"]
-        if batteryChargingStatusPath is None or batteryChargingStatusPath == "":
-            return "/sys/class/power_supply/BAT1/status"
-        return batteryChargingStatusPath
-
 
 class FanController:
     configuration = None
@@ -119,11 +113,9 @@ class FanController:
         return self.configuration.getDischargingStrategy()
 
     def getBatteryChargingStatus(self):
-        with open(self.configuration.batteryChargingStatusPath(), "r") as fb:
-            currentBatteryStatus = fb.readline().rstrip("\n")
-            if currentBatteryStatus == "Discharging":
-                return False
-            return True
+        bashCommand = "ectool battery"
+        rawOut = subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True, text=True).stdout
+        return len(re.findall(r'Flags.*(AC_PRESENT)', rawOut)) > 0
 
     def bindSocket(self):
         server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
