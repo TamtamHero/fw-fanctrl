@@ -186,12 +186,13 @@ class FanController:
         bashCommand = "ectool temps all"
         rawOut = subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True, text=True).stdout
         rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
-        higherTemps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)[:3]
+        temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
 
         # safety fallback to avoid damaging hardware
-        if len(higherTemps) == 0:
+        if len(temps) == 0 or temps[-1] == 0:
             return 50
-        return round(sum(higherTemps) / len(higherTemps), 1)
+
+        return round(temps[-1], 1)
 
     # return mean temperature over a given time interval (in seconds)
     def getMovingAverageTemperature(self, timeInterval):
