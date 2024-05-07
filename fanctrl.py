@@ -182,7 +182,7 @@ class FanController:
         temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
 
         # safety fallback to avoid damaging hardware
-        if len(temps) == 0 or temps[0] == 0:
+        if len(temps) == 0:
             return 50
 
         return round(temps[0], 1)
@@ -196,7 +196,7 @@ class FanController:
 
     def getEffectiveTemperature(self, currentTemp, timeIntervam):
         # the moving average temperature count for 2/3 of the effective temperature
-        return round(min((self.getMovingAverageTemperature(timeIntervam) * 2 + currentTemp) / 3, currentTemp), 1)
+        return round(min(self.getMovingAverageTemperature(timeIntervam), currentTemp), 1)
 
     def adaptSpeed(self, currentTemp):
         currentStrategy = self.getCurrentStrategy()
