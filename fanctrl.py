@@ -50,6 +50,9 @@ class Configuration:
         with open(self.path, "r") as fp:
             self.data = json.load(fp)
 
+    def getStrategies(self):
+        return self.data["strategies"].keys()
+
     def getStrategy(self, strategyName):
         if strategyName == "strategyOnDischarging":
             strategyName = self.data[strategyName]
@@ -159,6 +162,8 @@ class FanController:
                         client_socket.sendall("Success".encode())
                     if args.query:
                         client_socket.sendall(self.getCurrentStrategy().name.encode())
+                    if args.list_strategies:
+                        client_socket.sendall('\n'.join(self.configuration.getStrategies()).encode())
                     if args.reload:
                         self.configuration.reload()
                         if self.overwrittenStrategy is not None:
@@ -278,6 +283,9 @@ def main():
     commandGroup = parser.add_argument_group("configure")
     commandGroup.add_argument(
         "--query", "-q", help="Query the currently active strategy", action="store_true"
+    )
+    commandGroup.add_argument(
+        "--list-strategies", help="List the available strategies", action="store_true"
     )
     commandGroup.add_argument(
         "--reload", "-r", help="Reload the configuration from file", action="store_true"

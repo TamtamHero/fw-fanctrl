@@ -70,14 +70,15 @@ The default path can be overwritten by entering a value for `batteryChargingStat
 
 # Commands
 
-| option       | contexte        | description                     |
-|--------------|-----------------|---------------------------------|
-| \<strategy>  | run & configure | the name of the strategy to use |
-| --run        | run             | run the service                 |
-| --config     | run             | specify the configuration path  |
-| --no-log     | run             | disable state logging           |
-| --query, -q  | configure       | print the current strategy name |
-| --reload, -r | configure       | reload the configuration file   |
-| --pause      | configure       | temporarily disable the service |
-| --resume     | configure       | resume the service              |
+| option            | contexte        | description                     |
+|-------------------|-----------------|---------------------------------|
+| \<strategy>       | run & configure | the name of the strategy to use |
+| --run             | run             | run the service                 |
+| --config          | run             | specify the configuration path  |
+| --no-log          | run             | disable state logging           |
+| --query, -q       | configure       | print the current strategy name |
+| --list-strategies | configure       | print the available strategies  |
+| --reload, -r      | configure       | reload the configuration file   |
+| --pause           | configure       | temporarily disable the service |
+| --resume          | configure       | resume the service              |
 
