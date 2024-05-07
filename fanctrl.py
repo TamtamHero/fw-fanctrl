@@ -182,10 +182,10 @@ class FanController:
         temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
 
         # safety fallback to avoid damaging hardware
-        if len(temps) == 0 or temps[-1] == 0:
+        if len(temps) == 0 or temps[0] == 0:
             return 50
 
-        return round(temps[-1], 1)
+        return round(temps[0], 1)
 
     # return mean temperature over a given time interval (in seconds)
     def getMovingAverageTemperature(self, timeInterval):
