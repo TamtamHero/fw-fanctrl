@@ -114,7 +114,8 @@ class FanController:
 
     def getBatteryChargingStatus(self):
         bashCommand = "ectool battery"
-        rawOut = subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True, text=True).stdout
+        rawOut = subprocess.run(bashCommand, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True,
+                                text=True).stdout
         return len(re.findall(r'Flags.*(AC_PRESENT)', rawOut)) > 0
 
     def bindSocket(self):
