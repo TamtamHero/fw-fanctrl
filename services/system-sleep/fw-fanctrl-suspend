@@ -1,6 +1,6 @@
 #!/bin/sh
 
 case $1 in
-    pre)  runuser -l "$LOGNAME" -c "fw-fanctrl sleep" ;;
-    post) runuser -l "$LOGNAME" -c "fw-fanctrl defaultStrategy" ;;
+    pre)  runuser -l "$LOGNAME" -c "fw-fanctrl --pause" ;;
+    post) runuser -l "$LOGNAME" -c "fw-fanctrl --resume" ;;
 esac

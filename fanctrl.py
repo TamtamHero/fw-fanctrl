@@ -1,146 +1,211 @@
 #! /usr/bin/python3
-
 import argparse
-import subprocess
-from time import sleep
+import collections
 import json
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+import os
+import re
+import shlex
+import socket
+import subprocess
+import sys
+import threading
+from time import sleep
+
+SOCKETS_FOLDER_PATH = "/tmp/"
+COMMANDS_SOCKET_FILE_PATH = os.path.join(SOCKETS_FOLDER_PATH, ".fw-fanctrl.commands.sock")
+
+parser = None
 
 
-class FileModifiedHandler(FileSystemEventHandler):
-    def __init__(self, path, file_name, callback):
-        self.file_name = file_name
-        self.callback = callback
+class InvalidStrategyException(Exception):
+    pass
 
-        # set observer to watch for changes in the directory
-        self.observer = Observer()
-        self.observer.schedule(self, path, recursive=False)
-        self.observer.start()
 
-    def on_modified(self, event):
-        # only act on the change that we're looking for
-        if not event.is_directory and event.src_path.endswith(self.file_name):
-            self.callback()  # call callback
+class Strategy:
+    name = None
+    fanSpeedUpdateFrequency = None
+    movingAverageInterval = None
+    speedCurve = None
+
+    def __init__(self, name, parameters):
+        self.name = name
+        self.fanSpeedUpdateFrequency = parameters["fanSpeedUpdateFrequency"]
+        if self.fanSpeedUpdateFrequency is None or self.fanSpeedUpdateFrequency == "":
+            self.fanSpeedUpdateFrequency = 5
+        self.movingAverageInterval = parameters["movingAverageInterval"]
+        if self.movingAverageInterval is None or self.movingAverageInterval == "":
+            self.movingAverageInterval = 20
+        self.speedCurve = parameters["speedCurve"]
+
+
+class Configuration:
+    path = None
+    data: None
+
+    def __init__(self, path):
+        self.path = path
+        self.reload()
+
+    def reload(self):
+        with open(self.path, "r") as fp:
+            self.data = json.load(fp)
+
+    def getStrategy(self, strategyName):
+        if strategyName == "strategyOnDischarging":
+            strategyName = self.data[strategyName]
+            if strategyName == "":
+                strategyName = "defaultStrategy"
+        if strategyName == "defaultStrategy":
+            strategyName = self.data[strategyName]
+        if strategyName is None or strategyName not in self.data["strategies"]:
+            raise InvalidStrategyException(strategyName)
+        return Strategy(strategyName, self.data["strategies"][strategyName])
+
+    def getDefaultStrategy(self):
+        return self.getStrategy("defaultStrategy")
+
+    def getDischargingStrategy(self):
+        return self.getStrategy("strategyOnDischarging")
+
+    def batteryChargingStatusPath(self):
+        batteryChargingStatusPath = self.data["batteryChargingStatusPath"]
+        if batteryChargingStatusPath is None or batteryChargingStatusPath == "":
+            return "/sys/class/power_supply/BAT1/status"
+        return batteryChargingStatusPath
 
 
 class FanController:
-    # state
+    configuration = None
+    overwrittenStrategy = None
     speed = 0
-    temps = [0] * 100
-    _tempIndex = 0
-    lastBatteryStatus = ""
-    switchableFanCurve = False
-    readAttempts = 0 # only used for AMD CPUs
+    tempHistory = collections.deque([0] * 100, maxlen=100)
+    active = True
+    timecount = 0
 
-    def __init__(self, configPath, strategy):
-        # parse config file
-        with open(configPath, "r") as fp:
+    def __init__(self, configPath, strategyName):
+        self.configuration = Configuration(configPath)
+
+        if strategyName is not None and strategyName != "":
+            self.overwriteStrategy(strategyName)
+
+        t = threading.Thread(target=self.bindSocket)
+        t.daemon = True
+        t.start()
+
+    def pause(self):
+        self.active = False
+        bashCommand = f"ectool autofanctrl"
+        subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True)
+
+    def resume(self):
+        self.active = True
+
+    def overwriteStrategy(self, strategyName):
+        self.overwrittenStrategy = self.configuration.getStrategy(strategyName)
+        self.timecount = 0
+
+    def clearOverwrittenStrategy(self):
+        self.overwrittenStrategy = None
+        self.timecount = 0
+
+    def reloadConfig(self):
+        with open(self.configPath, "r") as fp:
             self.config = json.load(fp)
-        if strategy == "":
-            strategyOnCharging = self.config["defaultStrategy"]
-        else:
-            strategyOnCharging = strategy
 
-        self.strategyOnCharging = self.config["strategies"][strategyOnCharging]
-        # if the user didnt specify a separate strategy for discharging, use the same strategy as for charging
-        strategyOnDischarging = self.config["strategyOnDischarging"]
-        if strategyOnDischarging == "":
-            self.switchableFanCurve = False
-            self.strategyOnDischarging = self.strategyOnCharging
-        else:
-            self.strategyOnDischarging = self.config["strategies"][
-                strategyOnDischarging
-            ]
-            self.switchableFanCurve = True
-            self.batteryChargingStatusPath = self.config["batteryChargingStatusPath"]
-            if self.batteryChargingStatusPath == "":
-                self.batteryChargingStatusPath = "/sys/class/power_supply/BAT1/status"
-
-        cpuinfo = subprocess.run(
-                "cat /proc/cpuinfo",
-                stdout=subprocess.PIPE,
-                shell=True,
-                text=True,
-                executable="/bin/bash",
-            ).stdout
-        self.cpu_type = "Intel" if "GenuineIntel" in cpuinfo else "AMD"
-
-
-        faninfo = subprocess.run(
-                "ectool pwmgetfanrpm",
-                stdout=subprocess.PIPE,
-                shell=True,
-                text=True,
-                executable="/bin/bash",
-            ).stdout
-        self.fan_count = faninfo.count("Fan")
-        self.laptop_model = "Framework laptop 16" if self.fan_count > 1 else "Framework laptop 13"
-
-        self.setStrategy(self.strategyOnCharging)
-
-        FileModifiedHandler("/tmp/", ".fw-fanctrl.tmp", self.strategyLiveUpdate)
-
-
-    def setStrategy(self, strategy):
-        self.speedCurve = strategy["speedCurve"]
-        self.fanSpeedUpdateFrequency = strategy["fanSpeedUpdateFrequency"]
-        self.movingAverageInterval = strategy["movingAverageInterval"]
-        self.setSpeed(self.speedCurve[0]["speed"])
-        self.updateTemperature()
-        self.temps = [self.temps[self._tempIndex]] * 100
-
-    def switchStrategy(self):
-        update = self.getBatteryChargingStatus()
-        if update == 0:
-            return  # if charging status unchanged do nothing
-        elif update == 1:
-            strategy = self.strategyOnCharging
-        elif update == 2:
-            strategy = self.strategyOnDischarging
-
-        # load fan curve according to strategy
-        self.setStrategy(strategy)
-
-    def strategyLiveUpdate(self):
-        with open("/tmp/.fw-fanctrl.tmp", "r+") as fp:
-            strategy = fp.read()
-            fp.seek(0)
-            fp.truncate
-
-            if strategy == "defaultStrategy":
-                strategy = self.config["defaultStrategy"]
-
-            if strategy in self.config["strategies"]:
-                self.setStrategy(self.config["strategies"][strategy])
-            else:
-                fp.write("unknown strategy")
+    def getCurrentStrategy(self):
+        if self.overwrittenStrategy is not None:
+            return self.overwrittenStrategy
+        if self.getBatteryChargingStatus():
+            return self.configuration.getDefaultStrategy()
+        return self.configuration.getDischargingStrategy()
 
     def getBatteryChargingStatus(self):
-        with open(self.batteryChargingStatusPath, "r") as fb:
+        with open(self.configuration.batteryChargingStatusPath(), "r") as fb:
             currentBatteryStatus = fb.readline().rstrip("\n")
-
-            if currentBatteryStatus == self.lastBatteryStatus:
-                return 0  # battery charging status hasnt change - dont switch fan curve
-            self.lastBatteryStatus = currentBatteryStatus
             if currentBatteryStatus == "Discharging":
-                return 2
-            # Battery is not discharging
-            return 1
+                return False
+            return True
+
+    def bindSocket(self):
+        server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        if os.path.exists(COMMANDS_SOCKET_FILE_PATH):
+            os.remove(COMMANDS_SOCKET_FILE_PATH)
+        try:
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(COMMANDS_SOCKET_FILE_PATH)
+            os.chmod(COMMANDS_SOCKET_FILE_PATH, 0o777)
+            server_socket.listen(1)
+            while True:
+                client_socket, _ = server_socket.accept()
+                try:
+                    # Receive data from the client
+                    data = client_socket.recv(4096).decode()
+                    print("Received command:", data)
+
+                    args = parser.parse_args(shlex.split(data))
+                    if args.strategy:
+                        try:
+                            if args.strategy == "defaultStrategy":
+                                self.clearOverwrittenStrategy()
+                            else:
+                                self.overwriteStrategy(args.strategy)
+                            client_socket.sendall(self.getCurrentStrategy().name.encode())
+                        except InvalidStrategyException:
+                            client_socket.sendall(("Error: unknown strategy: " + args.strategy).encode())
+                    if args.pause:
+                        self.pause()
+                        client_socket.sendall("Success".encode())
+                    if args.resume:
+                        self.resume()
+                        client_socket.sendall("Success".encode())
+                    if args.query:
+                        client_socket.sendall(self.getCurrentStrategy().name.encode())
+                    if args.reload:
+                        self.configuration.reload()
+                        if self.overwrittenStrategy is not None:
+                            self.overwriteStrategy(self.overwrittenStrategy.name)
+                        client_socket.sendall("Success".encode())
+                except:
+                    pass
+                finally:
+                    client_socket.shutdown(socket.SHUT_WR)
+                    client_socket.close()
+        finally:
+            server_socket.close()
 
     def setSpeed(self, speed):
         self.speed = speed
         bashCommand = f"ectool fanduty {speed}"
         subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True)
 
-    def adaptSpeed(self):
-        currentTemp = self.temps[self._tempIndex]
-        currentTemp = min(
-            currentTemp, self.getMovingAverageTemperature(self.movingAverageInterval)
-        )
-        minPoint = self.speedCurve[0]
-        maxPoint = self.speedCurve[-1]
-        for e in self.speedCurve:
+    def getActualTemperature(self):
+        bashCommand = "ectool temps all"
+        rawOut = subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True, text=True).stdout
+        rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
+        higherTemps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)[:3]
+
+        # safety fallback to avoid damaging hardware
+        if len(higherTemps) == 0:
+            return 50
+        return round(sum(higherTemps) / len(higherTemps), 1)
+
+    # return mean temperature over a given time interval (in seconds)
+    def getMovingAverageTemperature(self, timeInterval):
+        slicedTempHistory = [x for x in self.tempHistory if x > 0][-timeInterval:]
+        if len(slicedTempHistory) == 0:
+            return self.getActualTemperature()
+        return round(sum(slicedTempHistory) / len(slicedTempHistory), 1)
+
+    def getEffectiveTemperature(self, currentTemp, timeIntervam):
+        # the moving average temperature count for 2/3 of the effective temperature
+        return round((self.getMovingAverageTemperature(timeIntervam) * 2 + currentTemp) / 3, 1)
+
+    def adaptSpeed(self, currentTemp):
+        currentStrategy = self.getCurrentStrategy()
+        currentTemp = self.getEffectiveTemperature(currentTemp, currentStrategy.movingAverageInterval)
+        minPoint = currentStrategy.speedCurve[0]
+        maxPoint = currentStrategy.speedCurve[-1]
+        for e in currentStrategy.speedCurve:
             if currentTemp > e["temp"]:
                 minPoint = e
             else:
@@ -151,139 +216,95 @@ class FanController:
             newSpeed = minPoint["speed"]
         else:
             slope = (maxPoint["speed"] - minPoint["speed"]) / (
-                maxPoint["temp"] - minPoint["temp"]
+                    maxPoint["temp"] - minPoint["temp"]
             )
             newSpeed = int(minPoint["speed"] + (currentTemp - minPoint["temp"]) * slope)
-        self.setSpeed(newSpeed)
-
-    def updateTemperature(self):
-        sumCoreTemps = 0
-        cores = 0
-
-        sensorsOutput = json.loads(
-                subprocess.run(
-                    "sensors -j 2> /dev/null",
-                    stdout=subprocess.PIPE,
-                    shell=True,
-                    text=True,
-                    executable="/bin/bash",
-                ).stdout
-            )
-
-        if self.cpu_type == "Intel":
-            # sensors -j does not return the core temperatures at startup
-            if "coretemp-isa-0000" not in sensorsOutput.keys():
-                return
-
-            for k, v in sensorsOutput["coretemp-isa-0000"].items():
-                if k.startswith("Core "):
-                    cores += 1
-                    sumCoreTemps += float(v[[key for key in v.keys() if key.endswith("_input")][0]])
-
-        elif self.cpu_type == "AMD":
-             # sensors -j does not return the core temperatures at startup
-            if "acpitz-acpi-0" in sensorsOutput.keys():
-                for k, v in sensorsOutput["acpitz-acpi-0"].items():
-                    # temp3 is the socket temperature, we don't have individual core temperatures when cpu is AMD
-                    if k.startswith("temp3"):
-                        cores += 1
-                        sumCoreTemps = float(v[[key for key in v.keys() if key.endswith("_input")][0]])
-            # sometimes, acpitz-acpi-0 is not available at all, but we can fallback on k10temp-pci-00c3
-            elif self.readAttempts > 30:
-                if "k10temp-pci-00c3" in sensorsOutput.keys():
-                    cores += 1
-                    sumCoreTemps = float(sensorsOutput["k10temp-pci-00c3"]["Tctl"]["temp1_input"])
-                else:
-                    print("Neither acpitz-acpi-0 or k10temp-pci-00c3 are available, please report this issue")
-                    exit()
-            else:
-                self.readAttempts += 1
-                return
-        else:
-            print("Unsupported cpu type: " + self.cpu_type)
-            exit()
-
-        measurement = sumCoreTemps / cores
-
-        # if we're running on a 16 AND there's a discrete GPU, compare both temperature and take the highest
-        if "16" in self.laptop_model:
-            for k, v in sensorsOutput.items():
-                if "junction" in v and "edge" in v:
-                    dGpuTemp = v["edge"]["temp1_input"]
-                    if dGpuTemp > measurement:
-                        measurement = dGpuTemp
-
-        self._tempIndex = (self._tempIndex + 1) % len(self.temps)
-        self.temps[self._tempIndex] = measurement
-
-    # return mean temperature over a given time interval (in seconds)
-    def getMovingAverageTemperature(self, timeInterval):
-        tempSum = 0
-        for i in range(0, timeInterval):
-            tempSum += self.temps[self._tempIndex - i]
-        return tempSum / timeInterval
+        if self.active:
+            self.setSpeed(newSpeed)
 
     def printState(self):
+        currentStrategy = self.getCurrentStrategy()
+        currentTemperture = self.getActualTemperature()
         print(
-            f"speed: {self.speed}% temp: {self.temps[self._tempIndex]}°C movingAverage: {round(self.getMovingAverageTemperature(self.movingAverageInterval), 2)}°C"
+            f"speed: {self.speed}%, temp: {currentTemperture}°C, movingAverageTemp: {self.getMovingAverageTemperature(currentStrategy.movingAverageInterval)}°C, effectureTemp: {self.getEffectiveTemperature(currentTemperture, currentStrategy.movingAverageInterval)}°C"
         )
 
     def run(self, debug=True):
-        if debug:
-            print(f"model: {self.laptop_model}, cpu_type: {self.cpu_type}, fan_count: {self.fan_count}")
-        while True:
-            if self.switchableFanCurve:
-                self.switchStrategy()
-            self.updateTemperature()
+        try:
+            while True:
+                if self.active:
+                    temp = self.getActualTemperature()
+                    # update fan speed every "fanSpeedUpdateFrequency" seconds
+                    if self.timecount % self.getCurrentStrategy().fanSpeedUpdateFrequency == 0:
+                        self.adaptSpeed(temp)
+                        self.timecount = 0
 
-            # update fan speed every "fanSpeedUpdateFrequency" seconds
-            if self._tempIndex % self.fanSpeedUpdateFrequency == 0:
-                self.adaptSpeed()
+                    self.tempHistory.append(temp)
 
-            if debug:
-                self.printState()
-
-            sleep(1)
+                    if debug:
+                        self.printState()
+                    self.timecount += 1
+                    sleep(1)
+                else:
+                    sleep(5)
+        except InvalidStrategyException as e:
+            print("Error: missing strategy, exiting for safety reasons: " + e.args[0])
+            exit(1)
 
 
 def main():
+    global parser
     parser = argparse.ArgumentParser(
         description="Control Framework's laptop fan with a speed curve",
     )
-    parser.add_argument(
-        "new_strategy",
+
+    bothGroup = parser.add_argument_group("both")
+    bothGroup.add_argument(
+        "strategy",
         nargs="?",
-        help="Switches the strategy of a currently running fw-fanctrl instance",
-    )
-    parser.add_argument("--config", type=str, help="Path to config file", default=".")
-    parser.add_argument(
-        "--strategy",
-        type=str,
         help='Name of the strategy to use e.g: "lazy" (check config.json for others)',
-        default="",
     )
-    parser.add_argument(
-        "--no-log", help="Print speed/meanTemp to stdout", action="store_true"
+
+    runGroup = parser.add_argument_group("run")
+    runGroup.add_argument("--run", help="run the service", action="store_true")
+    runGroup.add_argument("--config", type=str, help="Path to config file", default="config.json")
+    runGroup.add_argument(
+        "--no-log", help="Disable print speed/meanTemp to stdout", action="store_true"
     )
-    parser.add_argument(
+    commandGroup = parser.add_argument_group("configure")
+    commandGroup.add_argument(
         "--query", "-q", help="Query the currently active strategy", action="store_true"
     )
+    commandGroup.add_argument(
+        "--reload", "-r", help="Reload the configuration from file", action="store_true"
+    )
+    commandGroup.add_argument("--pause", help="Pause the program", action="store_true")
+    commandGroup.add_argument("--resume", help="Resume the program", action="store_true")
+
     args = parser.parse_args()
 
-    if args.query:
-        with open("/tmp/.fw-fanctrl.tmp", "r") as fp:
-            print("Current stragety: ", fp.read())
-            exit(0)
-    if args.new_strategy:
-        with open("/tmp/.fw-fanctrl.tmp", "w") as fp:
-            fp.write(args.new_strategy)
-        sleep(0.1)
-        with open("/tmp/.fw-fanctrl.tmp", "r") as fp:
-            if fp.read() == "unknown strategy":
-                print("Error: unknown strategy")
-    else:
-        fan = FanController(configPath=args.config, strategy=args.strategy)
+    if args.run:
+        fan = FanController(configPath=args.config, strategyName=args.strategy)
         fan.run(debug=not args.no_log)
+    else:
+        client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            client_socket.connect(COMMANDS_SOCKET_FILE_PATH)
+            client_socket.sendall(' '.join(sys.argv[1:]).encode())
+            received_data = b""
+            while True:
+                data_chunk = client_socket.recv(1024)
+                if not data_chunk:
+                    break
+                received_data += data_chunk
+            # Receive data from the server
+            data = received_data.decode()
+            print(data)
+            if data.startswith("Error:"):
+                exit(1)
+        finally:
+            if client_socket:
+                client_socket.close()
 
 
 if __name__ == "__main__":
