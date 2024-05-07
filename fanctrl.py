@@ -108,10 +108,6 @@ class FanController:
         self.overwrittenStrategy = None
         self.timecount = 0
 
-    def reloadConfig(self):
-        with open(self.configPath, "r") as fp:
-            self.config = json.load(fp)
-
     def getCurrentStrategy(self):
         if self.overwrittenStrategy is not None:
             return self.overwrittenStrategy
@@ -260,9 +256,9 @@ def main():
 
     bothGroup = parser.add_argument_group("both")
     bothGroup.add_argument(
-        "strategy",
+        "strategy", "--strategy",
         nargs="?",
-        help='Name of the strategy to use e.g: "lazy" (check config.json for others)',
+        help='Name of the strategy to use e.g: "lazy" (check config.json for others). Use "defaultStrategy" to go back to the default strategy',
     )
 
     runGroup = parser.add_argument_group("run")
