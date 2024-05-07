@@ -11,8 +11,9 @@ import sys
 import threading
 from time import sleep
 
-SOCKETS_FOLDER_PATH = "/tmp/"
-COMMANDS_SOCKET_FILE_PATH = os.path.join(SOCKETS_FOLDER_PATH, ".fw-fanctrl.commands.sock")
+RESOURCE_FOLDER_PATH = "/etc/fw-fanctrl"
+DEFAULT_CONFIGURATION_FILE_PATH = os.path.join(RESOURCE_FOLDER_PATH, "config.json")
+COMMANDS_SOCKET_FILE_PATH = os.path.join(RESOURCE_FOLDER_PATH, ".fw-fanctrl.commands.sock")
 
 parser = None
 
@@ -270,7 +271,7 @@ def main():
 
     runGroup = parser.add_argument_group("run")
     runGroup.add_argument("--run", help="run the service", action="store_true")
-    runGroup.add_argument("--config", type=str, help="Path to config file", default="config.json")
+    runGroup.add_argument("--config", type=str, help="Path to config file", default=DEFAULT_CONFIGURATION_FILE_PATH)
     runGroup.add_argument(
         "--no-log", help="Disable print speed/meanTemp to stdout", action="store_true"
     )

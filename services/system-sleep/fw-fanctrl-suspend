@@ -1,6 +1,6 @@
 #!/bin/sh
 
 case $1 in
-    pre)  runuser -l "$LOGNAME" -c "fw-fanctrl --pause" ;;
-    post) runuser -l "$LOGNAME" -c "fw-fanctrl --resume" ;;
+    pre)  /usr/bin/python3 /usr/local/bin/fw-fanctrl --pause ;;
+    post) /usr/bin/python3 /usr/local/bin/fw-fanctrl --resume ;;
 esac
