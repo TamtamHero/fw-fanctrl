@@ -108,10 +108,6 @@ class FanController:
         self.overwrittenStrategy = None
         self.timecount = 0
 
-    def reloadConfig(self):
-        with open(self.configPath, "r") as fp:
-            self.config = json.load(fp)
-
     def getCurrentStrategy(self):
         if self.overwrittenStrategy is not None:
             return self.overwrittenStrategy
@@ -143,15 +139,18 @@ class FanController:
                     print("Received command:", data)
 
                     args = parser.parse_args(shlex.split(data))
-                    if args.strategy:
+                    if args.strategy or args._strategy:
+                        strategy = args.strategy
+                        if strategy is None:
+                            strategy = args._strategy
                         try:
-                            if args.strategy == "defaultStrategy":
+                            if strategy == "defaultStrategy":
                                 self.clearOverwrittenStrategy()
                             else:
-                                self.overwriteStrategy(args.strategy)
+                                self.overwriteStrategy(strategy)
                             client_socket.sendall(self.getCurrentStrategy().name.encode())
                         except InvalidStrategyException:
-                            client_socket.sendall(("Error: unknown strategy: " + args.strategy).encode())
+                            client_socket.sendall(("Error: unknown strategy: " + strategy).encode())
                     if args.pause:
                         self.pause()
                         client_socket.sendall("Success".encode())
@@ -260,9 +259,14 @@ def main():
 
     bothGroup = parser.add_argument_group("both")
     bothGroup.add_argument(
-        "strategy",
+        "_strategy",
         nargs="?",
-        help='Name of the strategy to use e.g: "lazy" (check config.json for others)',
+        help='Name of the strategy to use e.g: "lazy" (check config.json for others). Use "defaultStrategy" to go back to the default strategy',
+    )
+    bothGroup.add_argument(
+        "--strategy",
+        nargs="?",
+        help='Name of the strategy to use e.g: "lazy" (check config.json for others). Use "defaultStrategy" to go back to the default strategy',
     )
 
     runGroup = parser.add_argument_group("run")
@@ -284,6 +288,9 @@ def main():
     args = parser.parse_args()
 
     if args.run:
+        strategy = args.strategy
+        if strategy is None:
+            strategy = args._strategy
         fan = FanController(configPath=args.config, strategyName=args.strategy)
         fan.run(debug=not args.no_log)
     else:
