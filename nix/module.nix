@@ -94,7 +94,7 @@ in
 
     # Create config
     environment.etc."fw-fanctrl/config.json" = {
-      text = generators.toPretty (builtins.toJSON cfg.config);
+      text = builtins.toJSON cfg.config;
     };
 
     # Create Service
