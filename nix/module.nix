@@ -6,6 +6,7 @@ let
   cfg = config.programs.fw-fanctrl;
   fw-ectool = pkgs.callPackage ./packages/fw-ectool.nix {};
   fw-fanctrl = pkgs.callPackage ./packages/fw-fanctrl.nix {};
+  defaultConfig = builtins.fromJSON (builtins.readFile ../config.json);
 in
 {
   options.programs.fw-fanctrl = {
@@ -26,20 +27,20 @@ in
     config = {
       defaultStrategy = mkOption {
         type = str;
-        default = "lazy";
+        default = defaultConfig.defaultStrategy;
         description = "Default strategy to use";
       };
       strategyOnDischarging = mkOption {
         type = str;
-        default = "";
+        default = defaultConfig.strategyOnDischarging; 
         description = "Default strategy on discharging";
       };
       batteryChargingStatusPath = mkOption {
         type = str;
-        default = "";
+        default = defaultConfig.batteryChargingStatusPath;
       };
       strategies = mkOption {
-        default = {};
+        default = defaultConfig.strategies;
         type = attrsOf (submodule (
           { options, name, ... }:
           {
@@ -93,11 +94,7 @@ in
 
     # Create config
     environment.etc."fw-fanctrl/config.json" = {
-      text = cfg.configFile;
-    };
-
-    environment.etc."fw-fanctrl/config2.json" = {
-      text = builtins.toJSON cfg.config;
+      text = generators.toPretty (builtins.toJSON cfg.config);
     };
 
     # Create Service
