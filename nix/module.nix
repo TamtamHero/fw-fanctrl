@@ -16,12 +16,69 @@ in
         Enable fw-fanctrl systemd service and install the needed packages.
       '';
     };
-    config = mkOption {
+    configFile = mkOption {
       type = lines;
       default = builtins.readFile ../config.json;
       description = ''
         Config json that creates the config in /etc/fw-fanctrl/config.json.
       '';
+    };
+    config = {
+      defaultStrategy = mkOption {
+        type = str;
+        defualt = "lazy";
+        description = "Default strategy to use";
+      };
+      strategyOnDischarging = mkOption {
+        type = str;
+        default = "";
+        description = "Default strategy on discharging";
+      };
+      batteryChargingStatusPath = mkOption {
+        type = str;
+        default = "";
+      };
+      strategies = mkOption {
+        type = listOf (submodule (
+          { options, ... }:
+          {
+            options = {
+              name = mkOption {
+                type = str;
+                default = "";
+                description = "Name of the strategy";
+              };
+              fanSpeedUpdateFrequency = mkOption {
+                type = int;
+                default = 5;
+              };
+              movingAverageInterval = mkOption {
+                type = int;
+                default = 25;
+              };
+              speedCurve = mkOption {
+                type = listOf (submodule (
+                  { options, ... }:
+                  {
+                    options = {
+                      temp = mkOption {
+                        type = int;
+                        default = 0;
+                        description = "Tempreture on which the fan speed should be changed";
+                      };
+                      speed = mkOption {
+                        type = int;
+                        default = 0;
+                        description = "Percent how fast the fan should run at";
+                      };
+                    };
+                  }
+                ));
+              }; 
+            };
+          }
+        ));
+      };
     };
   };
 
@@ -34,7 +91,11 @@ in
 
     # Create config
     environment.etc."fw-fanctrl/config.json" = {
-      text = cfg.config;
+      text = cfg.configFile;
+    };
+
+    environment.etc."fw-fanctrl/config2.json" = {
+      text = builtins.toJson cfg.config;
     };
 
     # Create Service
