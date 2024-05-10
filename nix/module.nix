@@ -52,11 +52,6 @@ in
 
     # Create suspend config
     environment.etc."systemd/system-sleep/fw-fanctrl-suspend.sh".source =
-        pkgs.writeShellScript "fw-fanctrl-suspend.sh" ''
-          case $1 in
-            pre)  ${pkgs.util-linux}/bin/runuser -l $(${pkgs.coreutils}/bin/logname) -c "${fw-fanctrl}/bin/fw-fanctrl sleep" ;;
-            post) ${pkgs.util-linux}/bin/runuser -l $(${pkgs.coreutils}/bin/logname) -c "${fw-fanctrl}/bin/fw-fanctrl defaultStrategy" ;;
-          esac
-      '';
+        pkgs.writeShellScript "fw-fanctrl-suspend.sh" (builtins.replaceStrings [ "runuser" "logname" "fw-fanctrl" ] [ "${pkgs.util-linux}/bin/runuser" "${pkgs.coreutils}/bin/logname" "${fw-fanctrl}/bin/fw-fanctrl" ] (builtins.readFile ../services/system-sleep/fw-fanctrl-suspend));
   };
 }
