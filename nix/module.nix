@@ -95,7 +95,7 @@ in
     };
 
     environment.etc."fw-fanctrl/config2.json" = {
-      text = builtins.toJson cfg.config;
+      text = builtins.toJSON cfg.config;
     };
 
     # Create Service
