@@ -26,7 +26,7 @@ in
     config = {
       defaultStrategy = mkOption {
         type = str;
-        defualt = "lazy";
+        default = "lazy";
         description = "Default strategy to use";
       };
       strategyOnDischarging = mkOption {
