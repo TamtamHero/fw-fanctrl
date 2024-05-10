@@ -66,7 +66,7 @@ function install() {
     chmod +x "/usr/local/bin/fw-fanctrl"
     chown "$LOGNAME:$LOGNAME" "/usr/local/bin/fw-fanctrl"
     mkdir -p "$HOME/.config/fw-fanctrl"
-    cp -n "./config.json" "$HOME/.config/fw-fanctrl/" || true
+    cp -n "./config.json" "/etc/fw-fanctrl/config.json" || true
 
     # cleaning legacy file
     rm "/usr/local/bin/fanctrl.py" 2> "/dev/null" || true
