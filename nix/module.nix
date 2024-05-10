@@ -39,9 +39,9 @@ in
         default = "";
       };
       strategies = mkOption {
-        default = [];
-        type = listOf (submodule (
-          { options, ... }:
+        default = {};
+        type = attrsOf (submodule (
+          { options, name, ... }:
           {
             options = {
               name = mkOption {
