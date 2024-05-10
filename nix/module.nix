@@ -39,6 +39,7 @@ in
         default = "";
       };
       strategies = mkOption {
+        default = [];
         type = listOf (submodule (
           { options, ... }:
           {
@@ -57,6 +58,7 @@ in
                 default = 25;
               };
               speedCurve = mkOption {
+                default = [];
                 type = listOf (submodule (
                   { options, ... }:
                   {
