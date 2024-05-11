@@ -1,5 +1,5 @@
 {
-  description = "A software to controll the Framework fan speed";
+  description = "A software to control the Framework fan speed";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
