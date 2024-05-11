@@ -54,7 +54,7 @@ function uninstall() {
     rm "/usr/local/bin/fw-fanctrl"
     ectool autofanctrl # restore default fan manager
     rm "/usr/local/bin/ectool"
-    rm -rf "$HOME/.config/fw-fanctrl"
+    rm -rf "/etc/fw-fanctrl"
 }
 
 function install() {
