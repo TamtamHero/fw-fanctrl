@@ -17,13 +17,6 @@ in
         Enable fw-fanctrl systemd service and install the needed packages.
       '';
     };
-    configFile = mkOption {
-      type = lines;
-      default = builtins.readFile ../config.json;
-      description = ''
-        Config json that creates the config in /etc/fw-fanctrl/config.json.
-      '';
-    };
     config = {
       defaultStrategy = mkOption {
         type = str;
@@ -38,6 +31,7 @@ in
       batteryChargingStatusPath = mkOption {
         type = str;
         default = defaultConfig.batteryChargingStatusPath;
+        description = "";
       };
       strategies = mkOption {
         default = defaultConfig.strategies;
@@ -53,13 +47,16 @@ in
               fanSpeedUpdateFrequency = mkOption {
                 type = int;
                 default = 5;
+                description = "How often the fan speed should be updated in seconds";
               };
               movingAverageInterval = mkOption {
                 type = int;
                 default = 25;
+                description = "";
               };
               speedCurve = mkOption {
                 default = [];
+                description = "How should the speed curve look like";
                 type = listOf (submodule (
                   { options, ... }:
                   {
