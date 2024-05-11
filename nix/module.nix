@@ -67,7 +67,7 @@ in
                       temp = mkOption {
                         type = int;
                         default = 0;
-                        description = "Tempreture on which the fan speed should be changed";
+                        description = "Temperature at which the fan speed should be changed";
                       };
                       speed = mkOption {
                         type = int;
