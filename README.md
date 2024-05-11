@@ -130,6 +130,9 @@ programs.fw-fanctrl.config = {
   };
 };
 
+# Add a custom config from an existing JSON file
+programs.fw-fanctrl.config = builtins.fromJSON (builtins.readFile ./config.json)
+
 # Or just change the default strategy form the default config
 programs.fw-fanctrl.config.defaultStrategy = "medium";
 ```
