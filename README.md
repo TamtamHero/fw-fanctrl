@@ -9,7 +9,7 @@ It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs and w
 
 # Install
 
-**This discripes how to install fw-fanctrl on every distro that is not NixOS! If you want to use it on NixOS show [here](#nixos)**
+**This discribes how to install fw-fanctrl on every distro that is not NixOS! If you want to use it on NixOS, use [these](#nixos) instructions**
 
 ## Dependancies
 
