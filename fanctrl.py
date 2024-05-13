@@ -194,9 +194,9 @@ class FanController:
             return self.getActualTemperature()
         return round(sum(slicedTempHistory) / len(slicedTempHistory), 1)
 
-    def getEffectiveTemperature(self, currentTemp, timeIntervam):
+    def getEffectiveTemperature(self, currentTemp, timeInterval):
         # the moving average temperature count for 2/3 of the effective temperature
-        return round(min(self.getMovingAverageTemperature(timeIntervam), currentTemp), 1)
+        return round(min(self.getMovingAverageTemperature(timeInterval), currentTemp), 1)
 
     def adaptSpeed(self, currentTemp):
         currentStrategy = self.getCurrentStrategy()
