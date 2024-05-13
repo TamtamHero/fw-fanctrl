@@ -30,7 +30,7 @@ in
       };
       batteryChargingStatusPath = mkOption {
         type = str;
-        default = defaultConfig.batteryChargingStatusPath;
+        default = "/sys/class/power_supply/BAT1/status";
         description = "";
       };
       strategies = mkOption {
@@ -52,7 +52,7 @@ in
               movingAverageInterval = mkOption {
                 type = int;
                 default = 25;
-                description = "";
+                description = "Interval (seconds) of the last temperatures to use to calculate the average temperature";
               };
               speedCurve = mkOption {
                 default = [];
