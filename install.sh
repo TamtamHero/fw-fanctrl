@@ -71,9 +71,6 @@ function move_legacy() {
 }
 
 function install() {
-    if [ "$1" != "--no-requirements" ]; then
-        pip3 install -r requirements.txt || exit 1
-    fi
     cp "./bin/ectool" "/usr/local/bin"
     cp "./fanctrl.py" "/usr/local/bin/fw-fanctrl"
     chmod +x "/usr/local/bin/fw-fanctrl"
