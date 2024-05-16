@@ -13,6 +13,8 @@ It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs and w
 
 To communicate with the embedded controller the `ectool` is needed. You can either use the pre-compiled executable of `ectool` in this repo, or recompile one from [this repo](https://gitlab.howett.net/DHowett/ectool) and copy it in `./bin`.
 
+You also need to disable secure boot of your device for `ectool` to work (more details about why [here](https://www.howett.net/posts/2021-12-framework-ec/#using-fw-ectool))
+
 Then run:
 ```
 sudo ./install.sh
