@@ -11,13 +11,7 @@ It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs and w
 
 ## Dependancies
 
-This tool depends on `lm-sensors` to fetch CPU temperature:
-```
-sudo apt install lm-sensors
-yes | sudo sensors-detect
-```
-
-To communicate with the embedded controller the `fw-ectool` is needed. You can either use the pre-compiled executable of `fw-ectool` in this repo, or recompile one from [this repo](https://gitlab.howett.net/DHowett/ectool) and copy it in `./bin`.
+To communicate with the embedded controller the `ectool` is needed. You can either use the pre-compiled executable of `ectool` in this repo, or recompile one from [this repo](https://gitlab.howett.net/DHowett/ectool) and copy it in `./bin`.
 
 Then run:
 ```
@@ -38,13 +32,16 @@ sudo ./install.sh remove
 
 # Configuration
 
-There is a single `config.json` file where you can configure the service. You need to run the install script again after editing this config, or you can directly edit the installed config at `/home/<user>/.config/fw-fanctrl/config.json` and restart the service with:
+There is a single `config.json` file located at `/home/<user>/.config/fw-fanctrl/config.json`.
 
+(You will need to reload the configuration with)
 ```
-sudo service fw-fanctrl restart
+fw-fanctrl --reload
 ```
 
-It contains different strategies, ranked from the most silent to the noisiest. It is possible to specify two different strategies for charging/discharging allowing for different optimization goals. On discharging one could have fan curve optimized for low fan speeds in order to save power while accepting a bit more heat. On charging one could have a fan curve that focuses on keeping the CPU from throttling and the system cool, at the expense of fan noise.
+It contains different strategies, ranked from the most silent to the noisiest. It is possible to specify two different strategies for charging/discharging allowing for different optimization goals.
+On discharging one could have fan curve optimized for low fan speeds in order to save power while accepting a bit more heat. 
+On charging one could have a fan curve that focuses on keeping the CPU from throttling and the system cool, at the expense of fan noise.
 You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
 
 Strategies can be configured with the following parameters:
@@ -57,24 +54,28 @@ Strategies can be configured with the following parameters:
 
 - **FanSpeedUpdateFrequency**:
 
-    Time interval between every update to the fan's speed. `fw-fanctrl` measures temperature every second and add it to its moving average, but the actual update to fan speed is made every 5s by default. This is for comfort, otherwise the speed is changed too often and it is noticeable and annoying, especially at low speed.
-    For a more reactive fan, you can lower this setting.
+    Time interval between every update to the fan's speed. `fw-fanctrl` measures temperature every second and add it to its moving average, but the actual update to fan speed is controlled using this configuration. This is for comfort, otherwise the speed is changed too often and it is noticeable and annoying, especially at low speed.
+    For a more reactive fan, you can lower this setting. **Defaults to 5 seconds.**
 
 - **MovingAverageInterval**:
 
-    Number of seconds on which the moving average of temperature is computed. Increase it, and the fan speed will change more gradually. Lower it, and it will gain in reactivity. Defaults to 30 seconds.
+    Number of seconds on which the moving average of temperature is computed. Increase it, and the fan speed will change more gradually. Lower it, and it will gain in reactivity. **Defaults to 20 seconds.**
 
 ## Charging/Discharging strategies
 
 The strategy active by default is the one specified in the `defaultStrategy` entry. Optionally a separate strategy only active during discharge can be defined, using the `strategyOnDischarging` entry. By default no extra strategy for discharging is provided, the default stratgy is active during all times.
-The charging status of the battery is fetched from the following file by default:
-`/sys/class/power_supply/BAT1/status`
-The default path can be overwritten by entering a value for `batteryChargingStatusPath` inside the `config.json` file.
 
-# Misc
+# Commands
 
-It is possible to hot swap the current strategy with another one by running the command
-```
-fw-fanctrl strategyName
-```
-where `strategyName is one of the strategies described in the config file.
+| option            | contexte        | description                     |
+|-------------------|-----------------|---------------------------------|
+| \<strategy>       | run & configure | the name of the strategy to use |
+| --run             | run             | run the service                 |
+| --config          | run             | specify the configuration path  |
+| --no-log          | run             | disable state logging           |
+| --query, -q       | configure       | print the current strategy name |
+| --list-strategies | configure       | print the available strategies  |
+| --reload, -r      | configure       | reload the configuration file   |
+| --pause           | configure       | temporarily disable the service |
+| --resume          | configure       | resume the service              |
+
