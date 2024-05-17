@@ -71,6 +71,7 @@ function move_legacy() {
 }
 
 function install() {
+    pip3 install || exit 1
     cp "./bin/ectool" "/usr/local/bin"
     cp "./fanctrl.py" "/usr/local/bin/fw-fanctrl"
     chmod +x "/usr/local/bin/fw-fanctrl"
