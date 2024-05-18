@@ -21,7 +21,11 @@ sudo ./install.sh
 ```
 
 This bash script is going to create and enable a service that runs this repo's main script, `fanctrl.py`.
-It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool` to `/usr/local/bin` and create a config file in `/etc/fw-fanctrl/config.json`
+It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool` to `/usr/bin` and create a config file
+in `/etc/fw-fanctrl/config.json`
+
+this script also includes options to disable post-install process (`--no-post-install`) and specify an installation
+directory (`--install-dir <install directory (defaults to /usr/bin)>`).
 
 # Update
 
@@ -29,7 +33,7 @@ To install an update, you can just pull the latest commit on the `main` branch o
 
 # Uninstall
 ```
-sudo ./install.sh remove
+sudo ./install.sh --remove
 ```
 
 # Configuration
