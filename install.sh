@@ -23,6 +23,11 @@ function sanitizePath() {
     echo "$SANITIZED_PATH"
 }
 
+# remove remaining legacy files
+function uninstall_legacy() {
+    rm -rf "$HOME/.config/fw-fanctrl"
+}
+
 function uninstall() {
     # remove program services based on the services present in the './services' folder
     echo "removing services"
@@ -54,22 +59,28 @@ function uninstall() {
     rm "/usr/local/bin/fw-fanctrl"
     ectool autofanctrl # restore default fan manager
     rm "/usr/local/bin/ectool"
-    rm -rf "$HOME/.config/fw-fanctrl"
+    rm -rf "/etc/fw-fanctrl"
+
+    uninstall_legacy
+}
+
+# move remaining legacy files
+function move_legacy() {
+    rm "/usr/local/bin/fanctrl.py" 2> "/dev/null" || true
+    (cp "$HOME/.config/fw-fanctrl"/* "/etc/fw-fanctrl/" && rm -rf "$HOME/.config/fw-fanctrl") 2> "/dev/null" || true
 }
 
 function install() {
-    if [ "$1" != "--no-requirements" ]; then
-        pip3 install -r requirements.txt || exit 1
-    fi
     cp "./bin/ectool" "/usr/local/bin"
     cp "./fanctrl.py" "/usr/local/bin/fw-fanctrl"
     chmod +x "/usr/local/bin/fw-fanctrl"
     chown "$LOGNAME:$LOGNAME" "/usr/local/bin/fw-fanctrl"
     mkdir -p "$HOME/.config/fw-fanctrl"
-    cp -n "./config.json" "$HOME/.config/fw-fanctrl/" || true
+    mkdir -p "/etc/fw-fanctrl"
 
-    # cleaning legacy file
-    rm "/usr/local/bin/fanctrl.py" 2> "/dev/null" || true
+    cp -n "./config.json" "/etc/fw-fanctrl" 2> "/dev/null" || true
+
+    move_legacy
 
     # create program services based on the services present in the './services' folder
     echo "creating services"
@@ -80,8 +91,7 @@ function install() {
             sudo systemctl stop "$SERVICE"
         fi
         echo "creating '/etc/systemd/system/$SERVICE$SERVICE_EXTENSION'"
-        # 'envsubst' replace environment variables in the service file
-        envsubst < "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sudo tee "/etc/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
+        sudo cp -f "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" "/etc/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
         sudo systemctl daemon-reload
         echo "enabling [$SERVICE]"
         sudo systemctl enable "$SERVICE"
