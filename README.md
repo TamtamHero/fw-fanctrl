@@ -23,7 +23,7 @@ sudo ./install.sh
 ```
 
 This bash script is going to create and enable a service that runs this repo's main script, `fanctrl.py`.
-It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool` to `/usr/local/bin` and create a config file in `/home/<user>/.config/fw-fanctrl/config.json`
+It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool` to `/usr/local/bin` and create a config file in `/etc/fw-fanctrl/config.json`
 
 # Update
 
@@ -36,7 +36,7 @@ sudo ./install.sh remove
 
 # Configuration
 
-There is a single `config.json` file located at `/home/<user>/.config/fw-fanctrl/config.json`.
+There is a single `config.json` file located at `/etc/fw-fanctrl/config.json`.
 
 (You will need to reload the configuration with)
 ```
