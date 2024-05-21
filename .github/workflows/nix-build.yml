@@ -1,9 +1,7 @@
 name: "Test"
 on:
   pull_request:
-    branches:
-      - main
-      - packaging/nix
+
 jobs:
   tests:
     runs-on: ubuntu-latest
