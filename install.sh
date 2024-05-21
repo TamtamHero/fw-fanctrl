@@ -107,6 +107,7 @@ function uninstall() {
         rm "$DEST_DIR/bin/ectool"
     fi
     rm -rf "/etc/fw-fanctrl"
+    rm -rf "/run/fw-fanctrl"
 
     uninstall_legacy
 }

@@ -13,7 +13,8 @@ from time import sleep
 
 RESOURCE_FOLDER_PATH = "/etc/fw-fanctrl"
 DEFAULT_CONFIGURATION_FILE_PATH = os.path.join(RESOURCE_FOLDER_PATH, "config.json")
-COMMANDS_SOCKET_FILE_PATH = os.path.join(RESOURCE_FOLDER_PATH, ".fw-fanctrl.commands.sock")
+SOCKETS_FOLDER_PATH = "/run/fw-fanctrl"
+COMMANDS_SOCKET_FILE_PATH = os.path.join(SOCKETS_FOLDER_PATH, ".fw-fanctrl.commands.sock")
 
 parser = None
 
@@ -124,6 +125,8 @@ class FanController:
         if os.path.exists(COMMANDS_SOCKET_FILE_PATH):
             os.remove(COMMANDS_SOCKET_FILE_PATH)
         try:
+            if not os.path.exists(SOCKETS_FOLDER_PATH):
+                os.makedirs(SOCKETS_FOLDER_PATH)
             server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server_socket.bind(COMMANDS_SOCKET_FILE_PATH)
             os.chmod(COMMANDS_SOCKET_FILE_PATH, 0o777)
