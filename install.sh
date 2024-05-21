@@ -6,14 +6,16 @@ if [ "$EUID" -ne 0 ]
 fi
 
 # Argument parsing
-SHORT=r,d:,h
-LONG=remove,install-dir:,no-post-install,help
+SHORT=r,d:,p:,h
+LONG=remove,dest-dir:,prefix-dir:,no-ectool,no-post-install,help
 VALID_ARGS=$(getopt -a -n weather --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi
 
-INSTALL_DIRECTORY="/usr/bin"
+PREFIX_DIR="/usr"
+DEST_DIR="/usr"
+SHOULD_INSTALL_ECTOOL=true
 SHOULD_POST_INSTALL=true
 SHOULD_REMOVE=false
 
@@ -23,15 +25,22 @@ while true; do
     '--remove' | '-r')
         SHOULD_REMOVE=true
         ;;
-    '--install-dir' | '-d')
-        INSTALL_DIRECTORY=$2
+    '--prefix-dir' | '-p')
+        PREFIX_DIR=$2
         shift
+        ;;
+    '--dest-dir' | '-d')
+        DEST_DIR=$2
+        shift
+        ;;
+    '--no-ectool')
+        SHOULD_INSTALL_ECTOOL=false
         ;;
     '--no-post-install')
         SHOULD_POST_INSTALL=false
         ;;
     '--help' | '-h')
-        echo "Usage: $0 [--remove,-r] [--install-dir,-d <install directory (defaults to $INSTALL_DIRECTORY)>] [--no-post-install]" 1>&2
+        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--no-ectool] [--no-post-install]" 1>&2
         exit 0
         ;;
     --)
@@ -61,21 +70,22 @@ function uninstall_legacy() {
     rm "/usr/local/bin/fw-fanctrl" 2> "/dev/null" || true
     rm "/usr/local/bin/ectool" 2> "/dev/null" || true
     rm "/usr/local/bin/fanctrl.py" 2> "/dev/null" || true
+    rm "/etc/systemd/system/fw-fanctrl.service" 2> "/dev/null" || true
 }
 
 function uninstall() {
     # remove program services based on the services present in the './services' folder
     echo "removing services"
-    sudo systemctl daemon-reload
+    systemctl daemon-reload
     for SERVICE in $SERVICES ; do
         # be EXTRA CAREFUL about the validity of the paths (dont wanna delete something important, right?... O_O)
         SERVICE=$(sanitizePath "$SERVICE")
         echo "stopping [$SERVICE]"
-        sudo systemctl stop "$SERVICE"
+        systemctl stop "$SERVICE"
         echo "disabling [$SERVICE]"
-        sudo systemctl disable "$SERVICE"
-        echo "removing '/etc/systemd/system/$SERVICE$SERVICE_EXTENSION'"
-        (cd "/etc/systemd/system/" && sudo rm -rf "$SERVICE$SERVICE_EXTENSION")
+        systemctl disable "$SERVICE"
+        echo "removing '$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION'"
+        (cd "$PREFIX_DIR/lib/systemd/system/" && rm -rf "$SERVICE$SERVICE_EXTENSION")
     done
 
     # remove program services sub-configurations based on the sub-configurations present in the './services' folder
@@ -86,14 +96,16 @@ function uninstall() {
         SUBCONFIGS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -type f)"
         for SUBCONFIG in $SUBCONFIGS ; do
             SUBCONFIG=$(sanitizePath "$SUBCONFIG")
-            echo "removing '/usr/lib/systemd/$SERVICE/$SUBCONFIG'"
-            (cd "/usr/lib/systemd/" && cd "$SERVICE" && rm -rf "$SUBCONFIG")
+            echo "removing '$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
+            (cd "$PREFIX_DIR/lib/systemd/" && cd "$SERVICE" && rm -rf "$SUBCONFIG")
         done
     done
 
-    rm "$INSTALL_DIRECTORY/fw-fanctrl"
+    rm "$DEST_DIR/bin/fw-fanctrl"
     ectool autofanctrl # restore default fan manager
-    rm "$INSTALL_DIRECTORY/ectool"
+    if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
+        rm "$DEST_DIR/bin/ectool"
+    fi
     rm -rf "/etc/fw-fanctrl"
 
     uninstall_legacy
@@ -102,12 +114,14 @@ function uninstall() {
 function install() {
     uninstall_legacy
 
-    mkdir -p "$INSTALL_DIRECTORY"
-    cp "./bin/ectool" "$INSTALL_DIRECTORY/ectool"
-    cp "./fanctrl.py" "$INSTALL_DIRECTORY/fw-fanctrl"
-    chmod +x "$INSTALL_DIRECTORY/ectool"
-    chmod +x "$INSTALL_DIRECTORY/fw-fanctrl"
+    mkdir -p "$DEST_DIR/bin"
+    if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
+        cp "./bin/ectool" "$DEST_DIR/bin/ectool"
+        chmod +x "$DEST_DIR/bin/ectool"
+    fi
     mkdir -p "/etc/fw-fanctrl"
+    cp "./fanctrl.py" "$DEST_DIR/bin/fw-fanctrl"
+    chmod +x "$DEST_DIR/bin/fw-fanctrl"
 
     cp -n "./config.json" "/etc/fw-fanctrl" 2> "/dev/null" || true
 
@@ -115,12 +129,12 @@ function install() {
     echo "creating services"
     for SERVICE in $SERVICES ; do
         SERVICE=$(sanitizePath "$SERVICE")
-        if [ "$(sudo systemctl is-active "$SERVICE")" == "active" ]; then
+        if [ "$(systemctl is-active "$SERVICE")" == "active" ]; then
             echo "stopping [$SERVICE]"
-            sudo systemctl stop "$SERVICE"
+            systemctl stop "$SERVICE"
         fi
-        echo "creating '/etc/systemd/system/$SERVICE$SERVICE_EXTENSION'"
-        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%DIRECTORY%/${INSTALL_DIRECTORY//\//\\/}/" | sudo tee "/etc/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
+        echo "creating '$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION'"
+        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | tee "$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
     done
 
     # add program services sub-configurations based on the sub-configurations present in the './services' folder
@@ -132,16 +146,16 @@ function install() {
         # ensure folders exists
         for SUBCONFIG_FOLDER in $SUBCONFIG_FOLDERS ; do
             SUBCONFIG_FOLDER=$(sanitizePath "$SUBCONFIG_FOLDER")
-            echo "creating '/usr/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER'"
-            (cd "/usr/lib/systemd/" && cd "$SERVICE" && sudo mkdir -p "$SUBCONFIG_FOLDER")
+            echo "creating '$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER'"
+            (cd "$PREFIX_DIR/lib/systemd/" && cd "$SERVICE" && mkdir -p "$SUBCONFIG_FOLDER")
         done
         SUBCONFIGS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -type f)"
         # add sub-configurations
         for SUBCONFIG in $SUBCONFIGS ; do
             SUBCONFIG=$(sanitizePath "$SUBCONFIG")
-            echo "adding '/usr/lib/systemd/$SERVICE/$SUBCONFIG'"
-            cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | sed -e "s/%DIRECTORY%/${INSTALL_DIRECTORY//\//\\/}/" | sudo tee "/usr/lib/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
-            sudo chmod +x "/usr/lib/systemd/$SERVICE/$SUBCONFIG"
+            echo "adding '$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
+            cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | tee "$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
+            chmod +x "$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG"
         done
     done
     if [ "$SHOULD_POST_INSTALL" = true ]; then
