@@ -24,17 +24,18 @@ sudo ./install.sh
 
 This bash script will to create and activate a service that runs this repo's main script, `fanctrl.py`.
 It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool` to `[prefix-dir(/usr)]/bin` and create a config file
-in `/etc/fw-fanctrl/config.json`
+in `[sysconf-dir(/etc)]/fw-fanctrl/config.json`
 
 this script also includes options to:
 - specify an installation destination directory (`--dest-dir <installation destination directory (defaults to /usr)>`).
 - specify an installation prefix directory (`--prefix-dir <installation prefix directory (defaults to /usr)>`).
+- specify a default configuration directory (`--sysconf-dir <system configuration destination directory (defaults to /etc)>`).
 - disable ectool installation and service activation (`--no-ectool`)
 - disable post-install process (`--no-post-install`)
 
 # Update
 
-To install an update, you can just pull the latest commit on the `main` branch of this repository, and run the install script again.
+To install an update, you can pull the latest commit on the `main` branch of this repository, and run the install script again.
 
 # Uninstall
 ```
@@ -43,7 +44,7 @@ sudo ./install.sh --remove
 
 # Configuration
 
-There is a single `config.json` file located at `/etc/fw-fanctrl/config.json`.
+There is a single `config.json` file located at `[sysconf-dir(/etc)]/fw-fanctrl/config.json`.
 
 (You will need to reload the configuration with)
 ```

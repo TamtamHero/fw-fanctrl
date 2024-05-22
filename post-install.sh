@@ -1,9 +1,41 @@
 #!/bin/bash
+set -e
 
 if [ "$EUID" -ne 0 ]
   then echo "This program requires root permissions"
   exit 1
 fi
+
+HOME_DIR="$(eval echo "~$(logname)")"
+
+# Argument parsing
+SHORT=s:,h
+LONG=sysconf-dir:,help
+VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
+if [[ $? -ne 0 ]]; then
+    exit 1;
+fi
+
+SYSCONF_DIR="/etc"
+
+eval set -- "$VALID_ARGS"
+while true; do
+  case "$1" in
+    '--sysconf-dir' | '-s')
+        SYSCONF_DIR=$2
+        shift
+        ;;
+    '--help' | '-h')
+        echo "Usage: $0 [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)]" 1>&2
+        exit 0
+        ;;
+    --)
+        break
+        ;;
+  esac
+  shift
+done
+#
 
 SERVICES_DIR="./services"
 SERVICE_EXTENSION=".service"
@@ -17,6 +49,14 @@ function sanitizePath() {
     local SANITIZED_PATH=${SANITIZED_PATH#/}
     echo "$SANITIZED_PATH"
 }
+
+# move remaining legacy files
+function move_legacy() {
+    echo "moving legacy files to their new destination"
+    (cp "$HOME_DIR/.config/fw-fanctrl"/* "$SYSCONF_DIR/fw-fanctrl/" && rm -rf "$HOME_DIR/.config/fw-fanctrl") 2> "/dev/null" || true
+}
+
+move_legacy
 
 echo "enabling services"
 sudo systemctl daemon-reload
