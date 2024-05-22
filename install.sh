@@ -126,7 +126,7 @@ function install() {
         cp "./bin/ectool" "$DEST_DIR/bin/ectool"
         chmod +x "$DEST_DIR/bin/ectool"
     fi
-    mkdir -p "/etc/fw-fanctrl"
+    mkdir -p "$SYSCONF_DIR/fw-fanctrl"
     cp "./fanctrl.py" "$DEST_DIR/bin/fw-fanctrl"
     chmod +x "$DEST_DIR/bin/fw-fanctrl"
 
