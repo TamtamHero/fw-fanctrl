@@ -153,6 +153,7 @@ function install() {
         echo "adding sub-configurations for [$SERVICE]"
         SUBCONFIG_FOLDERS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
         # ensure folders exists
+        mkdir -p "$DEST_DIR/lib/systemd/$SERVICE"
         for SUBCONFIG_FOLDER in $SUBCONFIG_FOLDERS ; do
             SUBCONFIG_FOLDER=$(sanitizePath "$SUBCONFIG_FOLDER")
             echo "creating '$DEST_DIR/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER'"
