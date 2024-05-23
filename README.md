@@ -11,7 +11,9 @@ It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs and w
 
 ## Dependancies
 
-To communicate with the embedded controller the `ectool` is needed. You can either use the pre-compiled executable of `ectool` in this repo, or recompile one from [this repo](https://gitlab.howett.net/DHowett/ectool) and copy it in `./bin`.
+To communicate with the embedded controller the `ectool` is required.
+You can either use the precompiled executable of `ectool` in this repo or
+disable its installation (`--no-ectool`) and add your own by recompiling it from [this repo](https://gitlab.howett.net/DHowett/ectool) and putting it in `[dest-dir(/)]/bin`.
 
 You also need to disable secure boot of your device for `ectool` to work (more details about why [here](https://www.howett.net/posts/2021-12-framework-ec/#using-fw-ectool))
 
@@ -20,21 +22,29 @@ Then run:
 sudo ./install.sh
 ```
 
-This bash script is going to create and enable a service that runs this repo's main script, `fanctrl.py`.
-It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool` to `/usr/local/bin` and create a config file in `/etc/fw-fanctrl/config.json`
+This bash script will to create and activate a service that runs this repo's main script, `fanctrl.py`.
+It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool` to `[dest-dir(/)]/bin` and create a config file
+in `[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`
+
+this script also includes options to:
+- specify an installation destination directory (`--dest-dir <installation destination directory (defaults to /)>`).
+- specify an installation prefix directory (`--prefix-dir <installation prefix directory (defaults to /usr)>`).
+- specify a default configuration directory (`--sysconf-dir <system configuration destination directory (defaults to /etc)>`).
+- disable ectool installation and service activation (`--no-ectool`)
+- disable post-install process (`--no-post-install`)
 
 # Update
 
-To install an update, you can just pull the latest commit on the `main` branch of this repository, and run the install script again.
+To install an update, you can pull the latest commit on the `main` branch of this repository, and run the install script again.
 
 # Uninstall
 ```
-sudo ./install.sh remove
+sudo ./install.sh --remove
 ```
 
 # Configuration
 
-There is a single `config.json` file located at `/etc/fw-fanctrl/config.json`.
+There is a single `config.json` file located at `[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`.
 
 (You will need to reload the configuration with)
 ```
