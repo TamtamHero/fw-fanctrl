@@ -13,7 +13,7 @@ It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs and w
 
 To communicate with the embedded controller the `ectool` is required.
 You can either use the precompiled executable of `ectool` in this repo or
-disable its installation (`--no-ectool`) and add your own by recompiling it from [this repo](https://gitlab.howett.net/DHowett/ectool) and putting it in `[prefix-dir(/usr)]/bin`.
+disable its installation (`--no-ectool`) and add your own by recompiling it from [this repo](https://gitlab.howett.net/DHowett/ectool) and putting it in `[dest-dir(/)]/bin`.
 
 You also need to disable secure boot of your device for `ectool` to work (more details about why [here](https://www.howett.net/posts/2021-12-framework-ec/#using-fw-ectool))
 
@@ -23,11 +23,11 @@ sudo ./install.sh
 ```
 
 This bash script will to create and activate a service that runs this repo's main script, `fanctrl.py`.
-It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool` to `[prefix-dir(/usr)]/bin` and create a config file
-in `[sysconf-dir(/etc)]/fw-fanctrl/config.json`
+It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool` to `[dest-dir(/)]/bin` and create a config file
+in `[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`
 
 this script also includes options to:
-- specify an installation destination directory (`--dest-dir <installation destination directory (defaults to /usr)>`).
+- specify an installation destination directory (`--dest-dir <installation destination directory (defaults to /)>`).
 - specify an installation prefix directory (`--prefix-dir <installation prefix directory (defaults to /usr)>`).
 - specify a default configuration directory (`--sysconf-dir <system configuration destination directory (defaults to /etc)>`).
 - disable ectool installation and service activation (`--no-ectool`)
@@ -44,7 +44,7 @@ sudo ./install.sh --remove
 
 # Configuration
 
-There is a single `config.json` file located at `[sysconf-dir(/etc)]/fw-fanctrl/config.json`.
+There is a single `config.json` file located at `[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`.
 
 (You will need to reload the configuration with)
 ```

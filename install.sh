@@ -15,7 +15,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 PREFIX_DIR="/usr"
-DEST_DIR="/usr"
+DEST_DIR=""
 SYSCONF_DIR="/etc"
 SHOULD_INSTALL_ECTOOL=true
 SHOULD_POST_INSTALL=true
@@ -112,7 +112,7 @@ function uninstall() {
     if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
         rm "$DEST_DIR/bin/ectool" 2> "/dev/null" || true
     fi
-    rm -rf "$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
+    rm -rf "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
     rm -rf "/run/fw-fanctrl" 2> "/dev/null" || true
 
     uninstall_legacy
@@ -126,11 +126,11 @@ function install() {
         cp "./bin/ectool" "$DEST_DIR/bin/ectool"
         chmod +x "$DEST_DIR/bin/ectool"
     fi
-    mkdir -p "$SYSCONF_DIR/fw-fanctrl"
+    mkdir -p "$DEST_DIR$SYSCONF_DIR/fw-fanctrl"
     cp "./fanctrl.py" "$DEST_DIR/bin/fw-fanctrl"
     chmod +x "$DEST_DIR/bin/fw-fanctrl"
 
-    cp -n "./config.json" "$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
+    cp -n "./config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
 
     # create program services based on the services present in the './services' folder
     echo "creating '$DEST_DIR/lib/systemd/system'"
@@ -143,7 +143,7 @@ function install() {
             systemctl stop "$SERVICE"
         fi
         echo "creating '$DEST_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION'"
-        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | tee "$DEST_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
+        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | sed -e "s/%DEST_DIRECTORY%/${DEST_DIR//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | tee "$DEST_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
     done
 
     # add program services sub-configurations based on the sub-configurations present in the './services' folder
@@ -169,7 +169,7 @@ function install() {
         done
     done
     if [ "$SHOULD_POST_INSTALL" = true ]; then
-        sh "./post-install.sh" --sysconf-dir "$SYSCONF_DIR"
+        sh "./post-install.sh" --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR"
     fi
 }
 

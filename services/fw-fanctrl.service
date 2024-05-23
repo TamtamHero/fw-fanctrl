@@ -4,7 +4,7 @@ After=multi-user.target
 [Service]
 Type=simple
 Restart=always
-ExecStart=/usr/bin/python3 "%PREFIX_DIRECTORY%/bin/fw-fanctrl" --run --config "%SYSCONF_DIRECTORY%/fw-fanctrl/config.json" --no-log
+ExecStart=/usr/bin/python3 "%PREFIX_DIRECTORY%/bin/fw-fanctrl" --run --config "%DEST_DIRECTORY%%SYSCONF_DIRECTORY%/fw-fanctrl/config.json" --no-log
 ExecStopPost=/bin/sh -c "ectool autofanctrl"
 [Install]
 WantedBy=multi-user.target
