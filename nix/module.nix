@@ -101,7 +101,8 @@ in
       serviceConfig = {
         Type = "simple";
         Restart = "always";
-        ExecStart = "${fw-fanctrl}/bin/fw-fanctrl --config /etc/fw-fanctrl/config.json --no-log";
+        ExecStart = "${fw-fanctrl}/bin/fw-fanctrl --run --config /etc/fw-fanctrl/config.json --no-log";
+        ExecStopPost = "${fw-ectool}/bin/ectool autofanctrl";
       };
       enable = true;
       wantedBy = [ "multi-user.target" ];
