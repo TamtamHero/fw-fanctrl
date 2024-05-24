@@ -95,21 +95,21 @@ in
     };
 
     # Create Service
-    systemd.services.fw-fanctrl = {
-      description = "Framework Fan Controller";
-      after = [ "multi-user.target" ];
-      serviceConfig = {
-        Type = "simple";
-        Restart = "always";
-        ExecStart = "${fw-fanctrl}/bin/fw-fanctrl --run --config /etc/fw-fanctrl/config.json --no-log";
-        ExecStopPost = "${fw-ectool}/bin/ectool autofanctrl";
-      };
-      enable = true;
-      wantedBy = [ "multi-user.target" ];
-    };
+    #systemd.services.fw-fanctrl = {
+    #  description = "Framework Fan Controller";
+    #  after = [ "multi-user.target" ];
+    #  serviceConfig = {
+    #    Type = "simple";
+    #    Restart = "always";
+    #    ExecStart = "${fw-fanctrl}/bin/fw-fanctrl --run --config /etc/fw-fanctrl/config.json --no-log";
+    #    ExecStopPost = "${fw-ectool}/bin/ectool autofanctrl";
+    #  };
+    #  enable = true;
+    #  wantedBy = [ "multi-user.target" ];
+    #};
 
-    # Create suspend config
-    environment.etc."systemd/system-sleep/fw-fanctrl-suspend.sh".source =
-        pkgs.writeShellScript "fw-fanctrl-suspend.sh" (builtins.replaceStrings [ "runuser" "logname" "fw-fanctrl" ] [ "${pkgs.util-linux}/bin/runuser" "${pkgs.coreutils}/bin/logname" "${fw-fanctrl}/bin/fw-fanctrl" ] (builtins.readFile ../services/system-sleep/fw-fanctrl-suspend));
+    ## Create suspend config
+    #environment.etc."systemd/system-sleep/fw-fanctrl-suspend.sh".source =
+    #    pkgs.writeShellScript "fw-fanctrl-suspend.sh" (builtins.replaceStrings [ "runuser" "logname" "fw-fanctrl" ] [ "${pkgs.util-linux}/bin/runuser" "${pkgs.coreutils}/bin/logname" "${fw-fanctrl}/bin/fw-fanctrl" ] (builtins.readFile ../services/system-sleep/fw-fanctrl-suspend));
   };
 }

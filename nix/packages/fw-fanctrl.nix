@@ -1,10 +1,10 @@
 { 
 lib,
-lm_sensors,
 python3Packages,
 python3,
 bash,
-callPackage
+callPackage,
+getopt
 }:
 
 let
@@ -40,26 +40,24 @@ python3Packages.buildPythonPackage rec{
 
   nativeBuildInputs = [
     python3
+    getopt
   ];
 
-  propagatedBuildInputs = with python3Packages; [
-    watchdog
+  propagatedBuildInputs = [
     (callPackage ./fw-ectool.nix {})
-    lm_sensors
   ];
 
   doCheck = false;
 
   postPatch = ''
     patchShebangs --build fanctrl.py
+    patchShebangs --build install.sh
     substituteInPlace fanctrl.py --replace "/bin/bash" "${bash}/bin/bash"
     cat fanctrl.py
   '';
 
   installPhase = ''
-    mkdir -p $out/bin 
-    mv ./fanctrl.py $out/bin/fw-fanctrl
-    chmod 755 $out/bin/fw-fanctrl
+    ./install.sh --dest-dir $out --prefix-dir "" --no-ectool --no-post-install 
   '';
 
   meta = with lib; {

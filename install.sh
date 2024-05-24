@@ -1,7 +1,9 @@
 #!/bin/bash
 set -e
 
-if [ "$EUID" -ne 0 ]
+echo $(whoami)
+
+if [ "$EUID" -ne 0 ] && [ $(whoami) != "nixbld" ]
   then echo "This program requires root permissions"
   exit 1
 fi
