@@ -32,6 +32,7 @@ this script also includes options to:
 - specify a default configuration directory (`--sysconf-dir <system configuration destination directory (defaults to /etc)>`).
 - disable ectool installation and service activation (`--no-ectool`)
 - disable post-install process (`--no-post-install`)
+- disable pre-uninstall process (`--no-pre-uninstall`)
 
 # Update
 
