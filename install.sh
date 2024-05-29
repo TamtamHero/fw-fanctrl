@@ -171,7 +171,7 @@ function install() {
         done
     done
     if [ "$SHOULD_POST_INSTALL" = true ]; then
-        sh "./post-install.sh" --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR"
+        ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR"
     fi
 }
 
