@@ -86,7 +86,7 @@ function uninstall_legacy() {
 
 function uninstall() {
     if [ "$SHOULD_PRE_UNINSTALL" = true ]; then
-        sh "./pre-uninstall.sh"
+        ./pre-uninstall.sh
     fi
     # remove program services based on the services present in the './services' folder
     echo "removing services"
