@@ -86,7 +86,7 @@ function uninstall_legacy() {
 
 function uninstall() {
     if [ "$SHOULD_PRE_UNINSTALL" = true ]; then
-        sh "./pre-uninstall.sh"
+        ./pre-uninstall.sh
     fi
     # remove program services based on the services present in the './services' folder
     echo "removing services"
@@ -171,7 +171,7 @@ function install() {
         done
     done
     if [ "$SHOULD_POST_INSTALL" = true ]; then
-        sh "./post-install.sh" --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR"
+        ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR"
     fi
 }
 
