@@ -1,4 +1,4 @@
-name: "Test"
+name: "Nix packaging test"
 on:
   pull_request:
 
