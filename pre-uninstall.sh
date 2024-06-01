@@ -6,7 +6,7 @@ HOME_DIR="$(eval echo "~$(logname)")"
 # Argument parsing
 NO_SUDO=false
 SHORT=h
-LONG=help
+LONG=no-sudo,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
