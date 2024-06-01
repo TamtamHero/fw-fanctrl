@@ -41,6 +41,7 @@ python3Packages.buildPythonPackage rec{
   nativeBuildInputs = [
     python3
     getopt
+    bash
   ];
 
   propagatedBuildInputs = [
@@ -52,8 +53,6 @@ python3Packages.buildPythonPackage rec{
   postPatch = ''
     patchShebangs --build fanctrl.py
     patchShebangs --build install.sh
-    substituteInPlace fanctrl.py --replace "/bin/bash" "${bash}/bin/bash"
-    cat fanctrl.py
   '';
 
   installPhase = ''

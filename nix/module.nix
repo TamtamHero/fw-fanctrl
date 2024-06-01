@@ -1,4 +1,4 @@
-{ options, config, lib, pkgs, ... }:
+{ options, config, lib, pkgs, stdenv, ... }:
 
 with lib;
 with lib.types;
@@ -109,7 +109,10 @@ in
     };
 
     # Create suspend config
-    environment.etc."systemd/system-sleep/fw-fanctrl-suspend.sh".source =
-        pkgs.writeShellScript "fw-fanctrl-suspend.sh" (builtins.replaceStrings [ "#!/bin/sh" ''/usr/bin/python3 "%PREFIX_DIRECTORY%/bin/fw-fanctrl'' ] [ "" "${fw-fanctrl}/bin/fw-fanctrl" ] (builtins.readFile ../services/system-sleep/fw-fanctrl-suspend));
+    environment.etc."systemd/system-sleep/fw-fanctrl-suspend.sh".source = pkgs.writeShellScript "fw-fanctrl-suspend" (
+      builtins.replaceStrings [ ''/usr/bin/python3 "%PREFIX_DIRECTORY%/bin/fw-fanctrl"'' "/bin/bash" ] [ "${fw-fanctrl}/bin/fw-fanctrl" "" ] (
+        builtins.readFile ../services/system-sleep/fw-fanctrl-suspend
+      )
+    );
   };
 }
