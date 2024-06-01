@@ -56,7 +56,7 @@ python3Packages.buildPythonPackage rec{
   '';
 
   installPhase = ''
-    ./install.sh --dest-dir $out --prefix-dir "" --no-ectool --no-post-install 
+    ./install.sh --dest-dir $out --prefix-dir "" --no-ectool --no-post-install --no-sudo
     rm -rf $out/etc
     rm -rf $out/lib
   '';

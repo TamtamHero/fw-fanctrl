@@ -1,12 +1,6 @@
 #!/bin/bash
 set -e
 
-echo $(whoami)
-
-if [ "$EUID" -ne 0 ] && [ $(whoami) != "nixbld" ]
-  then echo "This program requires root permissions"
-  exit 1
-fi
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
@@ -22,6 +16,7 @@ SYSCONF_DIR="/etc"
 SHOULD_INSTALL_ECTOOL=true
 SHOULD_POST_INSTALL=true
 SHOULD_REMOVE=false
+NO_SUDO=false
 
 eval set -- "$VALID_ARGS"
 while true; do
@@ -47,6 +42,8 @@ while true; do
     '--no-post-install')
         SHOULD_POST_INSTALL=false
         ;;
+    '--no-sudo')
+        NO_SUDO=true
     '--help' | '-h')
         echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install]" 1>&2
         exit 0
@@ -57,7 +54,12 @@ while true; do
   esac
   shift
 done
-#
+
+# Root check
+if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]
+  then echo "This program requires root permissions"
+  exit 1
+fi
 
 SERVICES_DIR="./services"
 SERVICE_EXTENSION=".service"
