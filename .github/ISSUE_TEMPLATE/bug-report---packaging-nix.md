@@ -3,7 +3,8 @@ name: Bug report | packaging/nix
 about: Report a bug involving the nix packaging
 title: "[BUG] [packaging/nix]"
 labels: bug, packaging/nix
-assignees: ''
+assignees:
+ - Svenum
 
 ---
 
