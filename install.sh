@@ -50,7 +50,7 @@ while true; do
         NO_SUDO=true
         ;;
     '--help' | '-h')
-        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall]" 1>&2
+        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo]" 1>&2
         exit 0
         ;;
     --)
@@ -91,7 +91,7 @@ function uninstall_legacy() {
 
 function uninstall() {
     if [ "$SHOULD_PRE_UNINSTALL" = true ]; then
-        ./pre-uninstall.sh
+        ./pre-uninstall.sh $( (( NO_SUDO == true )) && echo "--no-sudo" )
     fi
     # remove program services based on the services present in the './services' folder
     echo "removing services"
@@ -176,7 +176,7 @@ function install() {
         done
     done
     if [ "$SHOULD_POST_INSTALL" = true ]; then
-        ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR"
+      ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR" $( (( NO_SUDO == true )) && echo "--no-sudo" )
     fi
 }
 

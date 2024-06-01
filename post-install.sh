@@ -1,16 +1,12 @@
 #!/bin/bash
 set -e
 
-if [ "$EUID" -ne 0 ]
-  then echo "This program requires root permissions"
-  exit 1
-fi
-
 HOME_DIR="$(eval echo "~$(logname)")"
 
 # Argument parsing
+NO_SUDO=false
 SHORT=d:,s:,h
-LONG=dest-dir:,sysconf-dir:,help
+LONG=dest-dir:,sysconf-dir:,no-sudo,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -30,8 +26,11 @@ while true; do
         SYSCONF_DIR=$2
         shift
         ;;
+    '--no-sudo')
+        NO_SUDO=true
+        ;;
     '--help' | '-h')
-        echo "Usage: $0 [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)]" 1>&2
+        echo "Usage: $0 [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-sudo]" 1>&2
         exit 0
         ;;
     --)
@@ -40,7 +39,12 @@ while true; do
   esac
   shift
 done
-#
+
+# Root check
+if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]
+  then echo "This program requires root permissions"
+  exit 1
+fi
 
 SERVICES_DIR="./services"
 SERVICE_EXTENSION=".service"
