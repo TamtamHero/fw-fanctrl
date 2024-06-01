@@ -1,5 +1,5 @@
 {
-  description = "A software to control the Framework fan speed";
+  description = "A simple systemd service to better control Framework Laptop's fan(s)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
