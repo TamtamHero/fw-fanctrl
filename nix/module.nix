@@ -110,6 +110,6 @@ in
 
     # Create suspend config
     environment.etc."systemd/system-sleep/fw-fanctrl-suspend.sh".source =
-        pkgs.writeShellScript "fw-fanctrl-suspend.sh" (builtins.readFile ../services/system-sleep/fw-fanctrl-suspend);
+        pkgs.writeShellScript "fw-fanctrl-suspend.sh" (builtins.replaceStrings [ "#!/bin/sh" ''/usr/bin/python3 "%PREFIX_DIRECTORY%/bin/fw-fanctrl'' ] [ "" "${fw-fanctrl}/bin/fw-fanctrl" ] (builtins.readFile ../services/system-sleep/fw-fanctrl-suspend));
   };
 }
