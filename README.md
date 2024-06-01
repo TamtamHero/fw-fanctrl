@@ -63,6 +63,7 @@ programs.fw-fanctrl.config.defaultStrategy = "medium";
 
 Non NixOS install is described [here](https://github.com/TamtamHero/fw-fanctrl/blob/main/README.md#Install)
 
+
 # Configuration
 
 The default config contains different strategies, ranked from the most silent to the noisiest. It is possible to specify two different strategies for charging/discharging allowing for different optimization goals.

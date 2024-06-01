@@ -9,29 +9,18 @@ fi
 HOME_DIR="$(eval echo "~$(logname)")"
 
 # Argument parsing
-SHORT=d:,s:,h
-LONG=dest-dir:,sysconf-dir:,help
+SHORT=h
+LONG=help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi
 
-DEST_DIR="/usr"
-SYSCONF_DIR="/etc"
-
 eval set -- "$VALID_ARGS"
 while true; do
   case "$1" in
-    '--dest-dir' | '-d')
-        DEST_DIR=$2
-        shift
-        ;;
-    '--sysconf-dir' | '-s')
-        SYSCONF_DIR=$2
-        shift
-        ;;
     '--help' | '-h')
-        echo "Usage: $0 [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)]" 1>&2
+        echo "Usage: $0" 1>&2
         exit 0
         ;;
     --)
@@ -55,20 +44,12 @@ function sanitizePath() {
     echo "$SANITIZED_PATH"
 }
 
-# move remaining legacy files
-function move_legacy() {
-    echo "moving legacy files to their new destination"
-    (cp "$HOME_DIR/.config/fw-fanctrl"/* "$DEST_DIR$SYSCONF_DIR/fw-fanctrl/" && rm -rf "$HOME_DIR/.config/fw-fanctrl") 2> "/dev/null" || true
-}
-
-move_legacy
-
-echo "enabling services"
+echo "disabling services"
 systemctl daemon-reload
 for SERVICE in $SERVICES ; do
     SERVICE=$(sanitizePath "$SERVICE")
-    echo "enabling [$SERVICE]"
-    systemctl enable "$SERVICE"
-    echo "starting [$SERVICE]"
-    systemctl start "$SERVICE"
+    echo "stopping [$SERVICE]"
+    systemctl stop "$SERVICE" 2> "/dev/null" || true
+    echo "disabling [$SERVICE]"
+    systemctl disable "$SERVICE" 2> "/dev/null" || true
 done
