@@ -110,6 +110,6 @@ in
 
     # Create suspend config
     environment.etc."systemd/system-sleep/fw-fanctrl-suspend.sh".source =
-        pkgs.writeShellScript "fw-fanctrl-suspend.sh" (builtins.replaceStrings [ "runuser" "logname" "fw-fanctrl" ] [ "${pkgs.util-linux}/bin/runuser" "${pkgs.coreutils}/bin/logname" "${fw-fanctrl}/bin/fw-fanctrl" ] (builtins.readFile ../services/system-sleep/fw-fanctrl-suspend));
+        pkgs.writeShellScript "fw-fanctrl-suspend.sh" (builtins.readFile ../services/system-sleep/fw-fanctrl-suspend);
   };
 }
