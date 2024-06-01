@@ -3,8 +3,7 @@ name: Bug report | packaging/nix
 about: Report a bug involving the nix packaging
 title: "[BUG] [packaging/nix]"
 labels: bug, packaging/nix
-assignees:
- - Svenum
+assignees: ''
 
 ---
 
@@ -37,3 +36,6 @@ If applicable, add the full error message.
 
 **Additional context**
 Add any other context about the problem here.
+
+**Assigned maintainers**
+- @Svenum
