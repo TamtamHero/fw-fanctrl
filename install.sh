@@ -10,7 +10,7 @@ fi
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-post-install,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -20,6 +20,7 @@ PREFIX_DIR="/usr"
 DEST_DIR=""
 SYSCONF_DIR="/etc"
 SHOULD_INSTALL_ECTOOL=true
+SHOULD_PRE_UNINSTALL=true
 SHOULD_POST_INSTALL=true
 SHOULD_REMOVE=false
 
@@ -44,11 +45,14 @@ while true; do
     '--no-ectool')
         SHOULD_INSTALL_ECTOOL=false
         ;;
+    '--no-pre-uninstall')
+        SHOULD_PRE_UNINSTALL=false
+        ;;
     '--no-post-install')
         SHOULD_POST_INSTALL=false
         ;;
     '--help' | '-h')
-        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install]" 1>&2
+        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall]" 1>&2
         exit 0
         ;;
     --)
@@ -83,16 +87,14 @@ function uninstall_legacy() {
 }
 
 function uninstall() {
+    if [ "$SHOULD_PRE_UNINSTALL" = true ]; then
+        ./pre-uninstall.sh
+    fi
     # remove program services based on the services present in the './services' folder
     echo "removing services"
-    systemctl daemon-reload
     for SERVICE in $SERVICES ; do
-        # be EXTRA CAREFUL about the validity of the paths (dont wanna delete something important, right?... O_O)
         SERVICE=$(sanitizePath "$SERVICE")
-        echo "stopping [$SERVICE]"
-        systemctl stop "$SERVICE" 2> "/dev/null" || true
-        echo "disabling [$SERVICE]"
-        systemctl disable "$SERVICE" 2> "/dev/null" || true
+        # be EXTRA CAREFUL about the validity of the paths (dont wanna delete something important, right?... O_O)
         rm -rf "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION"
     done
 
@@ -140,7 +142,7 @@ function install() {
     echo "creating services"
     for SERVICE in $SERVICES ; do
         SERVICE=$(sanitizePath "$SERVICE")
-        if [ "$(systemctl is-active "$SERVICE")" == "active" ]; then
+        if [ "$SHOULD_PRE_UNINSTALL" = true ] && [ "$(systemctl is-active "$SERVICE")" == "active" ]; then
             echo "stopping [$SERVICE]"
             systemctl stop "$SERVICE"
         fi
@@ -171,7 +173,7 @@ function install() {
         done
     done
     if [ "$SHOULD_POST_INSTALL" = true ]; then
-        sh "./post-install.sh" --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR"
+        ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR"
     fi
 }
 
