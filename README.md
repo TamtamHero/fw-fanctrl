@@ -100,9 +100,9 @@ For NixOS this repo contains an Flake. You could add it to your config like this
 ```nix
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
     fw-fanctrl = {
-      url = "github:TamtamHero/fw-fanctrl/main; # This is NOT a stable tested version
+      url = "github:TamtamHero/fw-fanctrl/packaging/nix;
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
