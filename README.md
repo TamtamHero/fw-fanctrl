@@ -30,6 +30,7 @@ this script also includes options to:
 - specify an installation destination directory (`--dest-dir <installation destination directory (defaults to /)>`).
 - specify an installation prefix directory (`--prefix-dir <installation prefix directory (defaults to /usr)>`).
 - specify a default configuration directory (`--sysconf-dir <system configuration destination directory (defaults to /etc)>`).
+- if you're using OpenRC instead of systemd use (`--openrc`).
 - disable ectool installation and service activation (`--no-ectool`)
 - disable post-install process (`--no-post-install`)
 - disable pre-uninstall process (`--no-pre-uninstall`)
