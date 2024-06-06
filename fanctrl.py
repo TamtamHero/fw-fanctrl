@@ -49,7 +49,11 @@ class Configuration:
 
     def reload(self):
         with open(self.path, "r") as fp:
-            self.data = json.load(fp)
+            try:
+                self.data = json.load(fp)
+            except json.JSONDecodeError:
+                return False
+        return True
 
     def getStrategies(self):
         return self.data["strategies"].keys()
@@ -161,10 +165,12 @@ class FanController:
                     if args.list_strategies:
                         client_socket.sendall('\n'.join(self.configuration.getStrategies()).encode())
                     if args.reload:
-                        self.configuration.reload()
-                        if self.overwrittenStrategy is not None:
-                            self.overwriteStrategy(self.overwrittenStrategy.name)
-                        client_socket.sendall("Success".encode())
+                        if self.configuration.reload():
+                            if self.overwrittenStrategy is not None:
+                                self.overwriteStrategy(self.overwrittenStrategy.name)
+                            client_socket.sendall("Success".encode())
+                        else:
+                            client_socket.sendall("Error: Config file could not be parsed due to JSON Error".encode())
                 except:
                     pass
                 finally:
