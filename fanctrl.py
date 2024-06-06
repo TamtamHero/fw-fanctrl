@@ -77,6 +77,10 @@ class Configuration:
             return "kmod"
         return "ectool"
 
+    def getUseGPU(self):
+        if self.data["useGPU"].lower() in ["yes", "y", "true", "t", "1"]:
+            return True
+        return False
 
 class FanController:
     mode = "ectool"
@@ -90,7 +94,7 @@ class FanController:
     def __init__(self, configPath, strategyName):
         self.configuration = Configuration(configPath)
         self.mode = self.configuration.getMode()
-        if self.mode == "kmod" and not self._init_kmod():
+        if self.mode == "kmod" and not self._init_sysfs():
             self.mode = "ectool"  # Revert to using ectool as default
 
         if strategyName is not None and strategyName != "":
@@ -100,14 +104,14 @@ class FanController:
         t.daemon = True
         t.start()
 
-    def _init_kmod(self):
+    def _init_sysfs(self):
         fan_ctrl_base_dir = Path('/sys/class/hwmon')
         if not fan_ctrl_base_dir.exists() or not fan_ctrl_base_dir.is_dir():
             return False
-        self.kmod_get_fanspeed_files = []
-        self.kmod_set_fanspeed_files = []
-        self.kmod_reset_to_auto_files = []
-        self.kmod_get_temp = []
+        self.sysfs_get_fanspeed_files = []
+        self.sysfs_set_fanspeed_files = []
+        self.sysfs_reset_to_auto_files = []
+        self.sysfs_get_temp = []
         for hwmon_interface in fan_ctrl_base_dir.iterdir():
             name_file = hwmon_interface / "name"
             with name_file.open("r") as name_fp:
@@ -115,25 +119,29 @@ class FanController:
             if device_name == "framework_laptop":
                 for file in hwmon_interface.iterdir():
                     if file.name.startswith("fan") and file.name.endswith("_target"):
-                        self.kmod_get_fanspeed_files.append(file)
+                        self.sysfs_get_fanspeed_files.append(file)
                     if file.name.startswith("pwm"):
                         if file.name[3:].isdecimal():
-                            self.kmod_set_fanspeed_files.append(file)
+                            self.sysfs_set_fanspeed_files.append(file)
                         elif file.name.endswith("_enable"):
-                            self.kmod_reset_to_auto_files.append(file)
+                            self.sysfs_reset_to_auto_files.append(file)
             elif device_name == "acpitz":
                 for file in hwmon_interface.iterdir():
                     if file.name.startswith("temp") and file.name.endswith("_input"):
-                        self.kmod_get_temp.append(file)
-        if len(self.kmod_get_fanspeed_files) > 0 and len(self.kmod_set_fanspeed_files) > 0 \
-                and len(self.kmod_reset_to_auto_files) > 0 and len(self.kmod_get_temp) > 0:
+                        self.sysfs_get_temp.append(file)
+            elif self.configuration.getUseGPU() and device_name == "amdgpu":
+                for file in hwmon_interface.iterdir():
+                    if file.name.startswith("temp") and file.name.endswith("_input"):
+                        self.sysfs_get_temp.append(file)
+        if len(self.sysfs_get_fanspeed_files) > 0 and len(self.sysfs_set_fanspeed_files) > 0 \
+                and len(self.sysfs_reset_to_auto_files) > 0 and len(self.sysfs_get_temp) > 0:
             return True
         return False
 
     def pause(self):
         self.active = False
         if self.mode == "kmod":
-            for file in self.kmod_reset_to_auto_files:
+            for file in self.sysfs_reset_to_auto_files:
                 with file.open("w") as fp:
                     fp.write("2\n")
         else:
@@ -221,7 +229,7 @@ class FanController:
     def setSpeed(self, speed):
         self.speed = speed
         if self.mode == "kmod":
-            for file in self.kmod_set_fanspeed_files:
+            for file in self.sysfs_set_fanspeed_files:
                 with file.open("w") as fp:
                     fp.write(f"{speed}\n")
         else:
@@ -231,7 +239,7 @@ class FanController:
     def getActualTemperature(self):
         if self.mode == "kmod":
             rawTemps = []
-            for file in self.kmod_get_temp:
+            for file in self.sysfs_get_temp:
                 with file.open("r") as fp:
                     rawTemps.append(float(fp.read()) / 1000.0)
         else:
