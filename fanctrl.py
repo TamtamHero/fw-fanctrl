@@ -10,6 +10,7 @@ import subprocess
 import sys
 import threading
 from time import sleep
+from pathlib import Path
 
 DEFAULT_CONFIGURATION_FILE_PATH = "/etc/fw-fanctrl/config.json"
 SOCKETS_FOLDER_PATH = "/run/fw-fanctrl"
@@ -71,8 +72,14 @@ class Configuration:
     def getDischargingStrategy(self):
         return self.getStrategy("strategyOnDischarging")
 
+    def getMode(self):
+        if self.data["mode"].lower() == "kmod":
+            return "kmod"
+        return "ectool"
+
 
 class FanController:
+    mode = "ectool"
     configuration = None
     overwrittenStrategy = None
     speed = 0
@@ -82,6 +89,9 @@ class FanController:
 
     def __init__(self, configPath, strategyName):
         self.configuration = Configuration(configPath)
+        self.mode = self.configuration.getMode()
+        if self.mode == "kmod" and not self._init_kmod():
+            self.mode = "ectool"  # Revert to using ectool as default
 
         if strategyName is not None and strategyName != "":
             self.overwriteStrategy(strategyName)
@@ -90,10 +100,45 @@ class FanController:
         t.daemon = True
         t.start()
 
+    def _init_kmod(self):
+        fan_ctrl_base_dir = Path('/sys/class/hwmon')
+        if not fan_ctrl_base_dir.exists() or not fan_ctrl_base_dir.is_dir():
+            return False
+        self.kmod_get_fanspeed_files = []
+        self.kmod_set_fanspeed_files = []
+        self.kmod_reset_to_auto_files = []
+        self.kmod_get_temp = []
+        for hwmon_interface in fan_ctrl_base_dir.iterdir():
+            name_file = hwmon_interface / "name"
+            with name_file.open("r") as name_fp:
+                device_name = name_fp.read().strip()
+            if device_name == "framework_laptop":
+                for file in hwmon_interface.iterdir():
+                    if file.name.startswith("fan") and file.name.endswith("_target"):
+                        self.kmod_get_fanspeed_files.append(file)
+                    if file.name.startswith("pwm"):
+                        if file.name[3:].isdecimal():
+                            self.kmod_set_fanspeed_files.append(file)
+                        elif file.name.endswith("_enable"):
+                            self.kmod_reset_to_auto_files.append(file)
+            elif device_name == "acpitz":
+                for file in hwmon_interface.iterdir():
+                    if file.name.startswith("temp") and file.name.endswith("_input"):
+                        self.kmod_get_temp.append(file)
+        if len(self.kmod_get_fanspeed_files) > 0 and len(self.kmod_set_fanspeed_files) > 0 \
+                and len(self.kmod_reset_to_auto_files) > 0 and len(self.kmod_get_temp) > 0:
+            return True
+        return False
+
     def pause(self):
         self.active = False
-        bashCommand = f"ectool autofanctrl"
-        subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True)
+        if self.mode == "kmod":
+            for file in self.kmod_reset_to_auto_files:
+                with file.open("w") as fp:
+                    fp.write("2\n")
+        else:
+            bashCommand = f"ectool autofanctrl"
+            subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True)
 
     def resume(self):
         self.active = True
@@ -175,13 +220,24 @@ class FanController:
 
     def setSpeed(self, speed):
         self.speed = speed
-        bashCommand = f"ectool fanduty {speed}"
-        subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True)
+        if self.mode == "kmod":
+            for file in self.kmod_set_fanspeed_files:
+                with file.open("w") as fp:
+                    fp.write(f"{speed}\n")
+        else:
+            bashCommand = f"ectool fanduty {speed}"
+            subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True)
 
     def getActualTemperature(self):
-        bashCommand = "ectool temps all"
-        rawOut = subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True, text=True).stdout
-        rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
+        if self.mode == "kmod":
+            rawTemps = []
+            for file in self.kmod_get_temp:
+                with file.open("r") as fp:
+                    rawTemps.append(float(fp.read()) / 1000.0)
+        else:
+            bashCommand = "ectool temps all"
+            rawOut = subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True, text=True).stdout
+            rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
         temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
 
         # safety fallback to avoid damaging hardware
