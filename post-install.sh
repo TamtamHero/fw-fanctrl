@@ -10,7 +10,7 @@ HOME_DIR="$(eval echo "~$(logname)")"
 
 # Argument parsing
 SHORT=d:,s:,h
-LONG=dest-dir:,sysconf-dir:,help
+LONG=dest-dir:,sysconf-dir:,openrc,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -18,6 +18,8 @@ fi
 
 DEST_DIR="/usr"
 SYSCONF_DIR="/etc"
+INIT_SYSTEM="systemd"
+
 
 eval set -- "$VALID_ARGS"
 while true; do
@@ -30,8 +32,11 @@ while true; do
         SYSCONF_DIR=$2
         shift
         ;;
+   '--openrc')
+        INIT_SYSTEM="openrc"
+        ;;
     '--help' | '-h')
-        echo "Usage: $0 [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)]" 1>&2
+        echo "Usage: $0 [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--openrc]" 1>&2
         exit 0
         ;;
     --)
@@ -41,11 +46,6 @@ while true; do
   shift
 done
 #
-
-SERVICES_DIR="./services"
-SERVICE_EXTENSION=".service"
-
-SERVICES="$(cd "$SERVICES_DIR" && find . -maxdepth 1 -maxdepth 1 -type f -name "*$SERVICE_EXTENSION" -exec basename {} "$SERVICE_EXTENSION" \;)"
 
 function sanitizePath() {
     local SANITIZED_PATH="$1"
@@ -64,11 +64,23 @@ function move_legacy() {
 move_legacy
 
 echo "enabling services"
-systemctl daemon-reload
-for SERVICE in $SERVICES ; do
-    SERVICE=$(sanitizePath "$SERVICE")
-    echo "enabling [$SERVICE]"
-    systemctl enable "$SERVICE"
-    echo "starting [$SERVICE]"
-    systemctl start "$SERVICE"
-done
+if [ "${INIT_SYSTEM}"  = "systemd" ]; then
+    SERVICES_DIR="./services"
+    SERVICE_EXTENSION=".service"
+
+    SERVICES="$(cd "$SERVICES_DIR" && find . -maxdepth 1 -maxdepth 1 -type f -name "*$SERVICE_EXTENSION" -exec basename {} "$SERVICE_EXTENSION" \;)"
+
+    systemctl daemon-reload
+    for SERVICE in $SERVICES ; do
+        SERVICE=$(sanitizePath "$SERVICE")
+        echo "enabling [$SERVICE]"
+        systemctl enable "$SERVICE"
+        echo "starting [$SERVICE]"
+        systemctl start "$SERVICE"
+    done
+elif [ "${INIT_SYSTEM}" = "openrc" ]; then
+    echo "enabling fw-fanctrl"
+    rc-update add fw-fanctrl default
+    echo "starting fw-fanctrl"
+    rc-service fw-fanctrl start
+fi

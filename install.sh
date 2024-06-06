@@ -8,7 +8,7 @@ fi
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,openrc,no-ectool,no-pre-uninstall,no-post-install,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -21,6 +21,7 @@ SHOULD_INSTALL_ECTOOL=true
 SHOULD_PRE_UNINSTALL=true
 SHOULD_POST_INSTALL=true
 SHOULD_REMOVE=false
+INIT_SYSTEM="systemd"
 
 eval set -- "$VALID_ARGS"
 while true; do
@@ -40,6 +41,9 @@ while true; do
         SYSCONF_DIR=$2
         shift
         ;;
+    '--openrc')
+        INIT_SYSTEM="openrc"
+        ;;
     '--no-ectool')
         SHOULD_INSTALL_ECTOOL=false
         ;;
@@ -50,7 +54,7 @@ while true; do
         SHOULD_POST_INSTALL=false
         ;;
     '--help' | '-h')
-        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall]" 1>&2
+        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--openrc] [--no-ectool] [--no-post-install] [--no-pre-uninstall]" 1>&2
         exit 0
         ;;
     --)
@@ -61,11 +65,17 @@ while true; do
 done
 #
 
-SERVICES_DIR="./services"
-SERVICE_EXTENSION=".service"
+if [ "${INIT_SYSTEM}"  = "systemd" ]; then
+    SERVICES_DIR="./services"
+    SERVICE_EXTENSION=".service"
 
-SERVICES="$(cd "$SERVICES_DIR" && find . -maxdepth 1 -maxdepth 1 -type f -name "*$SERVICE_EXTENSION" -exec basename {} "$SERVICE_EXTENSION" \;)"
-SERVICES_SUBCONFIGS="$(cd "$SERVICES_DIR" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
+    SERVICES="$(cd "$SERVICES_DIR" && find . -maxdepth 1 -maxdepth 1 -type f -name "*$SERVICE_EXTENSION" -exec basename {} "$SERVICE_EXTENSION" \;)"
+    SERVICES_SUBCONFIGS="$(cd "$SERVICES_DIR" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
+elif [ "${INIT_SYSTEM}" = "openrc" ]; then
+    rc-service -e fw-fanctrl
+    SERVICE_EXISTS=$?
+    RC_STATUS="$(rc-status -f ini | awk -F '=' '/fw-fanctrl/ {print $2}' | xargs)"
+fi
 
 function sanitizePath() {
     local SANITIZED_PATH="$1"
@@ -134,42 +144,64 @@ function install() {
 
     cp -n "./config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
 
-    # create program services based on the services present in the './services' folder
-    echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/system'"
-    mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/system"
-    echo "creating services"
-    for SERVICE in $SERVICES ; do
-        SERVICE=$(sanitizePath "$SERVICE")
-        if [ "$SHOULD_PRE_UNINSTALL" = true ] && [ "$(systemctl is-active "$SERVICE")" == "active" ]; then
-            echo "stopping [$SERVICE]"
-            systemctl stop "$SERVICE"
-        fi
-        echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION'"
-        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
-    done
+    if [ "${INIT_SYSTEM}"  = "systemd" ]; then
+        # create program services based on the services present in the './services' folder
+        echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/system'"
+        mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/system"
+        echo "creating services"
+        for SERVICE in $SERVICES ; do
+            SERVICE=$(sanitizePath "$SERVICE")
+            if [ "$SHOULD_PRE_UNINSTALL" = true ] && [ "$(systemctl is-active "$SERVICE")" == "active" ]; then
+                echo "stopping [$SERVICE]"
+                systemctl stop "$SERVICE"
+            fi
+            echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION'"
+            cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
+        done
 
-    # add program services sub-configurations based on the sub-configurations present in the './services' folder
-    echo "adding services sub-configurations"
-    for SERVICE in $SERVICES_SUBCONFIGS ; do
-        SERVICE=$(sanitizePath "$SERVICE")
-        echo "adding sub-configurations for [$SERVICE]"
-        SUBCONFIG_FOLDERS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
-        # ensure folders exists
-        mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE"
-        for SUBCONFIG_FOLDER in $SUBCONFIG_FOLDERS ; do
-            SUBCONFIG_FOLDER=$(sanitizePath "$SUBCONFIG_FOLDER")
-            echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER'"
-            mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER"
+        # add program services sub-configurations based on the sub-configurations present in the './services' folder
+        echo "adding services sub-configurations"
+        for SERVICE in $SERVICES_SUBCONFIGS ; do
+            SERVICE=$(sanitizePath "$SERVICE")
+            echo "adding sub-configurations for [$SERVICE]"
+            SUBCONFIG_FOLDERS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
+            # ensure folders exists
+            mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE"
+            for SUBCONFIG_FOLDER in $SUBCONFIG_FOLDERS ; do
+                SUBCONFIG_FOLDER=$(sanitizePath "$SUBCONFIG_FOLDER")
+                echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER'"
+                mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER"
+            done
+            SUBCONFIGS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -type f)"
+            # add sub-configurations
+            for SUBCONFIG in $SUBCONFIGS ; do
+                SUBCONFIG=$(sanitizePath "$SUBCONFIG")
+                echo "adding '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
+                cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
+                chmod +x "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG"
+            done
         done
-        SUBCONFIGS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -type f)"
-        # add sub-configurations
-        for SUBCONFIG in $SUBCONFIGS ; do
-            SUBCONFIG=$(sanitizePath "$SUBCONFIG")
-            echo "adding '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
-            cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
-            chmod +x "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG"
-        done
-    done
+    elif [ "${INIT_SYSTEM}" = "openrc" ]; then
+        if ${SERVICE_EXISTS}; then
+            if [ "${RC_STATUS}" = "started" ]; then
+                echo "service is already running, stopping"
+                rc-service -s fw-fanctrl stop
+            fi
+        fi
+
+        echo "creating init.d file"
+        INIT_D_DIR="${DEST_DIR}${SYSCONF_DIR}/init.d"
+        CONF_D_DIR="${DEST_DIR}${SYSCONF_DIR}/conf.d"
+        mkdir -p "${INIT_D_DIR}"
+        cp "OpenRC/init.d/fw-fanctrl" "${INIT_D_DIR}"
+
+        echo "creating conf.d file"
+        mkdir -p "${CONF_D_DIR}"
+        sed -e "s/%DEST_DIRECTORY%/${DEST_DIR//\//\\/}/" "OpenRC/conf.d/fw-fanctrl" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | tee "${CONF_D_DIR}/fw-fanctrl"
+        cp "OpenRC/conf.d/fw-fanctrl" "${CONF_D_DIR}"
+
+    fi
+
     if [ "$SHOULD_POST_INSTALL" = true ]; then
         ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR"
     fi
