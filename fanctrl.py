@@ -16,7 +16,43 @@ DEFAULT_CONFIGURATION_FILE_PATH = "/etc/fw-fanctrl/config.json"
 SOCKETS_FOLDER_PATH = "/run/fw-fanctrl"
 COMMANDS_SOCKET_FILE_PATH = os.path.join(SOCKETS_FOLDER_PATH, ".fw-fanctrl.commands.sock")
 
-parser = None
+parser = argparse.ArgumentParser(
+    description="Control Framework's laptop fan with a speed curve",
+)
+
+bothGroup = parser.add_argument_group("both")
+bothGroup.add_argument(
+    "_strategy",
+    nargs="?",
+    help='Name of the strategy to use e.g: "lazy" (check config.json for others). '
+         'Use "defaultStrategy" to go back to the default strategy',
+)
+bothGroup.add_argument(
+    "--strategy",
+    nargs="?",
+    help='Name of the strategy to use e.g: "lazy" (check config.json for others). '
+         'Use "defaultStrategy" to go back to the default strategy',
+)
+
+runGroup = parser.add_argument_group("run")
+runGroup.add_argument("--run", help="run the service", action="store_true")
+runGroup.add_argument("--config", type=str, help="Path to config file",
+                      default=DEFAULT_CONFIGURATION_FILE_PATH)
+runGroup.add_argument(
+    "--no-log", help="Disable print speed/meanTemp to stdout", action="store_true"
+)
+commandGroup = parser.add_argument_group("configure")
+commandGroup.add_argument(
+    "--query", "-q", help="Query the currently active strategy", action="store_true"
+)
+commandGroup.add_argument(
+    "--list-strategies", "-l", help="List the available strategies", action="store_true"
+)
+commandGroup.add_argument(
+    "--reload", "-r", help="Reload the configuration from file", action="store_true"
+)
+commandGroup.add_argument("--pause", help="Pause the program", action="store_true")
+commandGroup.add_argument("--resume", help="Resume the program", action="store_true")
 
 
 class InvalidStrategyException(Exception):
@@ -318,42 +354,6 @@ class FanController:
 
 
 def main():
-    global parser
-    parser = argparse.ArgumentParser(
-        description="Control Framework's laptop fan with a speed curve",
-    )
-
-    bothGroup = parser.add_argument_group("both")
-    bothGroup.add_argument(
-        "_strategy",
-        nargs="?",
-        help='Name of the strategy to use e.g: "lazy" (check config.json for others). Use "defaultStrategy" to go back to the default strategy',
-    )
-    bothGroup.add_argument(
-        "--strategy",
-        nargs="?",
-        help='Name of the strategy to use e.g: "lazy" (check config.json for others). Use "defaultStrategy" to go back to the default strategy',
-    )
-
-    runGroup = parser.add_argument_group("run")
-    runGroup.add_argument("--run", help="run the service", action="store_true")
-    runGroup.add_argument("--config", type=str, help="Path to config file", default=DEFAULT_CONFIGURATION_FILE_PATH)
-    runGroup.add_argument(
-        "--no-log", help="Disable print speed/meanTemp to stdout", action="store_true"
-    )
-    commandGroup = parser.add_argument_group("configure")
-    commandGroup.add_argument(
-        "--query", "-q", help="Query the currently active strategy", action="store_true"
-    )
-    commandGroup.add_argument(
-        "--list-strategies", help="List the available strategies", action="store_true"
-    )
-    commandGroup.add_argument(
-        "--reload", "-r", help="Reload the configuration from file", action="store_true"
-    )
-    commandGroup.add_argument("--pause", help="Pause the program", action="store_true")
-    commandGroup.add_argument("--resume", help="Resume the program", action="store_true")
-
     args = parser.parse_args()
 
     if args.run:
