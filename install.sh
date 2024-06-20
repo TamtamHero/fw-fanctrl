@@ -14,6 +14,9 @@ if [[ $? -ne 0 ]]; then
     exit 1;
 fi
 
+TEMP_FOLDER='./.temp'
+trap 'rm -rf $TEMP_FOLDER' EXIT
+
 PREFIX_DIR="/usr"
 DEST_DIR=""
 SYSCONF_DIR="/etc"
@@ -123,9 +126,12 @@ function uninstall() {
 function install() {
     uninstall_legacy
 
+    rm -rf "$TEMP_FOLDER"
     mkdir -p "$DEST_DIR$PREFIX_DIR/bin"
     if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
-        installEctool || (echo "failed to download and install ectool. please check your internet connection or consider installing it manually and using --no-ectool on the installation script." && exit 1)
+        mkdir "$TEMP_FOLDER"
+        installEctool "$TEMP_FOLDER" || (echo "an error occurred when installing ectool." && echo "please check your internet connection or consider installing it manually and using --no-ectool on the installation script." && exit 1)
+        rm -rf "$TEMP_FOLDER"
     fi
     mkdir -p "$DEST_DIR$SYSCONF_DIR/fw-fanctrl"
     cp "./fanctrl.py" "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
@@ -175,33 +181,34 @@ function install() {
 }
 
 function installEctool() {
+    workingDirectory=$1
     echo "installing ectool"
 
-    TEMP_FOLDER='./.temp'
-    rm -rf "$TEMP_FOLDER"
-    mkdir "$TEMP_FOLDER"
+    ectoolDestPath="$DEST_DIR$PREFIX_DIR/bin/ectool"
 
     ectoolJobId="$(cat './fetch/ectool/linux/gitlab_job_id')"
     ectoolSha256Hash="$(cat './fetch/ectool/linux/hash.sha256')"
 
-    artifactsZipFile="$TEMP_FOLDER/artifact.zip"
+    artifactsZipFile="$workingDirectory/artifact.zip"
 
     echo "downloading artifact from gitlab"
-    curl -s -o "$artifactsZipFile" -L "https://gitlab.howett.net/DHowett/ectool/-/jobs/${ectoolJobId}/artifacts/download?file_type=archive" || return 1
+    curl -s -S -o "$artifactsZipFile" -L "https://gitlab.howett.net/DHowett/ectool/-/jobs/${ectoolJobId}/artifacts/download?file_type=archive" || (echo "failed to download the artifact." && return 1)
+    if [[ $? -ne 0 ]]; then return 1; fi
 
     echo "checking artifact sha256 sum"
     actualEctoolSha256Hash=$(sha256sum "$artifactsZipFile" | cut -d ' ' -f 1)
     if [[ "$actualEctoolSha256Hash" != "$ectoolSha256Hash" ]]; then
-        echo "Incorrect sha256 sum for ectool gitlab artifact N°$ectoolJobId : $ectoolSha256Hash != $actualEctoolSha256Hash"
-        exit 1
+        echo "Incorrect sha256 sum for ectool gitlab artifact '$ectoolJobId' : '$ectoolSha256Hash' != '$actualEctoolSha256Hash'"
+        return 1
     fi
 
     echo "extracting artifact"
-    unzip -q -j "$artifactsZipFile" '_build/src/ectool' -d "$TEMP_FOLDER" || return 1
-
-    cp "$TEMP_FOLDER/ectool" "$DEST_DIR$PREFIX_DIR/bin/ectool" || return 1
-    chmod +x "$DEST_DIR$PREFIX_DIR/bin/ectool" || return 1
-    rm -rf "$TEMP_FOLDER"
+    {
+        unzip -q -j "$artifactsZipFile" '_build/src/ectool' -d "$workingDirectory" &&
+        cp "$workingDirectory/ectool" "$ectoolDestPath" &&
+        chmod +x "$ectoolDestPath"
+    } || (echo "failed to extract the artifact to its designated location." && return 1)
+    if [[ $? -ne 0 ]]; then return 1; fi
 
     echo "ectool installed"
 }
