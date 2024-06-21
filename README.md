@@ -12,8 +12,8 @@ It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs and w
 ## Dependancies
 
 To communicate with the embedded controller the `ectool` is required.
-You can either use the precompiled executable of `ectool` in this repo or
-disable its installation (`--no-ectool`) and add your own by recompiling it from [this repo](https://gitlab.howett.net/DHowett/ectool) and putting it in `[dest-dir(/)]/bin`.
+You can either let the script download it from the [gitlab repository](https://gitlab.howett.net/DHowett/ectool) artifacts, 
+or disable its installation (`--no-ectool`) and install your own.
 
 You also need to disable secure boot of your device for `ectool` to work (more details about why [here](https://www.howett.net/posts/2021-12-framework-ec/#using-fw-ectool))
 
@@ -23,7 +23,7 @@ sudo ./install.sh
 ```
 
 This bash script will to create and activate a service that runs this repo's main script, `fanctrl.py`.
-It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool` to `[dest-dir(/)]/bin` and create a config file
+It will copy `fanctrl.py` (to an executable file `fw-fanctrl`), download the ectool to `[dest-dir(/)]/bin` and create a config file
 in `[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`
 
 this script also includes options to:
