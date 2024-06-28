@@ -4,7 +4,8 @@ python3Packages,
 python3,
 bash,
 callPackage,
-getopt
+getopt,
+ectool
 }:
 
 let
@@ -45,7 +46,7 @@ python3Packages.buildPythonPackage rec{
   ];
 
   propagatedBuildInputs = [
-    (callPackage ./fw-ectool.nix {})
+    ectool
   ];
 
   doCheck = false;
