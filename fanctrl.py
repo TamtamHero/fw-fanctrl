@@ -9,16 +9,59 @@ import socket
 import subprocess
 import sys
 import threading
+from abc import ABC, abstractmethod
 from time import sleep
+from pathlib import Path
+from typing import Optional, Deque, List
 
 DEFAULT_CONFIGURATION_FILE_PATH = "/etc/fw-fanctrl/config.json"
 SOCKETS_FOLDER_PATH = "/run/fw-fanctrl"
 COMMANDS_SOCKET_FILE_PATH = os.path.join(SOCKETS_FOLDER_PATH, ".fw-fanctrl.commands.sock")
 
-parser = None
+parser = argparse.ArgumentParser(
+    description="Control Framework's laptop fan with a speed curve",
+)
+
+bothGroup = parser.add_argument_group("both")
+bothGroup.add_argument(
+    "_strategy",
+    nargs="?",
+    help='Name of the strategy to use e.g: "lazy" (check config.json for others). '
+         'Use "defaultStrategy" to go back to the default strategy',
+)
+bothGroup.add_argument(
+    "--strategy",
+    nargs="?",
+    help='Name of the strategy to use e.g: "lazy" (check config.json for others). '
+         'Use "defaultStrategy" to go back to the default strategy',
+)
+
+runGroup = parser.add_argument_group("run")
+runGroup.add_argument("--run", help="run the service", action="store_true")
+runGroup.add_argument("--config", type=str, help="Path to config file",
+                      default=DEFAULT_CONFIGURATION_FILE_PATH)
+runGroup.add_argument(
+    "--no-log", help="Disable print speed/meanTemp to stdout", action="store_true"
+)
+commandGroup = parser.add_argument_group("configure")
+commandGroup.add_argument(
+    "--query", "-q", help="Query the currently active strategy", action="store_true"
+)
+commandGroup.add_argument(
+    "--list-strategies", "-l", help="List the available strategies", action="store_true"
+)
+commandGroup.add_argument(
+    "--reload", "-r", help="Reload the configuration from file", action="store_true"
+)
+commandGroup.add_argument("--pause", help="Pause the program", action="store_true")
+commandGroup.add_argument("--resume", help="Resume the program", action="store_true")
 
 
 class InvalidStrategyException(Exception):
+    pass
+
+
+class KModNotWorkingException(Exception):
     pass
 
 
@@ -75,32 +118,27 @@ class Configuration:
     def getDischargingStrategy(self):
         return self.getStrategy("strategyOnDischarging")
 
+    def getMode(self):
+        if "mode" in self.data and self.data["mode"].lower() == "kmod":
+            return "kmod"
+        return "ectool"
 
-class FanController:
-    configuration = None
-    overwrittenStrategy = None
-    speed = 0
-    tempHistory = collections.deque([0] * 100, maxlen=100)
-    active = True
-    timecount = 0
+    def getUseGPU(self):
+        if "useGPU" in self.data and self.data["useGPU"].lower() in ["yes", "y", "true", "t", "1"]:
+            return True
+        return False
 
-    def __init__(self, configPath, strategyName):
-        self.configuration = Configuration(configPath)
 
-        if strategyName is not None and strategyName != "":
-            self.overwriteStrategy(strategyName)
+class FanController(ABC):
+    configuration: Configuration = None
+    overwrittenStrategy: Optional[Strategy] = None
+    speed: int = None
+    active: bool = True
+    timecount: int = 0
+    tempHistory: Deque = collections.deque([0] * 100, maxlen=100)
 
-        t = threading.Thread(target=self.bindSocket)
-        t.daemon = True
-        t.start()
-
-    def pause(self):
-        self.active = False
-        bashCommand = f"ectool autofanctrl"
-        subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True)
-
-    def resume(self):
-        self.active = True
+    def __init__(self, config: Configuration):
+        self.configuration = config
 
     def overwriteStrategy(self, strategyName):
         self.overwrittenStrategy = self.configuration.getStrategy(strategyName)
@@ -110,18 +148,20 @@ class FanController:
         self.overwrittenStrategy = None
         self.timecount = 0
 
-    def getCurrentStrategy(self):
-        if self.overwrittenStrategy is not None:
-            return self.overwrittenStrategy
-        if self.getBatteryChargingStatus():
-            return self.configuration.getDefaultStrategy()
-        return self.configuration.getDischargingStrategy()
+    @abstractmethod
+    def pause(self):
+        pass
 
-    def getBatteryChargingStatus(self):
-        bashCommand = "ectool battery"
-        rawOut = subprocess.run(bashCommand, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True,
-                                text=True).stdout
-        return len(re.findall(r'Flags.*(AC_PRESENT)', rawOut)) > 0
+    @abstractmethod
+    def setSpeed(self, speed: int) -> None:
+        pass
+
+    @abstractmethod
+    def getRawTemperatures(self) -> List[float]:
+        pass
+
+    def resume(self):
+        self.active = True
 
     def bindSocket(self):
         server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -179,22 +219,18 @@ class FanController:
         finally:
             server_socket.close()
 
-    def setSpeed(self, speed):
-        self.speed = speed
-        bashCommand = f"ectool fanduty {speed}"
-        subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True)
+    def getCurrentStrategy(self):
+        if self.overwrittenStrategy is not None:
+            return self.overwrittenStrategy
+        if self.getBatteryChargingStatus():
+            return self.configuration.getDefaultStrategy()
+        return self.configuration.getDischargingStrategy()
 
-    def getActualTemperature(self):
-        bashCommand = "ectool temps all"
-        rawOut = subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True, text=True).stdout
-        rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
-        temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
-
-        # safety fallback to avoid damaging hardware
-        if len(temps) == 0:
-            return 50
-
-        return round(temps[0], 1)
+    def getBatteryChargingStatus(self):
+        bashCommand = "ectool battery"
+        rawOut = subprocess.run(bashCommand, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True,
+                                text=True).stdout
+        return len(re.findall(r'Flags.*(AC_PRESENT)', rawOut)) > 0
 
     # return mean temperature over a given time interval (in seconds)
     def getMovingAverageTemperature(self, timeInterval):
@@ -233,7 +269,9 @@ class FanController:
         currentStrategy = self.getCurrentStrategy()
         currentTemperture = self.getActualTemperature()
         print(
-            f"speed: {self.speed}%, temp: {currentTemperture}°C, movingAverageTemp: {self.getMovingAverageTemperature(currentStrategy.movingAverageInterval)}°C, effectureTemp: {self.getEffectiveTemperature(currentTemperture, currentStrategy.movingAverageInterval)}°C"
+            f"speed: {self.speed}%, temp: {currentTemperture}°C, "
+            f"movingAverageTemp: {self.getMovingAverageTemperature(currentStrategy.movingAverageInterval)}°C, "
+            f"effectureTemp: {self.getEffectiveTemperature(currentTemperture, currentStrategy.movingAverageInterval)}°C"
         )
 
     def run(self, debug=True):
@@ -258,51 +296,122 @@ class FanController:
             print("Error: missing strategy, exiting for safety reasons: " + e.args[0])
             exit(1)
 
+    def getActualTemperature(self):
+        temps = sorted([x for x in [float(x) for x in self.getRawTemperatures()] if x > 0], reverse=True)
+
+        # safety fallback to avoid damaging hardware
+        if len(temps) == 0:
+            return 50
+
+        return round(temps[0], 1)
+
+
+class FanControllerKmod(FanController):
+    get_fanspeed_files: List[Path]
+    set_fanspeed_files: List[Path]
+    reset_to_auto_files: List[Path]
+    get_temp_files: List[Path]
+
+    def __init__(self, config: Configuration, strategyName: str):
+        super().__init__(config)
+
+        self.sysfs_get_fanspeed_files = []
+        self.sysfs_set_fanspeed_files = []
+        self.sysfs_reset_to_auto_files = []
+        self.sysfs_get_temp = []
+
+        fan_ctrl_base_dir = Path('/sys/class/hwmon')
+        if not fan_ctrl_base_dir.exists() or not fan_ctrl_base_dir.is_dir():
+            raise KModNotWorkingException(f"{str(fan_ctrl_base_dir)} does not exist or is not a directory")
+
+        for hwmon_interface in fan_ctrl_base_dir.iterdir():
+            name_file = hwmon_interface / "name"
+            with name_file.open("r") as name_fp:
+                device_name = name_fp.read().strip()
+            if device_name == "framework_laptop":
+                for file in hwmon_interface.iterdir():
+                    if file.name.startswith("fan") and file.name.endswith("_target"):
+                        self.sysfs_get_fanspeed_files.append(file)
+                    if file.name.startswith("pwm"):
+                        if file.name[3:].isdecimal():
+                            self.sysfs_set_fanspeed_files.append(file)
+                        elif file.name.endswith("_enable"):
+                            self.sysfs_reset_to_auto_files.append(file)
+            elif device_name == "acpitz":
+                for file in hwmon_interface.iterdir():
+                    if file.name.startswith("temp") and file.name.endswith("_input"):
+                        self.sysfs_get_temp.append(file)
+            elif self.configuration.getUseGPU() and device_name == "amdgpu":
+                for file in hwmon_interface.iterdir():
+                    if file.name.startswith("temp") and file.name.endswith("_input"):
+                        self.sysfs_get_temp.append(file)
+        if len(self.sysfs_get_fanspeed_files) == 0 and len(self.sysfs_set_fanspeed_files) == 0 \
+                and len(self.sysfs_reset_to_auto_files) == 0 and len(self.sysfs_get_temp) == 0:
+            raise KModNotWorkingException(f"Could not find files necessary to control fans")
+
+        if strategyName is not None and strategyName != "":
+            self.overwriteStrategy(strategyName)
+            t = threading.Thread(target=self.bindSocket)
+            t.daemon = True
+            t.start()
+
+    def pause(self):
+        for file in self.sysfs_reset_to_auto_files:
+            with file.open("w") as fp:
+                fp.write("2\n")
+
+    def setSpeed(self, speed: int) -> None:
+        self.speed = speed
+        for file in self.sysfs_set_fanspeed_files:
+            with file.open("w") as fp:
+                fp.write(f"{speed}\n")
+
+    def getRawTemperatures(self) -> List[float]:
+        rawTemps = []
+        for file in self.sysfs_get_temp:
+            with file.open("r") as fp:
+                rawTemps.append(float(fp.read()) / 1000.0)
+        return rawTemps
+
+
+class FanControllerEcTool(FanController):
+    def __init__(self, config: Configuration, strategyName):
+        super().__init__(config)
+        if strategyName is not None and strategyName != "":
+            self.overwriteStrategy(strategyName)
+            t = threading.Thread(target=self.bindSocket)
+            t.daemon = True
+            t.start()
+
+    def pause(self):
+        self.active = False
+        bashCommand = f"ectool autofanctrl"
+        subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True)
+
+    def setSpeed(self, speed):
+        self.speed = speed
+        bashCommand = f"ectool fanduty {speed}"
+        subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True)
+
+    def getRawTemperatures(self) -> List[float]:
+        bashCommand = "ectool temps all"
+        rawOut = subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True, text=True).stdout
+        return re.findall(r'\(= (\d+) C\)', rawOut)
+
 
 def main():
-    global parser
-    parser = argparse.ArgumentParser(
-        description="Control Framework's laptop fan with a speed curve",
-    )
-
-    bothGroup = parser.add_argument_group("both")
-    bothGroup.add_argument(
-        "_strategy",
-        nargs="?",
-        help='Name of the strategy to use e.g: "lazy" (check config.json for others). Use "defaultStrategy" to go back to the default strategy',
-    )
-    bothGroup.add_argument(
-        "--strategy",
-        nargs="?",
-        help='Name of the strategy to use e.g: "lazy" (check config.json for others). Use "defaultStrategy" to go back to the default strategy',
-    )
-
-    runGroup = parser.add_argument_group("run")
-    runGroup.add_argument("--run", help="run the service", action="store_true")
-    runGroup.add_argument("--config", type=str, help="Path to config file", default=DEFAULT_CONFIGURATION_FILE_PATH)
-    runGroup.add_argument(
-        "--no-log", help="Disable print speed/meanTemp to stdout", action="store_true"
-    )
-    commandGroup = parser.add_argument_group("configure")
-    commandGroup.add_argument(
-        "--query", "-q", help="Query the currently active strategy", action="store_true"
-    )
-    commandGroup.add_argument(
-        "--list-strategies", help="List the available strategies", action="store_true"
-    )
-    commandGroup.add_argument(
-        "--reload", "-r", help="Reload the configuration from file", action="store_true"
-    )
-    commandGroup.add_argument("--pause", help="Pause the program", action="store_true")
-    commandGroup.add_argument("--resume", help="Resume the program", action="store_true")
-
     args = parser.parse_args()
 
     if args.run:
         strategy = args.strategy
         if strategy is None:
             strategy = args._strategy
-        fan = FanController(configPath=args.config, strategyName=args.strategy)
+        config = Configuration(args.config)
+        mode = config.getMode()
+        if mode == "kmod":
+            fan = FanControllerKmod(config=config, strategyName=args.strategy)
+        else:
+            fan = FanControllerEcTool(config=config, strategyName=args.strategy)
         fan.run(debug=not args.no_log)
     else:
         client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
