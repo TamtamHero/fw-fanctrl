@@ -7,6 +7,8 @@ Under the hood, it uses [ectool](https://gitlab.howett.net/DHowett/ectool) to ch
 
 It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs, with or without a discrete GPU.
 
+If the service is paused or stopped, the fans will revert to their default behaviour.
+
 # Install
 
 ## Dependencies
@@ -80,15 +82,14 @@ The strategy active by default is the one specified in the `defaultStrategy` ent
 
 # Commands
 
-| Option            | Context         | Description                     |
-|-------------------|-----------------|---------------------------------|
-| \<strategy>       | run & configure | the name of the strategy to use |
-| --run             | run             | run the service                 |
-| --config          | run             | specify the configuration path  |
-| --no-log          | run             | disable state logging           |
-| --query, -q       | configure       | print the current strategy name |
-| --list-strategies | configure       | print the available strategies  |
-| --reload, -r      | configure       | reload the configuration file   |
-| --pause           | configure       | temporarily disable the service |
-| --resume          | configure       | resume the service              |
-
+| Option            | Context         | Description                                                                   |
+|-------------------|-----------------|-------------------------------------------------------------------------------|
+| \<strategy>       | run & configure | the name of the strategy to use                                               |
+| --run             | run             | run the service                                                               |
+| --config          | run             | specify the configuration path                                                |
+| --no-log          | run             | disable state logging                                                         |
+| --query, -q       | configure       | print the current strategy name                                               |
+| --list-strategies | configure       | print the available strategies                                                |
+| --reload, -r      | configure       | reload the configuration file                                                 |
+| --pause           | configure       | temporarily disable the service and reset the fans to their default behaviour |
+| --resume          | configure       | resume the service                                                            |
