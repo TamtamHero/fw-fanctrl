@@ -1,5 +1,5 @@
 [Unit]
-Description=FrameWork Fan Controller
+Description=Framework Fan Controller
 After=multi-user.target
 [Service]
 Type=simple

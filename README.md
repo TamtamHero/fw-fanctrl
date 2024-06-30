@@ -3,29 +3,29 @@
 This is a simple Python service for Linux that drives Framework Laptop's fan(s) speed according to a configurable speed/temp curve.
 Its default configuration targets very silent fan operation, but it's easy to configure it for a different comfort/performance trade-off.
 Its possible to specify two separate fan curves depending on whether the Laptop is charging/discharging.
-Under the hood, it uses [ectool](https://gitlab.howett.net/DHowett/ectool) to change parameters in FrameWork's embedded controller (EC).
+Under the hood, it uses [ectool](https://gitlab.howett.net/DHowett/ectool) to change parameters in Framework's embedded controller (EC).
 
-It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs and with or without discrete GPU.
+It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs, with or without a discrete GPU.
 
 If the service is paused or stopped, the fans will revert to their default behaviour.
 
 # Install
 
-## Dependancies
+## Dependencies
 
 To communicate with the embedded controller the `ectool` is required.
-You can either use the precompiled executable of `ectool` in this repo or
-disable its installation (`--no-ectool`) and add your own by recompiling it from [this repo](https://gitlab.howett.net/DHowett/ectool) and putting it in `[dest-dir(/)]/bin`.
+You can either let the script download it from the [gitlab repository](https://gitlab.howett.net/DHowett/ectool) artifacts, 
+or disable its installation (`--no-ectool`) and install your own.
 
 You also need to disable secure boot of your device for `ectool` to work (more details about why [here](https://www.howett.net/posts/2021-12-framework-ec/#using-fw-ectool))
 
 Then run:
-```
+```bash
 sudo ./install.sh
 ```
 
 This bash script will to create and activate a service that runs this repo's main script, `fanctrl.py`.
-It will copy `fanctrl.py` (to an executable file `fw-fanctrl`) and `./bin/ectool` to `[dest-dir(/)]/bin` and create a config file
+It will copy `fanctrl.py` (to an executable file `fw-fanctrl`), download the ectool to `[dest-dir(/)]/bin` and create a config file
 in `[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`
 
 this script also includes options to:
@@ -41,7 +41,7 @@ this script also includes options to:
 To install an update, you can pull the latest commit on the `main` branch of this repository, and run the install script again.
 
 # Uninstall
-```
+```bash
 sudo ./install.sh --remove
 ```
 
@@ -50,7 +50,7 @@ sudo ./install.sh --remove
 There is a single `config.json` file located at `[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`.
 
 (You will need to reload the configuration with)
-```
+```bash
 fw-fanctrl --reload
 ```
 
@@ -78,11 +78,11 @@ Strategies can be configured with the following parameters:
 
 ## Charging/Discharging strategies
 
-The strategy active by default is the one specified in the `defaultStrategy` entry. Optionally a separate strategy only active during discharge can be defined, using the `strategyOnDischarging` entry. By default no extra strategy for discharging is provided, the default stratgy is active during all times.
+The strategy active by default is the one specified in the `defaultStrategy` entry. Optionally a separate strategy only active during discharge can be defined, using the `strategyOnDischarging` entry. By default no extra strategy for discharging is provided, the default strategy is active during all times.
 
 # Commands
 
-| option            | contexte        | description                                                                   |
+| Option            | Context         | Description                                                                   |
 |-------------------|-----------------|-------------------------------------------------------------------------------|
 | \<strategy>       | run & configure | the name of the strategy to use                                               |
 | --run             | run             | run the service                                                               |
@@ -93,4 +93,3 @@ The strategy active by default is the one specified in the `defaultStrategy` ent
 | --reload, -r      | configure       | reload the configuration file                                                 |
 | --pause           | configure       | temporarily disable the service and reset the fans to their default behaviour |
 | --resume          | configure       | resume the service                                                            |
-
