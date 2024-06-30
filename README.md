@@ -3,9 +3,9 @@
 This is a simple Python service for Linux that drives Framework Laptop's fan(s) speed according to a configurable speed/temp curve.
 Its default configuration targets very silent fan operation, but it's easy to configure it for a different comfort/performance trade-off.
 Its possible to specify two separate fan curves depending on whether the Laptop is charging/discharging.
-Under the hood, it uses [ectool](https://gitlab.howett.net/DHowett/ectool) to change parameters in FrameWork's embedded controller (EC).
+Under the hood, it uses [ectool](https://gitlab.howett.net/DHowett/ectool) to change parameters in Framework's embedded controller (EC).
 
-It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs and with or without discrete GPU.
+It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs, with or without a discrete GPU.
 
 # Install
 For NixOS this repo contains an Flake. You could add it to your config like this:
@@ -90,11 +90,11 @@ Strategies can be configured with the following parameters:
 
 ## Charging/Discharging strategies
 
-The strategy active by default is the one specified in the `defaultStrategy` entry. Optionally a separate strategy only active during discharge can be defined, using the `strategyOnDischarging` entry. By default no extra strategy for discharging is provided, the default stratgy is active during all times.
+The strategy active by default is the one specified in the `defaultStrategy` entry. Optionally a separate strategy only active during discharge can be defined, using the `strategyOnDischarging` entry. By default no extra strategy for discharging is provided, the default strategy is active during all times.
 
 # Commands
 
-| option            | contexte        | description                     |
+| Option            | Context         | Description                     |
 |-------------------|-----------------|---------------------------------|
 | \<strategy>       | run & configure | the name of the strategy to use |
 | --run             | run             | run the service                 |
