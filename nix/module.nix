@@ -4,7 +4,6 @@ with lib;
 with lib.types;
 let
   cfg = config.programs.fw-fanctrl;
-  fw-ectool = pkgs.callPackage ./packages/fw-ectool.nix {};
   fw-fanctrl = pkgs.callPackage ./packages/fw-fanctrl.nix {};
   defaultConfig = builtins.fromJSON (builtins.readFile ../config.json);
 in
@@ -84,9 +83,9 @@ in
 
   config = mkIf cfg.enable {
     # Install package
-    environment.systemPackages = [
+    environment.systemPackages = with pkgs; [
       fw-fanctrl
-      fw-ectool
+      ectool
     ];
 
     # Create config
@@ -102,7 +101,7 @@ in
         Type = "simple";
         Restart = "always";
         ExecStart = "${fw-fanctrl}/bin/fw-fanctrl --run --config /etc/fw-fanctrl/config.json --no-log";
-        ExecStopPost = "${fw-ectool}/bin/ectool autofanctrl";
+        ExecStopPost = "${pkgs.ectool}/bin/ectool autofanctrl";
       };
       enable = true;
       wantedBy = [ "multi-user.target" ];
