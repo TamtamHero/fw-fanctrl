@@ -138,6 +138,7 @@ GOTO :EOF
 
     rmdir /s /q ".temp" 2> nul
 
+    pause
     GOTO :EOF
 
     :install-crosec
@@ -167,13 +168,17 @@ GOTO :EOF
         )
 
         echo installing 'crosec' driver
+
+        cd /d ".temp"
         @echo on
-        ".temp\installer" install
+        ".\installer" install
         @echo off
-        ::if %errorLevel% neq 0 (
-        ::   echo failed to run the 'crosec' driver installation
-        ::   exit /b 3
-        ::)
+        if %errorLevel% neq 0 (
+            cd /d "%~dp0"
+            echo failed to run the 'crosec' driver installation
+            exit /b 3
+        )
+        cd /d "%~dp0"
 
         echo testing 'crosec' driver
         @echo on
@@ -182,10 +187,10 @@ GOTO :EOF
 
         set count=0
         for %%i in (".temp\test-result.txt") do @set count=%%~zi
-        ::if "%count%" == "0" (
-        ::   echo 'crosec' driver not installed correctly
-        ::   exit /b 4
-        ::)
+        if "%count%" == "0" (
+           echo 'crosec' driver not installed correctly
+           exit /b 4
+        )
 
         rmdir /s /q "%ProgramFiles%\crosec" 2> nul
         echo copying '.temp' to '%ProgramFiles%\crosec'
@@ -358,7 +363,6 @@ GOTO :EOF
         "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" DisplayName "Framework Fanctrl"
         "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" Description "A simple systemd service to better control Framework Laptop's fan(s)"
         "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" AppStdout "%ProgramFiles%\fw-fanctrl\out.log"
-        ::"%ProgramFiles%\nssm\nssm" set "fw-fanctrl" AppStderr "%ProgramFiles%\fw-fanctrl\error.log"
         "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" AppStderr "%ProgramFiles%\fw-fanctrl\out.log"
         @echo off
 
@@ -377,6 +381,8 @@ GOTO :EOF
     CALL :uninstall-crosec
 
     rmdir /s /q ".temp" 2> nul
+
+    pause
 
     GOTO :EOF
 
