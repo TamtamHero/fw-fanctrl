@@ -32,7 +32,7 @@ if defined ARG_r (
 cd /d "%~dp0"
 
 if not defined ARG_remove (
-    GOTO :ACKNOLEDGEMENT-CHECK
+    GOTO :ACKNOWLEDGEMENT-CHECK
 )
 
 if defined ARG_remove (
@@ -43,29 +43,29 @@ if defined ARG_remove (
 
 GOTO :EOF
 
-:ACKNOLEDGEMENT-CHECK
-    set "acknoledgementPhrase=this is dangerous and I know what I am doing"
+:ACKNOWLEDGEMENT-CHECK
+    set "acknowledgementPhrase=this is dangerous and I know what I am doing"
     echo %ESC%[91m
     echo ====================================== WARNING ======================================
-    echo 1. THIS WINDOWS VERSION REQUIRES THE USE OF AN UNSIGNED DRIVER 'crosec' TO WORK.
-    echo 2. SECURE BOOT NEED TO BE DISABLED IN ORDER TO USE THE PROGRAMME
+    echo 1. THIS WINDOWS VERSION REQUIRES THE USE OF AN UNSIGNED 'crosec' DRIVER TO WORK.
+    echo 2. SECURE BOOT MUST BE DISABLED IN ORDER TO USE THE PROGRAM
     echo 3. IF YOU HAVE BITLOCKER ENABLED, YOU WILL NEED YOUR RECOVERY CODE ON BOOT !!!!
     echo ====================================== WARNING ======================================
-    echo PLEASE, BACK UP YOUR BITLOCKER RECOVERY KEY BEFORE DOING ANYTHING !
-    echo YOU CAN BE LOCKED OUT OF YOUR COMPUTER IF YOU ARE NOT CAUTIOUS ENOUGH !
-    echo ONLY CONTINUE THE INSTALLATION IF YOU ARE ABSOLUTELY SURE ABOUT WHAT YOU ARE DOING !
+    echo PLEASE MAKE A BACKUP OF YOUR BITLOCKER RECOVERY KEY BEFORE YOU DO ANYTHING !
+    echo YOU GET LOCKED OUT OF YOUR COMPUTER IF YOU ARE NOT CAREFUL ENOUGH !
+    echo PROCEED WITH THE INSTALLATION IF YOU ARE ABSOLUTELY SURE OF WHAT YOU ARE DOING !
     echo -------------------------------------------------------------------------------------
     echo %ESC%[0m
-    echo to continue the installation, type '%acknoledgementPhrase%'.
+    echo to continue the installation, type '%acknowledgementPhrase%'.
     echo to stop here, simply press enter.
-    set "acknoledgement="
-    set /p "acknoledgement=> "
-    if not defined acknoledgement (
+    set "acknowledgement="
+    set /p "acknowledgement=> "
+    if not defined acknowledgement (
         echo goodbye.
         exit /b 2
     )
-    if not "%acknoledgement%" equ "%acknoledgementPhrase%" (
-        echo wrong acknoledgement phrase [%acknoledgement%] not equal to [%acknoledgementPhrase%], stopping here!
+    if not "%acknowledgement%" equ "%acknowledgementPhrase%" (
+        echo wrong acknowledgement phrase [%acknowledgement%] not equal to [%acknowledgementPhrase%], stopping here!
         exit /b 2
     )
     echo:
