@@ -278,14 +278,14 @@ class FanController:
             strategy = command.strategy
             if strategy is None:
                 strategy = command._strategy
-                try:
-                    if strategy == "defaultStrategy":
-                        self.clearOverwrittenStrategy()
-                    else:
-                        self.overwriteStrategy(strategy)
-                    return self.getCurrentStrategy().name
-                except InvalidStrategyException:
-                    raise InvalidStrategyException(f"The specified strategy is invalid: {strategy}")
+            try:
+                if strategy == "defaultStrategy":
+                    self.clearOverwrittenStrategy()
+                else:
+                    self.overwriteStrategy(strategy)
+                return self.getCurrentStrategy().name
+            except InvalidStrategyException:
+                raise InvalidStrategyException(f"The specified strategy is invalid: {strategy}")
         elif command.pause:
             self.pause()
         elif command.resume:
