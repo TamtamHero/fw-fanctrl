@@ -10,6 +10,7 @@ import subprocess
 import sys
 import threading
 from time import sleep
+from abc import ABC, abstractmethod
 
 DEFAULT_CONFIGURATION_FILE_PATH = "/etc/fw-fanctrl/config.json"
 SOCKETS_FOLDER_PATH = "/run/fw-fanctrl"
@@ -18,7 +19,19 @@ COMMANDS_SOCKET_FILE_PATH = os.path.join(SOCKETS_FOLDER_PATH, ".fw-fanctrl.comma
 parser = None
 
 
+class JSONException(Exception):
+    pass
+
+
+class UnimplementedException(Exception):
+    pass
+
+
 class InvalidStrategyException(Exception):
+    pass
+
+
+class SocketAlreadyRunningException(Exception):
     pass
 
 
@@ -76,7 +89,138 @@ class Configuration:
         return self.getStrategy("strategyOnDischarging")
 
 
+class SocketController(ABC):
+    @abstractmethod
+    def startServerSocket(self, commandCallback=None):
+        raise UnimplementedException()
+
+    @abstractmethod
+    def stopServerSocket(self):
+        raise UnimplementedException()
+
+    @abstractmethod
+    def isServerSocketRunning(self):
+        raise UnimplementedException()
+
+    @abstractmethod
+    def sendViaClientSocket(self, command):
+        raise UnimplementedException()
+
+
+class UnixSocketController(SocketController, ABC):
+    server_socket = None
+
+    def startServerSocket(self, commandCallback=None):
+        if self.server_socket:
+            raise SocketAlreadyRunningException(self.server_socket)
+        self.server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        if os.path.exists(COMMANDS_SOCKET_FILE_PATH):
+            os.remove(COMMANDS_SOCKET_FILE_PATH)
+        try:
+            if not os.path.exists(SOCKETS_FOLDER_PATH):
+                os.makedirs(SOCKETS_FOLDER_PATH)
+            self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.server_socket.bind(COMMANDS_SOCKET_FILE_PATH)
+            os.chmod(COMMANDS_SOCKET_FILE_PATH, 0o777)
+            self.server_socket.listen(1)
+            while True:
+                client_socket, _ = self.server_socket.accept()
+                try:
+                    # Receive data from the client
+                    data = client_socket.recv(4096).decode()
+                    args = parser.parse_args(shlex.split(data))
+                    commandReturn = commandCallback(args)
+                    if not commandReturn:
+                        commandReturn = "Success!"
+                    client_socket.sendall(commandReturn.encode())
+                except Exception as e:
+                    client_socket.sendall(f"[Error] > An error occurred: {e}".encode())
+                finally:
+                    client_socket.shutdown(socket.SHUT_WR)
+                    client_socket.close()
+        finally:
+            self.server_socket.close()
+
+    def stopServerSocket(self):
+        if self.server_socket:
+            self.server_socket.close()
+            self.server_socket = None
+
+    def isServerSocketRunning(self):
+        return self.server_socket is not None
+
+    def sendViaClientSocket(self, command):
+        client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            client_socket.connect(COMMANDS_SOCKET_FILE_PATH)
+            client_socket.sendall(command.encode())
+            received_data = b""
+            while True:
+                data_chunk = client_socket.recv(1024)
+                if not data_chunk:
+                    break
+                received_data += data_chunk
+            # Receive data from the server
+            data = received_data.decode()
+            if data.startswith("Error:"):
+                raise Exception(data)
+            return data
+        finally:
+            if client_socket:
+                client_socket.close()
+
+
+class HardwareController(ABC):
+    @abstractmethod
+    def getTemperature(self):
+        raise UnimplementedException()
+
+    @abstractmethod
+    def setSpeed(self, speed):
+        raise UnimplementedException()
+
+    @abstractmethod
+    def pause(self):
+        pass
+
+    @abstractmethod
+    def resume(self):
+        pass
+
+    @abstractmethod
+    def isOnAC(self):
+        raise UnimplementedException()
+
+
+class EctoolHardwareController(HardwareController, ABC):
+
+    def getTemperature(self):
+        rawOut = subprocess.run("ectool temps all", stdout=subprocess.PIPE, shell=True, text=True).stdout
+        rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
+        temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
+        # safety fallback to avoid damaging hardware
+        if len(temps) == 0:
+            return 50
+        return round(temps[0], 1)
+
+    def setSpeed(self, speed):
+        subprocess.run(f"ectool fanduty {speed}", stdout=subprocess.PIPE, shell=True)
+
+    def isOnAC(self):
+        rawOut = subprocess.run("ectool battery", stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True,
+                                text=True).stdout
+        return len(re.findall(r"Flags.*(AC_PRESENT)", rawOut)) > 0
+
+    def pause(self):
+        subprocess.run("ectool autofanctrl", stdout=subprocess.PIPE, shell=True)
+
+    def resume(self):
+        pass
+
+
 class FanController:
+    hardwareController = None
+    socketController = None
     configuration = None
     overwrittenStrategy = None
     speed = 0
@@ -84,23 +228,35 @@ class FanController:
     active = True
     timecount = 0
 
-    def __init__(self, configPath, strategyName):
+    def __init__(self, hardwareController, socketController, configPath, strategyName):
+        self.hardwareController = hardwareController
+        self.socketController = socketController
         self.configuration = Configuration(configPath)
 
         if strategyName is not None and strategyName != "":
             self.overwriteStrategy(strategyName)
 
-        t = threading.Thread(target=self.bindSocket)
+        t = threading.Thread(target=self.socketController.startServerSocket, args=[self.commandManager])
         t.daemon = True
         t.start()
 
+    def getActualTemperature(self):
+        return self.hardwareController.getTemperature()
+
+    def setSpeed(self, speed):
+        self.speed = speed
+        self.hardwareController.setSpeed(speed)
+
+    def isOnAC(self):
+        return self.hardwareController.isOnAC()
+
     def pause(self):
         self.active = False
-        bashCommand = f"ectool autofanctrl"
-        subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True)
+        self.hardwareController.pause()
 
     def resume(self):
         self.active = True
+        self.hardwareController.resume()
 
     def overwriteStrategy(self, strategyName):
         self.overwrittenStrategy = self.configuration.getStrategy(strategyName)
@@ -113,88 +269,37 @@ class FanController:
     def getCurrentStrategy(self):
         if self.overwrittenStrategy is not None:
             return self.overwrittenStrategy
-        if self.getBatteryChargingStatus():
+        if self.isOnAC():
             return self.configuration.getDefaultStrategy()
         return self.configuration.getDischargingStrategy()
 
-    def getBatteryChargingStatus(self):
-        bashCommand = "ectool battery"
-        rawOut = subprocess.run(bashCommand, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True,
-                                text=True).stdout
-        return len(re.findall(r'Flags.*(AC_PRESENT)', rawOut)) > 0
-
-    def bindSocket(self):
-        server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        if os.path.exists(COMMANDS_SOCKET_FILE_PATH):
-            os.remove(COMMANDS_SOCKET_FILE_PATH)
-        try:
-            if not os.path.exists(SOCKETS_FOLDER_PATH):
-                os.makedirs(SOCKETS_FOLDER_PATH)
-            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            server_socket.bind(COMMANDS_SOCKET_FILE_PATH)
-            os.chmod(COMMANDS_SOCKET_FILE_PATH, 0o777)
-            server_socket.listen(1)
-            while True:
-                client_socket, _ = server_socket.accept()
-                try:
-                    # Receive data from the client
-                    data = client_socket.recv(4096).decode()
-                    print("Received command:", data)
-
-                    args = parser.parse_args(shlex.split(data))
-                    if args.strategy or args._strategy:
-                        strategy = args.strategy
-                        if strategy is None:
-                            strategy = args._strategy
-                        try:
-                            if strategy == "defaultStrategy":
-                                self.clearOverwrittenStrategy()
-                            else:
-                                self.overwriteStrategy(strategy)
-                            client_socket.sendall(self.getCurrentStrategy().name.encode())
-                        except InvalidStrategyException:
-                            client_socket.sendall(("Error: unknown strategy: " + strategy).encode())
-                    if args.pause:
-                        self.pause()
-                        client_socket.sendall("Success".encode())
-                    if args.resume:
-                        self.resume()
-                        client_socket.sendall("Success".encode())
-                    if args.query:
-                        client_socket.sendall(self.getCurrentStrategy().name.encode())
-                    if args.list_strategies:
-                        client_socket.sendall('\n'.join(self.configuration.getStrategies()).encode())
-                    if args.reload:
-                        if self.configuration.reload():
-                            if self.overwrittenStrategy is not None:
-                                self.overwriteStrategy(self.overwrittenStrategy.name)
-                            client_socket.sendall("Success".encode())
-                        else:
-                            client_socket.sendall("Error: Config file could not be parsed due to JSON Error".encode())
-                except:
-                    pass
-                finally:
-                    client_socket.shutdown(socket.SHUT_WR)
-                    client_socket.close()
-        finally:
-            server_socket.close()
-
-    def setSpeed(self, speed):
-        self.speed = speed
-        bashCommand = f"ectool fanduty {speed}"
-        subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True)
-
-    def getActualTemperature(self):
-        bashCommand = "ectool temps all"
-        rawOut = subprocess.run(bashCommand, stdout=subprocess.PIPE, shell=True, text=True).stdout
-        rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
-        temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
-
-        # safety fallback to avoid damaging hardware
-        if len(temps) == 0:
-            return 50
-
-        return round(temps[0], 1)
+    def commandManager(self, command):
+        if command.strategy or command._strategy:
+            strategy = command.strategy
+            if strategy is None:
+                strategy = command._strategy
+            try:
+                if strategy == "defaultStrategy":
+                    self.clearOverwrittenStrategy()
+                else:
+                    self.overwriteStrategy(strategy)
+                return self.getCurrentStrategy().name
+            except InvalidStrategyException:
+                raise InvalidStrategyException(f"The specified strategy is invalid: {strategy}")
+        elif command.pause:
+            self.pause()
+        elif command.resume:
+            self.resume()
+        elif command.query:
+            return self.getCurrentStrategy().name
+        elif command.list_strategies:
+            return '\n'.join(self.configuration.getStrategies())
+        elif command.reload:
+            if self.configuration.reload():
+                if self.overwrittenStrategy is not None:
+                    self.overwriteStrategy(self.overwrittenStrategy.name)
+            else:
+                raise JSONException("Config file could not be parsed due to JSON Error")
 
     # return mean temperature over a given time interval (in seconds)
     def getMovingAverageTemperature(self, timeInterval):
@@ -269,12 +374,14 @@ def main():
     bothGroup.add_argument(
         "_strategy",
         nargs="?",
-        help='Name of the strategy to use e.g: "lazy" (check config.json for others). Use "defaultStrategy" to go back to the default strategy',
+        help='Name of the strategy to use e.g: "lazy" (check config.json for others). Use "defaultStrategy" to go '
+             'back to the default strategy',
     )
     bothGroup.add_argument(
         "--strategy",
         nargs="?",
-        help='Name of the strategy to use e.g: "lazy" (check config.json for others). Use "defaultStrategy" to go back to the default strategy',
+        help='Name of the strategy to use e.g: "lazy" (check config.json for others). Use "defaultStrategy" to go '
+             'back to the default strategy',
     )
 
     runGroup = parser.add_argument_group("run")
@@ -295,34 +402,34 @@ def main():
     )
     commandGroup.add_argument("--pause", help="Pause the program", action="store_true")
     commandGroup.add_argument("--resume", help="Resume the program", action="store_true")
+    commandGroup.add_argument("--hardware-controller", "--hc", help="Select the hardware controller", type=str,
+                              choices=["ectool"], default="ectool")
+    commandGroup.add_argument("--socket-controller", "--sc", help="Select the socket controller", type=str,
+                              choices=["unix"], default="unix")
 
     args = parser.parse_args()
 
+    socketController = None
+    if args.socket_controller == "unix":
+        socketController = UnixSocketController()
+
     if args.run:
+        hardwareController = None
+        if args.hardware_controller == "ectool":
+            hardwareController = EctoolHardwareController()
+
         strategy = args.strategy
         if strategy is None:
             strategy = args._strategy
-        fan = FanController(configPath=args.config, strategyName=args.strategy)
+        fan = FanController(hardwareController=hardwareController, socketController=socketController,
+                            configPath=args.config, strategyName=args.strategy)
         fan.run(debug=not args.no_log)
     else:
-        client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         try:
-            client_socket.connect(COMMANDS_SOCKET_FILE_PATH)
-            client_socket.sendall(' '.join(sys.argv[1:]).encode())
-            received_data = b""
-            while True:
-                data_chunk = client_socket.recv(1024)
-                if not data_chunk:
-                    break
-                received_data += data_chunk
-            # Receive data from the server
-            data = received_data.decode()
-            print(data)
-            if data.startswith("Error:"):
-                exit(1)
-        finally:
-            if client_socket:
-                client_socket.close()
+            socketController.sendViaClientSocket(' '.join(sys.argv[1:]))
+        except Exception as e:
+            print(f"[Error] > An error occurred: {e}", file=sys.stderr)
+            exit(1)
 
 
 if __name__ == "__main__":

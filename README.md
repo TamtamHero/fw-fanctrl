@@ -82,14 +82,16 @@ The strategy active by default is the one specified in the `defaultStrategy` ent
 
 # Commands
 
-| Option            | Context         | Description                                                                   |
-|-------------------|-----------------|-------------------------------------------------------------------------------|
-| \<strategy>       | run & configure | the name of the strategy to use                                               |
-| --run             | run             | run the service                                                               |
-| --config          | run             | specify the configuration path                                                |
-| --no-log          | run             | disable state logging                                                         |
-| --query, -q       | configure       | print the current strategy name                                               |
-| --list-strategies | configure       | print the available strategies                                                |
-| --reload, -r      | configure       | reload the configuration file                                                 |
-| --pause           | configure       | temporarily disable the service and reset the fans to their default behaviour |
-| --resume          | configure       | resume the service                                                            |
+| Option                      | Context         | Description                                                                   |
+|-----------------------------|-----------------|-------------------------------------------------------------------------------|
+| \<strategy>                 | run & configure | the name of the strategy to use                                               |
+| --run                       | run             | run the service                                                               |
+| --config                    | run             | specify the configuration path                                                |
+| --no-log                    | run             | disable state logging                                                         |
+| --query, -q                 | configure       | print the current strategy name                                               |
+| --list-strategies           | configure       | print the available strategies                                                |
+| --reload, -r                | configure       | reload the configuration file                                                 |
+| --pause                     | configure       | temporarily disable the service and reset the fans to their default behaviour |
+| --resume                    | configure       | resume the service                                                            |
+| --hardware-controller, --hc | run             | select the hardware controller. choices: ectool                               |
+| --socket-controller, --sc   | run & configure | select the socket controller. choices: unix                                   |
