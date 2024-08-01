@@ -85,7 +85,7 @@ in
     # Install package
     environment.systemPackages = with pkgs; [
       fw-fanctrl
-      ectool
+      fw-ectool
     ];
 
     # Create config
@@ -101,7 +101,7 @@ in
         Type = "simple";
         Restart = "always";
         ExecStart = "${fw-fanctrl}/bin/fw-fanctrl --run --config /etc/fw-fanctrl/config.json --no-log";
-        ExecStopPost = "${pkgs.ectool}/bin/ectool autofanctrl";
+        ExecStopPost = "${pkgs.fw-ectool}/bin/ectool autofanctrl";
       };
       enable = true;
       wantedBy = [ "multi-user.target" ];
