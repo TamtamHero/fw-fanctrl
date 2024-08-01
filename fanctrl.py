@@ -426,7 +426,9 @@ def main():
         fan.run(debug=not args.no_log)
     else:
         try:
-            socketController.sendViaClientSocket(' '.join(sys.argv[1:]))
+            commandResult = socketController.sendViaClientSocket(' '.join(sys.argv[1:]))
+            if commandResult:
+                print(commandResult)
         except Exception as e:
             print(f"[Error] > An error occurred: {e}", file=sys.stderr)
             exit(1)
