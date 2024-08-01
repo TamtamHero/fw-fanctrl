@@ -1,0 +1,11 @@
+# /etc/conf.d/fw-fanctrl
+
+# Configuration File
+#FW_FANCTRL_CONFIGFILE="%DEST_DIRECTORY%%SYSCONF_DIRECTORY%/fw-fanctrl/config.json"
+
+# PID File
+#FW_FANCTRL_PIDFILE="%DEST_DIRECTORY%/run/fw-fanctrl.pid"
+
+# Logging
+#FW_FANCTRL_LOG="%DEST_DIRECTORY%/var/log/fw-fanctrl.log"
+#FW_FANCTLR_ERROR_LOG="%DEST_DIRECTORY%/var/log/fw-fanctrl.log"

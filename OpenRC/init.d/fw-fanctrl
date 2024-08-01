@@ -1,0 +1,23 @@
+#!/sbin/openrc-run
+# Copyright 2024 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+FW_FANCTRL_CONFIGFILE=${FW_FANCTRL_CONFIGFILE:-"/etc/fw-fanctrl/config.json"}
+FW_FANCTRL_PIDFILE=${FW_FANCTRL_PIDFILE:-"/var/run/fw-fanctrl.pid")
+FW_FANCTRL_LOG=${FW_FANCTRL_LOG:-"/var/log/fw-fanctrl.log"}
+FW_FANCTLR_ERROR_LOG=${FW_FANCTLR_ERROR_LOG:-"/var/log/fw-fanctrl.log"}
+
+
+name="fw-fanctrl daemon"
+description="Fan control for frame.work Laptop 16"
+command=/usr/local/bin/fw-fanctrl
+command_args="--config \"${FW_FANCTRL_CONFIGFILE}\" --no-log"
+required_files="${FW_FANCTRL_CONFIGFILE}"
+command_background=true
+pidfile="${FW_FANCTRL_PIDFILE}"
+output_log="${FW_FANCTRL_LOG}"
+error_log="${FW_FANCTLR_ERROR_LOG}"
+
+depend() {
+	need localmount
+}
