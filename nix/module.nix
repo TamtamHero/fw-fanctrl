@@ -85,7 +85,7 @@ in
     # Install package
     environment.systemPackages = with pkgs; [
       fw-fanctrl
-      ectool
+      fw-ectool
     ];
 
     # Create config
