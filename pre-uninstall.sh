@@ -31,7 +31,7 @@ while true; do
 done
 #
 
-SERVICES_DIR="./services"
+SERVICES_DIR="./services/linux"
 SERVICE_EXTENSION=".service"
 
 SERVICES="$(cd "$SERVICES_DIR" && find . -maxdepth 1 -maxdepth 1 -type f -name "*$SERVICE_EXTENSION" -exec basename {} "$SERVICE_EXTENSION" \;)"

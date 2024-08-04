@@ -94,4 +94,4 @@ The strategy active by default is the one specified in the `defaultStrategy` ent
 | --pause                     | configure       | temporarily disable the service and reset the fans to their default behaviour |
 | --resume                    | configure       | resume the service                                                            |
 | --hardware-controller, --hc | run             | select the hardware controller. choices: ectool                               |
-| --socket-controller, --sc   | run & configure | select the socket controller. choices: unix                                   |
+| --socket-controller, --sc   | run & configure | select the socket controller. choices: unix, win32                            |

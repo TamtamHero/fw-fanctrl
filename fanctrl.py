@@ -15,6 +15,7 @@ from abc import ABC, abstractmethod
 DEFAULT_CONFIGURATION_FILE_PATH = "/etc/fw-fanctrl/config.json"
 SOCKETS_FOLDER_PATH = "/run/fw-fanctrl"
 COMMANDS_SOCKET_FILE_PATH = os.path.join(SOCKETS_FOLDER_PATH, ".fw-fanctrl.commands.sock")
+WINDOWS_SOCKET_PATH = r"\\.\pipe\fw-fanctrl.socket"
 
 parser = None
 
@@ -168,6 +169,101 @@ class UnixSocketController(SocketController, ABC):
         finally:
             if client_socket:
                 client_socket.close()
+
+
+class WindowsSocketController(SocketController, ABC):
+    import ctypes
+    from ctypes import wintypes, windll
+
+    _ctypes = ctypes
+
+    CreateNamedPipe = windll.kernel32.CreateNamedPipeW
+    ConnectNamedPipe = windll.kernel32.ConnectNamedPipe
+    DisconnectNamedPipe = windll.kernel32.DisconnectNamedPipe
+    CreateFile = windll.kernel32.CreateFileW
+    ReadFile = windll.kernel32.ReadFile
+    WriteFile = windll.kernel32.WriteFile
+    CloseHandle = windll.kernel32.CloseHandle
+
+    LPSECURITY_ATTRIBUTES = ctypes.c_void_p
+    LPDWORD = ctypes.POINTER(wintypes.DWORD)
+    LPVOID = ctypes.c_void_p
+    DWORD = wintypes.DWORD
+
+    server_socket = None
+
+    def startServerSocket(self, commandCallback=None):
+        if self.server_socket:
+            raise SocketAlreadyRunningException(self.server_socket)
+        self.server_socket = self.CreateNamedPipe(
+            WINDOWS_SOCKET_PATH,
+            self.ctypes.wintypes.DWORD(3),  # PIPE_ACCESS_DUPLEX
+            self.ctypes.wintypes.DWORD(4),  # PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT
+            1,  # nMaxInstances
+            65536,  # nOutBufferSize
+            65536,  # nInBufferSize
+            0,  # nDefaultTimeOut
+            None  # lpSecurityAttributes
+        )
+        try:
+            while True:
+                self.ConnectNamedPipe(self.server_socket, None)
+                try:
+                    # Receive data from the client
+                    buffer = self.ctypes.create_string_buffer(65536)
+                    bytes_read = self.ctypes.wintypes.DWORD(0)
+                    self.ReadFile(self.server_socket, buffer, 65536, self.ctypes.byref(bytes_read), None)
+                    data = buffer.raw[:bytes_read.value].decode('utf-8')
+
+                    args = parser.parse_args(shlex.split(data))
+                    commandReturn = commandCallback(args)
+                    if not commandReturn:
+                        commandReturn = "Success!"
+
+                    commandReturn = commandReturn.encode('utf-8')
+                    bytes_written = self.ctypes.wintypes.DWORD(0)
+                    self.WriteFile(self.server_socket, commandReturn, len(commandReturn),
+                                   self.ctypes.byref(bytes_written), None)
+                except Exception as e:
+                    message = f"[Error] > An error occurred: {e}".encode('utf-8')
+                    bytes_written = self.wintypes.DWORD(0)
+                    self.WriteFile(self.server_socket, message, len(message), self.ctypes.byref(bytes_written), None)
+                finally:
+                    self.DisconnectNamedPipe(self.server_socket)
+        finally:
+            self.stopServerSocket()
+
+    def stopServerSocket(self):
+        if self.server_socket:
+            self.CloseHandle(self.server_socket)
+            self.server_socket = None
+
+    def isServerSocketRunning(self):
+        return self.server_socket is not None
+
+    def sendViaClientSocket(self, command):
+        client_socket = self.CreateFile(
+            WINDOWS_SOCKET_PATH,
+            self.ctypes.wintypes.DWORD(0x00000003),  # GENERIC_READ | GENERIC_WRITE
+            0,
+            None,
+            self.ctypes.wintypes.DWORD(3),  # OPEN_EXISTING
+            0,
+            None
+        )
+        try:
+            message = command.encode('utf-8')
+            bytes_written = self.ctypes.wintypes.DWORD(0)
+            self.WriteFile(client_socket, message, len(message), self.ctypes.byref(bytes_written), None)
+            buffer = self.ctypes.create_string_buffer(65536)
+            bytes_read = self.ctypes.wintypes.DWORD(0)
+            self.ReadFile(client_socket, buffer, 65536, self.ctypes.byref(bytes_read), None)
+            data = buffer.raw[:bytes_read.value].decode('utf-8')
+            if data.startswith("[Error] > "):
+                raise Exception(data)
+            return data
+        finally:
+            self.CloseHandle(client_socket)
 
 
 class HardwareController(ABC):
@@ -405,13 +501,15 @@ def main():
     commandGroup.add_argument("--hardware-controller", "--hc", help="Select the hardware controller", type=str,
                               choices=["ectool"], default="ectool")
     commandGroup.add_argument("--socket-controller", "--sc", help="Select the socket controller", type=str,
-                              choices=["unix"], default="unix")
+                              choices=["unix", "win32"], default="unix")
 
     args = parser.parse_args()
 
     socketController = None
     if args.socket_controller == "unix":
         socketController = UnixSocketController()
+    elif args.socket_controller == "win32":
+        socketController = WindowsSocketController()
 
     if args.run:
         hardwareController = None
