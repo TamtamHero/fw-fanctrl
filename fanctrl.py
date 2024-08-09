@@ -360,8 +360,10 @@ class FanController:
                 else:
                     sleep(5)
         except InvalidStrategyException as e:
-            print("Error: missing strategy, exiting for safety reasons: " + e.args[0])
-            exit(1)
+            print(f"Missing strategy, exiting for safety reasons: {e.args[0]}")
+        except Exception as e:
+            print(f"Critical error, exiting for safety reasons: {e}")
+        exit(1)
 
 
 def main():
