@@ -133,14 +133,14 @@ class UnixSocketController(SocketController, ABC):
                     commandReturn = commandCallback(args)
                     if not commandReturn:
                         commandReturn = "Success!"
-                    client_socket.sendall(commandReturn.encode())
+                    client_socket.sendall(commandReturn.encode('utf-8'))
                 except Exception as e:
-                    client_socket.sendall(f"[Error] > An error occurred: {e}".encode())
+                    client_socket.sendall(f"[Error] > An error occurred: {e}".encode('utf-8'))
                 finally:
                     client_socket.shutdown(socket.SHUT_WR)
                     client_socket.close()
         finally:
-            self.server_socket.close()
+            self.stopServerSocket()
 
     def stopServerSocket(self):
         if self.server_socket:
@@ -154,7 +154,7 @@ class UnixSocketController(SocketController, ABC):
         client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         try:
             client_socket.connect(COMMANDS_SOCKET_FILE_PATH)
-            client_socket.sendall(command.encode())
+            client_socket.sendall(command.encode('utf-8'))
             received_data = b""
             while True:
                 data_chunk = client_socket.recv(1024)
@@ -163,7 +163,7 @@ class UnixSocketController(SocketController, ABC):
                 received_data += data_chunk
             # Receive data from the server
             data = received_data.decode()
-            if data.startswith("Error:"):
+            if data.startswith("[Error] > "):
                 raise Exception(data)
             return data
         finally:
