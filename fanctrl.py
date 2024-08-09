@@ -13,8 +13,6 @@ from time import sleep
 from abc import ABC, abstractmethod
 
 DEFAULT_CONFIGURATION_FILE_PATH = "/etc/fw-fanctrl/config.json"
-SOCKETS_FOLDER_PATH = "/run/fw-fanctrl"
-COMMANDS_SOCKET_FILE_PATH = os.path.join(SOCKETS_FOLDER_PATH, ".fw-fanctrl.commands.sock")
 WINDOWS_SOCKET_PATH = r"\\.\pipe\fw-fanctrl.socket"
 
 parser = None
@@ -106,69 +104,6 @@ class SocketController(ABC):
     @abstractmethod
     def sendViaClientSocket(self, command):
         raise UnimplementedException()
-
-
-class UnixSocketController(SocketController, ABC):
-    server_socket = None
-
-    def startServerSocket(self, commandCallback=None):
-        if self.server_socket:
-            raise SocketAlreadyRunningException(self.server_socket)
-        self.server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        if os.path.exists(COMMANDS_SOCKET_FILE_PATH):
-            os.remove(COMMANDS_SOCKET_FILE_PATH)
-        try:
-            if not os.path.exists(SOCKETS_FOLDER_PATH):
-                os.makedirs(SOCKETS_FOLDER_PATH)
-            self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.server_socket.bind(COMMANDS_SOCKET_FILE_PATH)
-            os.chmod(COMMANDS_SOCKET_FILE_PATH, 0o777)
-            self.server_socket.listen(1)
-            while True:
-                client_socket, _ = self.server_socket.accept()
-                try:
-                    # Receive data from the client
-                    data = client_socket.recv(4096).decode()
-                    args = parser.parse_args(shlex.split(data))
-                    commandReturn = commandCallback(args)
-                    if not commandReturn:
-                        commandReturn = "Success!"
-                    client_socket.sendall(commandReturn.encode('utf-8'))
-                except Exception as e:
-                    client_socket.sendall(f"[Error] > An error occurred: {e}".encode('utf-8'))
-                finally:
-                    client_socket.shutdown(socket.SHUT_WR)
-                    client_socket.close()
-        finally:
-            self.stopServerSocket()
-
-    def stopServerSocket(self):
-        if self.server_socket:
-            self.server_socket.close()
-            self.server_socket = None
-
-    def isServerSocketRunning(self):
-        return self.server_socket is not None
-
-    def sendViaClientSocket(self, command):
-        client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        try:
-            client_socket.connect(COMMANDS_SOCKET_FILE_PATH)
-            client_socket.sendall(command.encode('utf-8'))
-            received_data = b""
-            while True:
-                data_chunk = client_socket.recv(1024)
-                if not data_chunk:
-                    break
-                received_data += data_chunk
-            # Receive data from the server
-            data = received_data.decode()
-            if data.startswith("[Error] > "):
-                raise Exception(data)
-            return data
-        finally:
-            if client_socket:
-                client_socket.close()
 
 
 class WindowsSocketController(SocketController, ABC):
@@ -503,14 +438,12 @@ def main():
     commandGroup.add_argument("--hardware-controller", "--hc", help="Select the hardware controller", type=str,
                               choices=["ectool"], default="ectool")
     commandGroup.add_argument("--socket-controller", "--sc", help="Select the socket controller", type=str,
-                              choices=["unix", "win32"], default="unix")
+                              choices=["win32"], default="win32")
 
     args = parser.parse_args()
 
     socketController = None
-    if args.socket_controller == "unix":
-        socketController = UnixSocketController()
-    elif args.socket_controller == "win32":
+    if args.socket_controller == "win32":
         socketController = WindowsSocketController()
 
     if args.run:
