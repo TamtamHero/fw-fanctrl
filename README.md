@@ -7,6 +7,8 @@
 
 ## Additional platforms:
 
+[![Static Badge](https://img.shields.io/badge/Windows-0078D6?style=flat&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fwindows)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/windows)
+
 [![Static Badge](https://img.shields.io/badge/NixOS-5277C3?style=flat&logo=nixos&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fnix)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix)
 
 ## Description
