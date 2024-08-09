@@ -189,7 +189,7 @@ fw-fanctrl --reload
 Here is a list of commands used to interact with the service.
 
 The commands in the `run` context are used launch the service manually.
-If you have installed it correctly, the systemd `fw-fanctrl.service` service will do this for you, so you probably will
+If you have installed it correctly, the windows `fw-fanctrl` service will do this for you, so you probably will
 never need them.
 
 | Option                      | Context         | Description                                                                   |
