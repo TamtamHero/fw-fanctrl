@@ -1,11 +1,12 @@
 # fw-fanctrl
 
-[![Static Badge](https://img.shields.io/badge/Linux%2FGlobal-FCC624?style=flat&logo=linux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fmain)](https://github.com/TamtamHero/fw-fanctrl/tree/main)
-![Static Badge](https://img.shields.io/badge/no%20binary%20blobs-30363D?style=flat&logo=GitHub-Sponsors&logoColor=4dff61)
+[![Static Badge](https://img.shields.io/badge/Windows-0078D6?style=flat&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fwindows)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/windows)
 
 [![Static Badge](https://img.shields.io/badge/Python__3.12-FFDE57?style=flat&label=Requirement&link=https%3A%2F%2Fwww.python.org%2Fdownloads)](https://www.python.org/downloads)
 
 ## Additional platforms:
+
+[![Static Badge](https://img.shields.io/badge/Linux%2FGlobal-FCC624?style=flat&logo=linux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fmain)](https://github.com/TamtamHero/fw-fanctrl/tree/main)
 
 [![Static Badge](https://img.shields.io/badge/NixOS-5277C3?style=flat&logo=nixos&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fnix)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix)
 
@@ -36,45 +37,46 @@ If the service is paused or stopped, the fans will revert to their default behav
 
 ### Dependencies
 
-Dependencies are downloaded and installed automatically, but can be excluded from the installation script if you wish to
-do this manually.
+Dependencies are downloaded and installed automatically.
 
-| name           | version   | url                                                                                  | exclusion argument |
-|----------------|-----------|--------------------------------------------------------------------------------------|--------------------|
-| DHowett@ectool | build#899 | [https://gitlab.howett.net/DHowett/ectool](https://gitlab.howett.net/DHowett/ectool) | `--no-ectool`      |
+| name           | version      | url                                                                                                  |
+|----------------|--------------|------------------------------------------------------------------------------------------------------|
+| DHowett@crosec | v0.0.2       | [https://github.com/DHowett/FrameworkWindowsUtils](https://github.com/DHowett/FrameworkWindowsUtils) |
+| DHowett@ectool | artifact#904 | [https://gitlab.howett.net/DHowett/ectool](https://gitlab.howett.net/DHowett/ectool)                 |
+| nssm           | 2.24         | [https://nssm.cc](https://nssm.cc)                                                                   |
 
 ### Instructions
 
+Please note that the windows version of this service uses an unsigned experimental [crosec](https://github.com/DHowett/FrameworkWindowsUtils) driver that may be unstable.
+We are not responsible for any damage or data loss that this may cause.
+
 First, make sure that you have disabled secure boot in your BIOS/UEFI settings.
 (more details on why [here](https://www.howett.net/posts/2021-12-framework-ec/#using-fw-ectool))
+
+```
+============================================================================
+IF YOU HAVE BITLOCKER ENABLED, YOU WILL NEED YOUR RECOVERY CODE ON BOOT !!!!
+PLEASE MAKE A BACKUP OF YOUR BITLOCKER RECOVERY KEY BEFORE YOU DO ANYTHING !
+YOU GET LOCKED OUT OF YOUR COMPUTER IF YOU ARE NOT CAREFUL ENOUGH !
+============================================================================
+```
 
 [Download the repo](https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip) and extract it manually, or
 download/clone it with the appropriate tools:
 
 ```shell
-git clone "https://github.com/TamtamHero/fw-fanctrl.git"
+git clone --branch "packaging/windows" "https://github.com/TamtamHero/fw-fanctrl.git"
 ```
 
 ```shell
-curl -L "https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip" -o "./fw-fanctrl.zip" && unzip "./fw-fanctrl.zip" -d "./fw-fanctrl" && rm -rf "./fw-fanctrl.zip"
+curl -L "https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/packaging/windows.zip" -o "./fw-fanctrl.zip" && unzip "./fw-fanctrl.zip" -d "./fw-fanctrl" && rm -rf "./fw-fanctrl.zip"
 ```
 
-Then run the installation script with administrator privileges
+Then run the installation script with administrator privileges (by double clicking it, or with the following command)
 
-```bash
-sudo ./install.sh
+```shell
+install.bat
 ```
-
-You can add a number of arguments to the installation command to suit your needs
-
-| argument                                                                        | description                                        |
-|---------------------------------------------------------------------------------|----------------------------------------------------|
-| `--dest-dir <installation destination directory (defaults to /)>`               | specify an installation destination directory      |
-| `--prefix-dir <installation prefix directory (defaults to /usr)>`               | specify an installation prefix directory           |
-| `--sysconf-dir <system configuration destination directory (defaults to /etc)>` | specify a default configuration directory          |
-| `--no-ectool`                                                                   | disable ectool installation and service activation |
-| `--no-post-install`                                                             | disable post-install process                       |
-| `--no-pre-uninstall`                                                            | disable pre-uninstall process                      |
 
 ## Update
 
@@ -82,22 +84,17 @@ To update, you can download or pull the appropriate branch from this repository,
 
 ## Uninstall
 
-To uninstall, run the installation script with the `--remove` argument, as well as other
-corresponding [arguments if necessary](#instructions)
+To uninstall, run the uninstallation script `uninstall.bat` (by double clicking it, or with the following command)
 
-```bash
-sudo ./install.sh --remove
+```shell
+install.bat
 ```
 
 ## Configuration
 
 After installation, you will find the configuration file in the following location:
 
-`/etc/fw-fanctrl/config.json`
-
-If you have modified the `dest-dir` or `sysconf-dir`, here is the corresponding pattern
-
-`[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`
+`%Appdata%\fw-fanctrl\config.json`
 
 It contains a list of strategies, ranked from the quietest to loudest, as well as the default and discharging
 strategies.
@@ -148,7 +145,8 @@ Strategies can be configured with the following parameters:
 > ]
 > ```
 >
-> `fw-fanctrl` measures the CPU temperature, calculates a moving average of it, and then finds an appropriate `fan speed`
+> `fw-fanctrl` measures the CPU temperature, calculates a moving average of it, and then finds an
+> appropriate `fan speed`
 > value by interpolating on the curve.
 
 > **FanSpeedUpdateFrequency**:
@@ -206,4 +204,4 @@ never need them.
 | --pause                     | configure       | temporarily disable the service and reset the fans to their default behaviour |
 | --resume                    | configure       | resume the service                                                            |
 | --hardware-controller, --hc | run             | select the hardware controller. choices: ectool                               |
-| --socket-controller, --sc   | run & configure | select the socket controller. choices: unix, win32                            |
+| --socket-controller, --sc   | run & configure | select the socket controller. choices: win32                                  |
