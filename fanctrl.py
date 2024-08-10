@@ -54,7 +54,7 @@ class Strategy:
 
 class Configuration:
     path = None
-    data: None
+    data = None
 
     def __init__(self, path):
         self.path = path
