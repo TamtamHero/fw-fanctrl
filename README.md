@@ -61,7 +61,7 @@ YOU GET LOCKED OUT OF YOUR COMPUTER IF YOU ARE NOT CAREFUL ENOUGH !
 ============================================================================
 ```
 
-[Download the repo](https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip) and extract it manually, or
+[Download the repo](https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/packaging/windows.zip) and extract it manually, or
 download/clone it with the appropriate tools:
 
 ```shell
@@ -87,7 +87,7 @@ To update, you can download or pull the appropriate branch from this repository,
 To uninstall, run the uninstallation script `uninstall.bat` (by double clicking it, or with the following command)
 
 ```shell
-install.bat
+uninstall.bat
 ```
 
 ## Configuration
