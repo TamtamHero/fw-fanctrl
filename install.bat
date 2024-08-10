@@ -62,10 +62,12 @@ GOTO :EOF
     set /p "acknowledgement=> "
     if not defined acknowledgement (
         echo goodbye.
+        pause
         exit /b 2
     )
     if not "%acknowledgement%" equ "%acknowledgementPhrase%" (
         echo wrong acknowledgement phrase [%acknowledgement%] not equal to [%acknowledgementPhrase%], stopping here!
+        pause
         exit /b 2
     )
     echo:
@@ -155,6 +157,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo failed to download 'crosec.zip'
+           pause
            exit /b 1
         )
 
@@ -164,6 +167,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo failed to extract 'crosec.zip'
+           pause
            exit /b 2
         )
 
@@ -176,6 +180,7 @@ GOTO :EOF
         if %errorLevel% neq 0 (
             cd /d "%~dp0"
             echo failed to run the 'crosec' driver installation
+            pause
             exit /b 3
         )
         cd /d "%~dp0"
@@ -189,6 +194,7 @@ GOTO :EOF
         for %%i in (".temp\test-result.txt") do @set count=%%~zi
         if "%count%" == "0" (
            echo 'crosec' driver not installed correctly
+           pause
            exit /b 4
         )
 
@@ -199,6 +205,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo unable to copy '.temp' to '%ProgramFiles%\ectool'
+           pause
            exit /b 5
         )
 
@@ -215,6 +222,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo failed to download 'artifact.zip'
+           pause
            exit /b 1
         )
 
@@ -224,6 +232,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo failed to extract 'artifact.zip'
+           pause
            exit /b 2
         )
 
@@ -234,6 +243,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo unable to create directory '%ProgramFiles%\ectool'
+           pause
            exit /b 3
         )
 
@@ -248,6 +258,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo unable to install 'ectool.exe'
+           pause
            exit /b 3
         )
 
@@ -264,6 +275,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo failed to download 'nssm.zip'
+           pause
            exit /b 1
         )
 
@@ -273,6 +285,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo failed to extract 'nssm.zip'
+           pause
            exit /b 2
         )
 
@@ -287,6 +300,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo unable to install 'nssm.exe'
+           pause
            exit /b 3
         )
 
@@ -302,6 +316,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo unable to create directory '%ProgramFiles%\fw-fanctrl'
+           pause
            exit /b 3
         )
 
@@ -316,6 +331,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo unable to install 'fanctrl.py'
+           pause
            exit /b 3
         )
 
@@ -325,6 +341,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo unable to install '.\services\windows\run-service.bat'
+           pause
            exit /b 4
         )
 
@@ -334,6 +351,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo unable to install '.\services\windows\run-service.bat'
+           pause
            exit /b 4
         )
 
@@ -345,6 +363,7 @@ GOTO :EOF
         @echo off
         if %errorLevel% neq 0 (
            echo unable to install '.\services\windows\fw-fanctrl.bat'
+           pause
            exit /b 4
         )
 
@@ -362,6 +381,7 @@ GOTO :EOF
         "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" Start "SERVICE_DELAYED_AUTO_START"
         "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" DisplayName "Framework Fanctrl"
         "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" Description "A simple systemd service to better control Framework Laptop's fan(s)"
+        "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" AppExit "%ProgramFiles%\ectool\ectool autofanctrl"
         "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" AppStdout "%ProgramFiles%\fw-fanctrl\out.log"
         "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" AppStderr "%ProgramFiles%\fw-fanctrl\out.log"
         @echo off
@@ -410,6 +430,8 @@ GOTO :EOF
         echo removing directory '%ProgramFiles%\nssm'
         rmdir /s /q "%ProgramFiles%\nssm" 2> nul
 
+        GOTO :EOF
+
     :uninstall-ectool
         echo removing 'ectool'
 
@@ -438,6 +460,7 @@ GOTO :EOF
         bcdedit /set {default} testsigning off
 
         GOTO :EOF
+
     GOTO :EOF
 
 

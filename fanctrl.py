@@ -9,6 +9,7 @@ import socket
 import subprocess
 import sys
 import threading
+import traceback
 from time import sleep
 from abc import ABC, abstractmethod
 
@@ -53,7 +54,7 @@ class Strategy:
 
 class Configuration:
     path = None
-    data: None
+    data = None
 
     def __init__(self, path):
         self.path = path
@@ -125,6 +126,32 @@ class WindowsSocketController(SocketController, ABC):
     LPVOID = ctypes.c_void_p
     DWORD = wintypes.DWORD
 
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
+
+    ConvertStringSecurityDescriptorToSecurityDescriptorW = advapi32.ConvertStringSecurityDescriptorToSecurityDescriptorW
+    ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, ctypes.POINTER(wintypes.LPVOID), ctypes.POINTER(wintypes.DWORD)]
+    ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = wintypes.HANDLE
+
+    sddl_string = "D:P(A;;GA;;;WD)"
+
+    security_descriptor = wintypes.LPVOID()
+    ConvertStringSecurityDescriptorToSecurityDescriptorW(sddl_string, 1, ctypes.byref(security_descriptor), None)
+
+    class SECURITY_ATTRIBUTES(ctypes.Structure):
+        from ctypes import wintypes
+
+        _fields_ = [
+            ("nLength", wintypes.DWORD),
+            ("lpSecurityDescriptor", wintypes.LPVOID),
+            ("nLength", wintypes.BOOL),
+        ]
+
+    security_attributes = SECURITY_ATTRIBUTES()
+    security_attributes.nLength = ctypes.sizeof(SECURITY_ATTRIBUTES)
+    security_attributes.lpSecurityDescriptor = security_descriptor
+    security_attributes.bInheritHandle = False
+
     server_socket = None
 
     def startServerSocket(self, commandCallback=None):
@@ -138,7 +165,7 @@ class WindowsSocketController(SocketController, ABC):
             65536,  # nOutBufferSize
             65536,  # nInBufferSize
             0,  # nDefaultTimeOut
-            None  # lpSecurityAttributes
+            self.ctypes.byref(self.security_attributes)  # lpSecurityAttributes
         )
         try:
             while True:
@@ -394,6 +421,7 @@ class FanController:
             print(f"Missing strategy, exiting for safety reasons: {e.args[0]}")
         except Exception as e:
             print(f"Critical error, exiting for safety reasons: {e}")
+            traceback.print_exc()
         exit(1)
 
 
