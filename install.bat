@@ -74,6 +74,7 @@ GOTO :EOF
     echo ----------
     CALL :INSTALL
     GOTO :EOF
+GOTO :EOF
 
 :INSTALL
     CALL :UNINSTALL
@@ -142,252 +143,255 @@ GOTO :EOF
 
     pause
     GOTO :EOF
+GOTO :EOF
 
-    :install-crosec
-        echo setting up 'crosec'
-        rmdir /s /q ".temp" 2> nul
-        mkdir ".temp"
+:install-crosec
+    echo setting up 'crosec'
+    rmdir /s /q ".temp" 2> nul
+    mkdir ".temp"
 
-        echo enabling 'bcdedit testsigning'
-        bcdedit /set {default} testsigning on
+    echo enabling 'bcdedit testsigning'
+    bcdedit /set {default} testsigning on
 
-        echo downloading 'crosec.zip'
-        @echo on
-        curl -s -o ".temp\crosec.zip" -L "https://github.com/DHowett/FrameworkWindowsUtils/releases/download/v0.0.2/CrosEC-0.0.2-4ac038b.zip" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo failed to download 'crosec.zip'
-           pause
-           exit /b 1
-        )
+    echo downloading 'crosec.zip'
+    @echo on
+    curl -s -o ".temp\crosec.zip" -L "https://github.com/DHowett/FrameworkWindowsUtils/releases/download/v0.0.2/CrosEC-0.0.2-4ac038b.zip" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo failed to download 'crosec.zip'
+       pause
+       exit /b 1
+    )
 
-        echo extracting 'crosec.zip'
-        @echo on
-        tar -xf ".temp\crosec.zip" --strip-components=1 -C ".temp" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo failed to extract 'crosec.zip'
-           pause
-           exit /b 2
-        )
+    echo extracting 'crosec.zip'
+    @echo on
+    tar -xf ".temp\crosec.zip" --strip-components=1 -C ".temp" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo failed to extract 'crosec.zip'
+       pause
+       exit /b 2
+    )
 
-        echo installing 'crosec' driver
+    echo installing 'crosec' driver
 
-        cd /d ".temp"
-        @echo on
-        ".\installer" install
-        @echo off
-        if %errorLevel% neq 0 (
-            cd /d "%~dp0"
-            echo failed to run the 'crosec' driver installation
-            pause
-            exit /b 3
-        )
+    cd /d ".temp"
+    @echo on
+    ".\installer" install
+    @echo off
+    if %errorLevel% neq 0 (
         cd /d "%~dp0"
+        echo failed to run the 'crosec' driver installation
+        pause
+        exit /b 3
+    )
+    cd /d "%~dp0"
 
-        echo testing 'crosec' driver
-        @echo on
-        ".temp\fauxectool" > ".temp\test-result.txt"
-        @echo off
+    echo testing 'crosec' driver
+    @echo on
+    ".temp\fauxectool" > ".temp\test-result.txt"
+    @echo off
 
-        set count=0
-        for %%i in (".temp\test-result.txt") do @set count=%%~zi
-        if "%count%" == "0" (
-           echo 'crosec' driver not installed correctly
-           pause
-           exit /b 4
-        )
+    set count=0
+    for %%i in (".temp\test-result.txt") do @set count=%%~zi
+    if "%count%" == "0" (
+       echo 'crosec' driver not installed correctly
+       pause
+       exit /b 4
+    )
 
-        rmdir /s /q "%ProgramFiles%\crosec" 2> nul
-        echo copying '.temp' to '%ProgramFiles%\crosec'
-        @echo on
-        xcopy /e /i ".temp" "%ProgramFiles%\crosec" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo unable to copy '.temp' to '%ProgramFiles%\ectool'
-           pause
-           exit /b 5
-        )
+    rmdir /s /q "%ProgramFiles%\crosec" 2> nul
+    echo copying '.temp' to '%ProgramFiles%\crosec'
+    @echo on
+    xcopy /e /i ".temp" "%ProgramFiles%\crosec" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo unable to copy '.temp' to '%ProgramFiles%\ectool'
+       pause
+       exit /b 5
+    )
 
-        GOTO :EOF
-
-    :install-ectool
-        echo setting up 'ectool'
-        rmdir /s /q ".temp" 2> nul
-        mkdir ".temp"
-
-        echo downloading 'artifact.zip'
-        @echo on
-        curl -s -o ".temp\artifact.zip" -L "https://gitlab.howett.net/DHowett/ectool/-/jobs/904/artifacts/download?file_type=archive" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo failed to download 'artifact.zip'
-           pause
-           exit /b 1
-        )
-
-        echo extracting 'artifact.zip'
-        @echo on
-        tar -xf ".temp\artifact.zip" --strip-components=3 -C ".temp" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo failed to extract 'artifact.zip'
-           pause
-           exit /b 2
-        )
-
-        rmdir /s /q "%ProgramFiles%\ectool" 2> nul
-        echo creating directory '%ProgramFiles%\ectool'
-        @echo on
-        mkdir "%ProgramFiles%\ectool" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo unable to create directory '%ProgramFiles%\ectool'
-           pause
-           exit /b 3
-        )
-
-        @echo %PATH% | findstr /I /C:"%ProgramFiles%\ectool" >nul
-        if %errorLevel% neq 0 (
-            set "addedEnvironmentPaths=%addedEnvironmentPaths%;%ProgramFiles%\ectool"
-        )
-
-        echo installing 'ectool.exe' to '%ProgramFiles%\ectool'
-        @echo on
-        copy /v ".temp\ectool.exe" "%ProgramFiles%\ectool" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo unable to install 'ectool.exe'
-           pause
-           exit /b 3
-        )
-
-        GOTO :EOF
-
-    :install-nssm
-        echo setting up 'nssm'
-        rmdir /s /q ".temp" 2> nul
-        mkdir ".temp"
-
-        echo downloading 'nssm.zip'
-        @echo on
-        curl -s -o ".temp\nssm.zip" -L "https://nssm.cc/release/nssm-2.24.zip" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo failed to download 'nssm.zip'
-           pause
-           exit /b 1
-        )
-
-        echo extracting 'nssm.zip'
-        @echo on
-        tar -xf ".temp\nssm.zip" --strip-components=1 -C ".temp" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo failed to extract 'nssm.zip'
-           pause
-           exit /b 2
-        )
-
-        echo creating directory '%ProgramFiles%\nssm'
-        @echo on
-        mkdir "%ProgramFiles%\nssm" > nul 2> nul
-        @echo off
-
-        echo installing 'nssm.exe' to '%ProgramFiles%\nssm\'
-        @echo on
-        copy /v ".temp\win64\nssm.exe" "%ProgramFiles%\nssm\" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo unable to install 'nssm.exe'
-           pause
-           exit /b 3
-        )
-
-        GOTO :EOF
-
-
-    :install-fw-fanctrl
-        echo setting up 'fw-fanctrl'
-        rmdir /s /q "%ProgramFiles%\fw-fanctrl" 2> nul
-        echo creating directory '%ProgramFiles%\fw-fanctrl'
-        @echo on
-        mkdir "%ProgramFiles%\fw-fanctrl" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo unable to create directory '%ProgramFiles%\fw-fanctrl'
-           pause
-           exit /b 3
-        )
-
-        @echo %PATH% | findstr /I /C:"%ProgramFiles%\fw-fanctrl" >nul
-        if %errorLevel% neq 0 (
-            set "addedEnvironmentPaths=%addedEnvironmentPaths%;%ProgramFiles%\fw-fanctrl"
-        )
-
-        echo installing 'fanctrl.py' to '%ProgramFiles%\fw-fanctrl'
-        @echo on
-        copy /v ".\fanctrl.py" "%ProgramFiles%\fw-fanctrl" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo unable to install 'fanctrl.py'
-           pause
-           exit /b 3
-        )
-
-        echo installing '.\services\windows\run-service.bat' to '%ProgramFiles%\fw-fanctrl'
-        @echo on
-        copy /v ".\services\windows\run-service.bat" "%ProgramFiles%\fw-fanctrl" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo unable to install '.\services\windows\run-service.bat'
-           pause
-           exit /b 4
-        )
-
-        echo installing '.\services\windows\run-service.bat' to '%ProgramFiles%\fw-fanctrl'
-        @echo on
-        copy /v ".\services\windows\run-service.bat" "%ProgramFiles%\fw-fanctrl" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo unable to install '.\services\windows\run-service.bat'
-           pause
-           exit /b 4
-        )
-
-        powershell -Command "(gc '%ProgramFiles%\fw-fanctrl\run-service.bat') -replace '####CONFIG_PATH####', '%Appdata%\fw-fanctrl\config.json' | Out-File -encoding ASCII '%ProgramFiles%\fw-fanctrl\run-service.bat'"
-
-        echo installing '.\services\windows\fw-fanctrl.bat' to '%ProgramFiles%\fw-fanctrl'
-        @echo on
-        copy /v ".\services\windows\fw-fanctrl.bat" "%ProgramFiles%\fw-fanctrl" > nul
-        @echo off
-        if %errorLevel% neq 0 (
-           echo unable to install '.\services\windows\fw-fanctrl.bat'
-           pause
-           exit /b 4
-        )
-
-        powershell -Command "(gc '%ProgramFiles%\fw-fanctrl\fw-fanctrl.bat') -replace '####PYTHON_PATH####', '%localAppData%\Programs\Python\Python312\python' | Out-File -encoding ASCII '%ProgramFiles%\fw-fanctrl\fw-fanctrl.bat'"
-
-        echo creating directory '%Appdata%\fw-fanctrl'
-        if not exist "%Appdata%\fw-fanctrl" mkdir "%Appdata%\fw-fanctrl"
-
-        echo installing 'config.json' in '%Appdata%\fw-fanctrl\config.json'
-        if not exist "%Appdata%\fw-fanctrl\config.json" echo n | copy /-y ".\config.json" "%Appdata%\fw-fanctrl\config.json" > nul
-
-        echo creating 'fw-fanctrl' service
-        @echo on
-        "%ProgramFiles%\nssm\nssm" install "fw-fanctrl" "%ProgramFiles%\fw-fanctrl\run-service.bat"
-        "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" Start "SERVICE_DELAYED_AUTO_START"
-        "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" DisplayName "Framework Fanctrl"
-        "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" Description "A simple systemd service to better control Framework Laptop's fan(s)"
-        "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" AppExit "%ProgramFiles%\ectool\ectool autofanctrl"
-        "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" AppStdout "%ProgramFiles%\fw-fanctrl\out.log"
-        "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" AppStderr "%ProgramFiles%\fw-fanctrl\out.log"
-        @echo off
-
-        GOTO :EOF
     GOTO :EOF
+GOTO :EOF
+
+:install-ectool
+    echo setting up 'ectool'
+    rmdir /s /q ".temp" 2> nul
+    mkdir ".temp"
+
+    echo downloading 'artifact.zip'
+    @echo on
+    curl -s -o ".temp\artifact.zip" -L "https://gitlab.howett.net/DHowett/ectool/-/jobs/904/artifacts/download?file_type=archive" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo failed to download 'artifact.zip'
+       pause
+       exit /b 1
+    )
+
+    echo extracting 'artifact.zip'
+    @echo on
+    tar -xf ".temp\artifact.zip" --strip-components=3 -C ".temp" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo failed to extract 'artifact.zip'
+       pause
+       exit /b 2
+    )
+
+    rmdir /s /q "%ProgramFiles%\ectool" 2> nul
+    echo creating directory '%ProgramFiles%\ectool'
+    @echo on
+    mkdir "%ProgramFiles%\ectool" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo unable to create directory '%ProgramFiles%\ectool'
+       pause
+       exit /b 3
+    )
+
+    @echo %PATH% | findstr /I /C:"%ProgramFiles%\ectool" >nul
+    if %errorLevel% neq 0 (
+        set "addedEnvironmentPaths=%addedEnvironmentPaths%;%ProgramFiles%\ectool"
+    )
+
+    echo installing 'ectool.exe' to '%ProgramFiles%\ectool'
+    @echo on
+    copy /v ".temp\ectool.exe" "%ProgramFiles%\ectool" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo unable to install 'ectool.exe'
+       pause
+       exit /b 3
+    )
+
+    GOTO :EOF
+GOTO :EOF
+
+:install-nssm
+    echo setting up 'nssm'
+    rmdir /s /q ".temp" 2> nul
+    mkdir ".temp"
+
+    echo downloading 'nssm.zip'
+    @echo on
+    curl -s -o ".temp\nssm.zip" -L "https://nssm.cc/release/nssm-2.24.zip" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo failed to download 'nssm.zip'
+       pause
+       exit /b 1
+    )
+
+    echo extracting 'nssm.zip'
+    @echo on
+    tar -xf ".temp\nssm.zip" --strip-components=1 -C ".temp" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo failed to extract 'nssm.zip'
+       pause
+       exit /b 2
+    )
+
+    echo creating directory '%ProgramFiles%\nssm'
+    @echo on
+    mkdir "%ProgramFiles%\nssm" > nul 2> nul
+    @echo off
+
+    echo installing 'nssm.exe' to '%ProgramFiles%\nssm\'
+    @echo on
+    copy /v ".temp\win64\nssm.exe" "%ProgramFiles%\nssm\" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo unable to install 'nssm.exe'
+       pause
+       exit /b 3
+    )
+
+    GOTO :EOF
+GOTO :EOF
+
+:install-fw-fanctrl
+    echo setting up 'fw-fanctrl'
+    rmdir /s /q "%ProgramFiles%\fw-fanctrl" 2> nul
+    echo creating directory '%ProgramFiles%\fw-fanctrl'
+    @echo on
+    mkdir "%ProgramFiles%\fw-fanctrl" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo unable to create directory '%ProgramFiles%\fw-fanctrl'
+       pause
+       exit /b 3
+    )
+
+    @echo %PATH% | findstr /I /C:"%ProgramFiles%\fw-fanctrl" >nul
+    if %errorLevel% neq 0 (
+        set "addedEnvironmentPaths=%addedEnvironmentPaths%;%ProgramFiles%\fw-fanctrl"
+    )
+
+    echo installing 'fanctrl.py' to '%ProgramFiles%\fw-fanctrl'
+    @echo on
+    copy /v ".\fanctrl.py" "%ProgramFiles%\fw-fanctrl" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo unable to install 'fanctrl.py'
+       pause
+       exit /b 3
+    )
+
+    echo installing '.\services\windows\run-service.bat' to '%ProgramFiles%\fw-fanctrl'
+    @echo on
+    copy /v ".\services\windows\run-service.bat" "%ProgramFiles%\fw-fanctrl" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo unable to install '.\services\windows\run-service.bat'
+       pause
+       exit /b 4
+    )
+
+    echo installing '.\services\windows\run-service.bat' to '%ProgramFiles%\fw-fanctrl'
+    @echo on
+    copy /v ".\services\windows\run-service.bat" "%ProgramFiles%\fw-fanctrl" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo unable to install '.\services\windows\run-service.bat'
+       pause
+       exit /b 4
+    )
+
+    powershell -Command "(gc '%ProgramFiles%\fw-fanctrl\run-service.bat') -replace '####CONFIG_PATH####', '%Appdata%\fw-fanctrl\config.json' | Out-File -encoding ASCII '%ProgramFiles%\fw-fanctrl\run-service.bat'"
+
+    echo installing '.\services\windows\fw-fanctrl.bat' to '%ProgramFiles%\fw-fanctrl'
+    @echo on
+    copy /v ".\services\windows\fw-fanctrl.bat" "%ProgramFiles%\fw-fanctrl" > nul
+    @echo off
+    if %errorLevel% neq 0 (
+       echo unable to install '.\services\windows\fw-fanctrl.bat'
+       pause
+       exit /b 4
+    )
+
+    powershell -Command "(gc '%ProgramFiles%\fw-fanctrl\fw-fanctrl.bat') -replace '####PYTHON_PATH####', '%localAppData%\Programs\Python\Python312\python' | Out-File -encoding ASCII '%ProgramFiles%\fw-fanctrl\fw-fanctrl.bat'"
+
+    echo creating directory '%Appdata%\fw-fanctrl'
+    if not exist "%Appdata%\fw-fanctrl" mkdir "%Appdata%\fw-fanctrl"
+
+    echo installing 'config.json' in '%Appdata%\fw-fanctrl\config.json'
+    if not exist "%Appdata%\fw-fanctrl\config.json" echo n | copy /-y ".\config.json" "%Appdata%\fw-fanctrl\config.json" > nul
+
+    echo creating 'fw-fanctrl' service
+    @echo on
+    "%ProgramFiles%\nssm\nssm" install "fw-fanctrl" "%ProgramFiles%\fw-fanctrl\run-service.bat"
+    "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" Start "SERVICE_DELAYED_AUTO_START"
+    "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" DisplayName "Framework Fanctrl"
+    "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" Description "A simple systemd service to better control Framework Laptop's fan(s)"
+    "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" AppExit "%ProgramFiles%\ectool\ectool autofanctrl"
+    "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" AppStdout "%ProgramFiles%\fw-fanctrl\out.log"
+    "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" AppStderr "%ProgramFiles%\fw-fanctrl\out.log"
+    @echo off
+
+    GOTO :EOF
+GOTO :EOF
 
 :UNINSTALL
     echo uninstalling
@@ -405,64 +409,66 @@ GOTO :EOF
     pause
 
     GOTO :EOF
+GOTO :EOF
 
-    :uninstall-fw-fanctrl
-        echo removing 'fw-fanctrl'
+:uninstall-fw-fanctrl
+    echo removing 'fw-fanctrl'
 
-        echo stopping 'fw-fanctrl' service
-        @echo on
-        "%ProgramFiles%\nssm\nssm" stop "fw-fanctrl"
-        @echo off
+    echo stopping 'fw-fanctrl' service
+    @echo on
+    "%ProgramFiles%\nssm\nssm" stop "fw-fanctrl"
+    @echo off
 
-        echo removing 'fw-fanctrl' service
-        @echo on
-        "%ProgramFiles%\nssm\nssm" remove "fw-fanctrl" confirm
-        @echo off
+    echo removing 'fw-fanctrl' service
+    @echo on
+    "%ProgramFiles%\nssm\nssm" remove "fw-fanctrl" confirm
+    @echo off
 
-        echo removing directory '%ProgramFiles%\fw-fanctrl'
-        rmdir /s /q "%ProgramFiles%\fw-fanctrl" 2> nul
-
-        GOTO :EOF
-
-    :uninstall-nssm
-        echo removing 'nssm'
-
-        echo removing directory '%ProgramFiles%\nssm'
-        rmdir /s /q "%ProgramFiles%\nssm" 2> nul
-
-        GOTO :EOF
-
-    :uninstall-ectool
-        echo removing 'ectool'
-
-        echo setting the fan control back to normal
-        @echo on
-        "%ProgramFiles%\ectool\ectool" autofanctrl
-        @echo off
-
-        echo removing directory '%ProgramFiles%\ectool'
-        rmdir /s /q "%ProgramFiles%\ectool" 2> nul
-
-        GOTO :EOF
-
-    :uninstall-crosec
-        echo removing 'crosec'
-        
-        echo uninstalling 'crosec' driver
-        @echo on
-        "%ProgramFiles%\crosec\installer" uninstall
-        @echo off
-
-        echo removing directory '%ProgramFiles%\crosec'
-        rmdir /s /q "%ProgramFiles%\crosec" 2> nul
-
-        echo disabling 'bcdedit testsigning'
-        bcdedit /set {default} testsigning off
-
-        GOTO :EOF
+    echo removing directory '%ProgramFiles%\fw-fanctrl'
+    rmdir /s /q "%ProgramFiles%\fw-fanctrl" 2> nul
 
     GOTO :EOF
+GOTO :EOF
 
+:uninstall-nssm
+    echo removing 'nssm'
+
+    echo removing directory '%ProgramFiles%\nssm'
+    rmdir /s /q "%ProgramFiles%\nssm" 2> nul
+
+    GOTO :EOF
+GOTO :EOF
+
+:uninstall-ectool
+    echo removing 'ectool'
+
+    echo setting the fan control back to normal
+    @echo on
+    "%ProgramFiles%\ectool\ectool" autofanctrl
+    @echo off
+
+    echo removing directory '%ProgramFiles%\ectool'
+    rmdir /s /q "%ProgramFiles%\ectool" 2> nul
+
+    GOTO :EOF
+GOTO :EOF
+
+:uninstall-crosec
+    echo removing 'crosec'
+
+    echo uninstalling 'crosec' driver
+    @echo on
+    "%ProgramFiles%\crosec\installer" uninstall
+    @echo off
+
+    echo removing directory '%ProgramFiles%\crosec'
+    rmdir /s /q "%ProgramFiles%\crosec" 2> nul
+
+    echo disabling 'bcdedit testsigning'
+    bcdedit /set {default} testsigning off
+
+    GOTO :EOF
+GOTO :EOF
 
 :ARG-PARSER
     :: Loop until two consecutive empty args
