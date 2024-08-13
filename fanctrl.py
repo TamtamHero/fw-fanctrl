@@ -542,6 +542,7 @@ class FanController:
             print(f"[Error] > Missing strategy, exiting for safety reasons: {e.args[0]}", file=sys.stderr)
         except Exception as e:
             print(f"[Error] > Critical error, exiting for safety reasons: {e}", file=sys.stderr)
+            traceback.print_exc()
         exit(1)
 
 
