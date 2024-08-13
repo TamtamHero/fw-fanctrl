@@ -13,7 +13,7 @@ import textwrap
 from time import sleep
 from abc import ABC, abstractmethod
 
-DEFAULT_CONFIGURATION_FILE_PATH = "/etc/fw-fanctrl/config.json"
+DEFAULT_CONFIGURATION_FILE_PATH = "%%appdata%%/fw-fanctrl/config.json"
 WINDOWS_SOCKET_PATH = r"\\.\pipe\fw-fanctrl.socket"
 
 
@@ -26,7 +26,6 @@ class CommandParser:
     def __init__(self, isRemote=False):
         self.isRemote = isRemote
         self.initParser()
-        self.initLegacyParser()
 
     def initParser(self):
         self.parser = argparse.ArgumentParser(
