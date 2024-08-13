@@ -69,7 +69,7 @@ git clone --branch "packaging/windows" "https://github.com/TamtamHero/fw-fanctrl
 ```
 
 ```shell
-curl -L "https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/packaging/windows.zip" -o "./fw-fanctrl.zip" && unzip "./fw-fanctrl.zip" -d "./fw-fanctrl" && rm -rf "./fw-fanctrl.zip"
+curl -L "https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/packaging/windows.zip" -o "./fw-fanctrl.zip" && tar -xf "./fw-fanctrl.zip" && del "./fw-fanctrl.zip"
 ```
 
 Then run the installation script with administrator privileges (by double clicking it, or with the following command)
