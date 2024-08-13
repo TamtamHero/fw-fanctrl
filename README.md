@@ -184,7 +184,7 @@ Strategies can be configured with the following parameters:
 Once the configuration has been changed, you must reload it with the following command
 
 ```bash
-fw-fanctrl --reload
+fw-fanctrl reload
 ```
 
 ## Commands
@@ -199,7 +199,7 @@ fw-fanctrl [commands and options]
 
 First, the global options
 
-| Option                    | Optional | choices | Default | Description                                                                    |
+| Option                    | Optional | Choices | Default | Description                                                                    |
 |---------------------------|----------|---------|---------|--------------------------------------------------------------------------------|
 | --socket-controller, --sc | yes      | unix    | unix    | the socket controller to use for communication between the cli and the service |
 
@@ -210,7 +210,7 @@ run the service manually
 If you have installed it correctly, the systemd `fw-fanctrl.service` service will do this for you, so you probably will
 never need those.
 
-| Option                      | Optional | choices        | Default              | Description                                                                       |
+| Option                      | Optional | Choices        | Default              | Description                                                                       |
 |-----------------------------|----------|----------------|----------------------|-----------------------------------------------------------------------------------|
 | \<strategy>                 | yes      |                | the default strategy | the name of the strategy to use                                                   |
 | --config                    | yes      | \[CONFIG_PATH] |                      | the configuration file path                                                       |
@@ -245,6 +245,6 @@ resume the service
 
 print the selected information
 
-| Option             | Optional | choices       | Default | Description            |
+| Option             | Optional | Choices       | Default | Description            |
 |--------------------|----------|---------------|---------|------------------------|
 | \<print_selection> | yes      | current, list | current | what should be printed |
