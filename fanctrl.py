@@ -3,10 +3,8 @@ import argparse
 import collections
 import io
 import json
-import os
 import re
 import shlex
-import socket
 import subprocess
 import sys
 import threading
