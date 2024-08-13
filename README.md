@@ -248,9 +248,3 @@ print the selected information
 | Option             | Optional | choices       | Default | Description            |
 |--------------------|----------|---------------|---------|------------------------|
 | \<print_selection> | yes      | current, list | current | what should be printed |
-
-
-
-
-
-
