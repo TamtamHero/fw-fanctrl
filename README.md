@@ -1,91 +1,203 @@
 # fw-fanctrl
 
-This is a simple Python service for Linux that drives Framework Laptop's fan(s) speed according to a configurable speed/temp curve.
-Its default configuration targets very silent fan operation, but it's easy to configure it for a different comfort/performance trade-off.
-Its possible to specify two separate fan curves depending on whether the Laptop is charging/discharging.
-Under the hood, it uses [ectool](https://gitlab.howett.net/DHowett/ectool) to change parameters in Framework's embedded controller (EC).
+[![Static Badge](https://img.shields.io/badge/Linux%2FGlobal-FCC624?style=flat&logo=linux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fmain)](https://github.com/TamtamHero/fw-fanctrl/tree/main)
+![Static Badge](https://img.shields.io/badge/no%20binary%20blobs-30363D?style=flat&logo=GitHub-Sponsors&logoColor=4dff61)
 
-It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs, with or without a discrete GPU.
+[![Static Badge](https://img.shields.io/badge/Python__3.12-FFDE57?style=flat&label=Requirement&link=https%3A%2F%2Fwww.python.org%2Fdownloads)](https://www.python.org/downloads)
+
+## Additional platforms:
+
+[![Static Badge](https://img.shields.io/badge/NixOS-5277C3?style=flat&logo=nixos&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fnix)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix)
+
+## Description
+
+Fw-fanctrl is a simple Python CLI service that controls Framework Laptop's fan(s)
+speed according to a configurable speed/temperature curve.
+
+Its default strategy aims for very quiet fan operation, but you can choose amongst the other provided strategies, or
+easily configure your own for a different comfort/performance trade-off.
+
+It also is possible to assign separate strategies depending on whether the laptop is charging or discharging.
+
+Under the hood, it uses [ectool](https://gitlab.howett.net/DHowett/ectool)
+to change parameters in Framework's embedded controller (EC).
+
+It is compatible with all 13" and 16" models, both AMD/Intel CPUs, with or without a discrete GPU.
 
 If the service is paused or stopped, the fans will revert to their default behaviour.
 
-# Install
+## Installation
 
-## Dependencies
+### Requirements
 
-To communicate with the embedded controller the `ectool` is required.
-You can either let the script download it from the [gitlab repository](https://gitlab.howett.net/DHowett/ectool) artifacts, 
-or disable its installation (`--no-ectool`) and install your own.
+| name   | version | url                                                                  |
+|--------|---------|----------------------------------------------------------------------|
+| Python | 3.12.x  | [https://www.python.org/downloads](https://www.python.org/downloads) |
 
-You also need to disable secure boot of your device for `ectool` to work (more details about why [here](https://www.howett.net/posts/2021-12-framework-ec/#using-fw-ectool))
+### Dependencies
 
-Then run:
+Dependencies are downloaded and installed automatically, but can be excluded from the installation script if you wish to
+do this manually.
+
+| name           | version   | url                                                                                  | exclusion argument |
+|----------------|-----------|--------------------------------------------------------------------------------------|--------------------|
+| DHowett@ectool | build#899 | [https://gitlab.howett.net/DHowett/ectool](https://gitlab.howett.net/DHowett/ectool) | `--no-ectool`      |
+
+### Instructions
+
+First, make sure that you have disabled secure boot in your BIOS/UEFI settings.
+(more details on why [here](https://www.howett.net/posts/2021-12-framework-ec/#using-fw-ectool))
+
+[Download the repo](https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip) and extract it manually, or
+download/clone it with the appropriate tools:
+
+```shell
+git clone "https://github.com/TamtamHero/fw-fanctrl.git"
+```
+
+```shell
+curl -L "https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip" -o "./fw-fanctrl.zip" && unzip "./fw-fanctrl.zip" -d "./fw-fanctrl" && rm -rf "./fw-fanctrl.zip"
+```
+
+Then run the installation script with administrator privileges
+
 ```bash
 sudo ./install.sh
 ```
 
-This bash script will to create and activate a service that runs this repo's main script, `fanctrl.py`.
-It will copy `fanctrl.py` (to an executable file `fw-fanctrl`), download the ectool to `[dest-dir(/)]/bin` and create a config file
-in `[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`
+You can add a number of arguments to the installation command to suit your needs
 
-this script also includes options to:
-- specify an installation destination directory (`--dest-dir <installation destination directory (defaults to /)>`).
-- specify an installation prefix directory (`--prefix-dir <installation prefix directory (defaults to /usr)>`).
-- specify a default configuration directory (`--sysconf-dir <system configuration destination directory (defaults to /etc)>`).
-- disable ectool installation and service activation (`--no-ectool`)
-- disable post-install process (`--no-post-install`)
-- disable pre-uninstall process (`--no-pre-uninstall`)
+| argument                                                                        | description                                        |
+|---------------------------------------------------------------------------------|----------------------------------------------------|
+| `--dest-dir <installation destination directory (defaults to /)>`               | specify an installation destination directory      |
+| `--prefix-dir <installation prefix directory (defaults to /usr)>`               | specify an installation prefix directory           |
+| `--sysconf-dir <system configuration destination directory (defaults to /etc)>` | specify a default configuration directory          |
+| `--no-ectool`                                                                   | disable ectool installation and service activation |
+| `--no-post-install`                                                             | disable post-install process                       |
+| `--no-pre-uninstall`                                                            | disable pre-uninstall process                      |
 
-# Update
+## Update
 
-To install an update, you can pull the latest commit on the `main` branch of this repository, and run the install script again.
+To update, you can download or pull the appropriate branch from this repository, and run the installation script again.
 
-# Uninstall
+## Uninstall
+
+To uninstall, run the installation script with the `--remove` argument, as well as other
+corresponding [arguments if necessary](#instructions)
+
 ```bash
 sudo ./install.sh --remove
 ```
 
-# Configuration
+## Configuration
 
-There is a single `config.json` file located at `[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`.
+After installation, you will find the configuration file in the following location:
 
-(You will need to reload the configuration with)
+`/etc/fw-fanctrl/config.json`
+
+If you have modified the `dest-dir` or `sysconf-dir`, here is the corresponding pattern
+
+`[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`
+
+It contains a list of strategies, ranked from the quietest to loudest, as well as the default and discharging
+strategies.
+
+For example, one could use a lower fan speed strategy on discharging to optimise battery life (- noise, + heat),
+and a high fan speed strategy on AC (+ noise, - heat).
+
+You can add or edit strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this
+repo :)
+
+### Default strategy
+
+The default strategy is the one used when the service is started.
+
+It can be changed by replacing the value of the `defaultStrategy` field with one of the strategies present in the
+configuration.
+
+```json
+"defaultStrategy": "[STRATEGY NAME]"
+```
+
+### Charging/Discharging strategies
+
+The discharging strategy is the one that will be used when the laptop is not on AC,
+Otherwise the default strategy is used.
+
+It can be changed by replacing the value of the `strategyOnDischarging` field with one of the strategies present in the
+configuration.
+
+```json
+"strategyOnDischarging": "[STRATEGY NAME]"
+```
+
+This is optional and can be left empty to have the same strategy at all times.
+
+### Editing strategies
+
+Strategies can be configured with the following parameters:
+
+> **SpeedCurve**:
+>
+> It is represented by the curve points for `f(temperature) = fan(s) speed`.
+>
+> ```json
+> "speedCurve": [
+>     { "temp": [TEMPERATURE POINT], "speed": [PERCENTAGE SPEED] },
+>     ...
+> ]
+> ```
+>
+> `fw-fanctrl` measures the CPU temperature, calculates a moving average of it, and then finds an appropriate `fan speed`
+> value by interpolating on the curve.
+
+> **FanSpeedUpdateFrequency**:
+>
+> It is the interval in seconds between fan speed calculations.
+>
+> ```json
+> "fanSpeedUpdateFrequency": [UPDATE FREQUENCY]
+> ```
+>
+> This is for comfort, otherwise the speed will change too often, which is noticeable and annoying, especially at low
+> speed.
+>
+> For a more responsive fan, you can reduce this setting.
+>
+> **Defaults to 5 seconds.** (minimum 1)
+
+> **MovingAverageInterval**:
+>
+> It is the number of seconds over which the moving average of temperature is calculated.
+>
+> ```json
+> "movingAverageInterval": [AVERAGING INTERVAL]
+> ```
+>
+> Increase it, and the fan speed changes more gradually. Lower it, and it becomes more responsive.
+>
+> **Defaults to 20 seconds.** (minimum 1)
+
+---
+
+Once the configuration has been changed, you must reload it with the following command
+
 ```bash
 fw-fanctrl --reload
 ```
 
-It contains different strategies, ranked from the most silent to the noisiest. It is possible to specify two different strategies for charging/discharging allowing for different optimization goals.
-On discharging one could have fan curve optimized for low fan speeds in order to save power while accepting a bit more heat. 
-On charging one could have a fan curve that focuses on keeping the CPU from throttling and the system cool, at the expense of fan noise.
-You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
+## Commands
 
-Strategies can be configured with the following parameters:
+Here is a list of commands used to interact with the service.
 
-- **SpeedCurve**:
-
-    This is the curve points for `f(temperature) = fan speed`
-
-    `fw-fanctrl` measures the CPU temperature, compute a moving average of it, and then find an appropriate `fan speed` value by interpolation on the curve.
-
-- **FanSpeedUpdateFrequency**:
-
-    Time interval between every update to the fan's speed. `fw-fanctrl` measures temperature every second and add it to its moving average, but the actual update to fan speed is controlled using this configuration. This is for comfort, otherwise the speed is changed too often and it is noticeable and annoying, especially at low speed.
-    For a more reactive fan, you can lower this setting. **Defaults to 5 seconds.**
-
-- **MovingAverageInterval**:
-
-    Number of seconds on which the moving average of temperature is computed. Increase it, and the fan speed will change more gradually. Lower it, and it will gain in reactivity. **Defaults to 20 seconds.**
-
-## Charging/Discharging strategies
-
-The strategy active by default is the one specified in the `defaultStrategy` entry. Optionally a separate strategy only active during discharge can be defined, using the `strategyOnDischarging` entry. By default no extra strategy for discharging is provided, the default strategy is active during all times.
-
-# Commands
+The commands in the `run` context are used launch the service manually.
+If you have installed it correctly, the systemd `fw-fanctrl.service` service will do this for you, so you probably will
+never need them.
 
 | Option                      | Context         | Description                                                                   |
 |-----------------------------|-----------------|-------------------------------------------------------------------------------|
 | \<strategy>                 | run & configure | the name of the strategy to use                                               |
-| --run                       | run             | run the service                                                               |
+| --run                       | run             | run the service manually                                                      |
 | --config                    | run             | specify the configuration path                                                |
 | --no-log                    | run             | disable state logging                                                         |
 | --query, -q                 | configure       | print the current strategy name                                               |
