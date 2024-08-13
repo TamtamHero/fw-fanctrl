@@ -186,22 +186,62 @@ fw-fanctrl --reload
 
 ## Commands
 
-Here is a list of commands used to interact with the service.
+Here is a list of commands and options used to interact with the service.
 
-The commands in the `run` context are used launch the service manually.
-If you have installed it correctly, the windows `fw-fanctrl` service will do this for you, so you probably will
-never need them.
+the base of all commands is the following
 
-| Option                      | Context         | Description                                                                   |
-|-----------------------------|-----------------|-------------------------------------------------------------------------------|
-| \<strategy>                 | run & configure | the name of the strategy to use                                               |
-| --run                       | run             | run the service manually                                                      |
-| --config                    | run             | specify the configuration path                                                |
-| --no-log                    | run             | disable state logging                                                         |
-| --query, -q                 | configure       | print the current strategy name                                               |
-| --list-strategies           | configure       | print the available strategies                                                |
-| --reload, -r                | configure       | reload the configuration file                                                 |
-| --pause                     | configure       | temporarily disable the service and reset the fans to their default behaviour |
-| --resume                    | configure       | resume the service                                                            |
-| --hardware-controller, --hc | run             | select the hardware controller. choices: ectool                               |
-| --socket-controller, --sc   | run & configure | select the socket controller. choices: win32                                  |
+```shell
+fw-fanctrl [commands and options]
+```
+
+First, the global options
+
+| Option                    | Optional | choices | Default | Description                                                                    |
+|---------------------------|----------|---------|---------|--------------------------------------------------------------------------------|
+| --socket-controller, --sc | yes      | win32   | win32   | the socket controller to use for communication between the cli and the service |
+
+**run**
+
+run the service manually
+
+If you have installed it correctly, the systemd `fw-fanctrl.service` service will do this for you, so you probably will
+never need those.
+
+| Option                      | Optional | choices        | Default              | Description                                                                       |
+|-----------------------------|----------|----------------|----------------------|-----------------------------------------------------------------------------------|
+| \<strategy>                 | yes      |                | the default strategy | the name of the strategy to use                                                   |
+| --config                    | yes      | \[CONFIG_PATH] |                      | the configuration file path                                                       |
+| --silent, -s                | yes      |                |                      | disable printing speed/temp status to stdout                                      |
+| --hardware-controller, --hc | yes      | ectool         | ectool               | the hardware controller to use for fetching and setting the temp and fan(s) speed |
+
+**use**
+
+change the current strategy
+
+| Option      | Optional | Description                     |
+|-------------|----------|---------------------------------|
+| \<strategy> | no       | the name of the strategy to use |
+
+**reset**
+
+reset to the default strategy
+
+**reload**
+
+reload the configuration file
+
+**pause**
+
+pause the service
+
+**resume**
+
+resume the service
+
+**print**
+
+print the selected information
+
+| Option             | Optional | choices       | Default | Description            |
+|--------------------|----------|---------------|---------|------------------------|
+| \<print_selection> | yes      | current, list | current | what should be printed |
