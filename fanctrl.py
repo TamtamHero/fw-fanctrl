@@ -308,6 +308,12 @@ class Configuration:
 
     def getDischargingStrategy(self):
         return self.getStrategy("strategyOnDischarging")
+    
+    def getNoBatteryMode(self):
+        noBatteryMode = self.data.get("noBatteryMode")
+        if noBatteryMode is None or noBatteryMode is None:
+            return False
+        return True
 
 
 class SocketController(ABC):
@@ -439,6 +445,18 @@ class EctoolHardwareController(HardwareController, ABC):
             return 50
         return round(temps[0], 1)
 
+    def getTemperatureNoBattery(self):
+        rawOut = "".join([
+            subprocess.run("ectool temps " + x, stdout=subprocess.PIPE, shell=True, text=True).stdout
+            for x in ["0", "1", "2", "4"]
+        ])
+        rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
+        temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
+        # safety fallback to avoid damaging hardware
+        if len(temps) == 0:
+            return 50
+        return round(temps[0], 1)
+
     def setSpeed(self, speed):
         subprocess.run(f"ectool fanduty {speed}", stdout=subprocess.PIPE, shell=True)
 
@@ -477,6 +495,8 @@ class FanController:
         t.start()
 
     def getActualTemperature(self):
+        if self.configuration.getNoBatteryMode():
+            return self.hardwareController.getTemperatureNoBattery()
         return self.hardwareController.getTemperature()
 
     def setSpeed(self, speed):

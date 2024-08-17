@@ -1,6 +1,7 @@
 {
     "defaultStrategy": "lazy",
     "strategyOnDischarging" : "",
+    "noBatteryMode": false,
     "strategies": {
         "laziest": {
             "fanSpeedUpdateFrequency": 5,
