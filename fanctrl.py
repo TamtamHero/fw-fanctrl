@@ -311,7 +311,7 @@ class Configuration:
     
     def getNoBatteryMode(self):
         noBatteryMode = self.data.get("noBatteryMode")
-        if noBatteryMode is None or noBatteryMode is None:
+        if noBatteryMode is None or noBatteryMode is False:
             return False
         return True
 
