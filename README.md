@@ -75,6 +75,7 @@ You can add a number of arguments to the installation command to suit your needs
 | `--no-ectool`                                                                   | disable ectool installation and service activation |
 | `--no-post-install`                                                             | disable post-install process                       |
 | `--no-pre-uninstall`                                                            | disable pre-uninstall process                      |
+| `--no-battery-sensors`                                                          | disable checking battery tempurature sensors       |
 
 ## Update
 
@@ -216,6 +217,7 @@ never need those.
 | --config                    | yes      | \[CONFIG_PATH] |                      | the configuration file path                                                       |
 | --silent, -s                | yes      |                |                      | disable printing speed/temp status to stdout                                      |
 | --hardware-controller, --hc | yes      | ectool         | ectool               | the hardware controller to use for fetching and setting the temp and fan(s) speed |
+| --no-battery-sensors        | yes      |                |                      | disable checking battery tempurature sensors (for mainboards without batteries)   |
 
 **use**
 
