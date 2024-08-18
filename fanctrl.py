@@ -434,15 +434,15 @@ class HardwareController(ABC):
 
 
 class EctoolHardwareController(HardwareController, ABC):
-    noBatteryMode = False
+    noBatterySensorMode = False
     nonBatterySensors = None
     
-    def __init__(self, noBatteryMode=False):
-        self.noBatteryMode = noBatteryMode
-        if self.noBatteryMode:
-            self.getNonBatterySensors()
-    
-    def getNonBatterySensors(self):
+    def __init__(self, noBatterySensorMode=False):
+        if noBatterySensorMode:
+            self.noBatterySensorMode = True
+            self.populateNonBatterySensors()
+
+    def populateNonBatterySensors(self):
         self.nonBatterySensors = []
         rawOut = subprocess.run("ectool tempsinfo all", stdout=subprocess.PIPE, shell=True, text=True).stdout
         batterySensorsRaw = re.findall(r"\d+ Battery", rawOut, re.MULTILINE)
@@ -452,7 +452,7 @@ class EctoolHardwareController(HardwareController, ABC):
                 self.nonBatterySensors.append(x)
 
     def getTemperature(self):
-        if self.noBatteryMode:
+        if self.noBatterySensorMode:
             rawOut = "".join([
                 subprocess.run("ectool temps " + x, stdout=subprocess.PIPE, shell=True, text=True).stdout
                 for x in self.nonBatterySensors
@@ -639,9 +639,9 @@ def main():
         socketController = UnixSocketController()
 
     if args.command == "run":
-        hardwareController = EctoolHardwareController(noBatteryMode=args.no_battery_sensors)
+        hardwareController = EctoolHardwareController(noBatterySensorMode=args.no_battery_sensors)
         if args.hardware_controller == "ectool":
-            hardwareController = EctoolHardwareController(noBatteryMode=args.no_battery_sensors)
+            hardwareController = EctoolHardwareController(noBatterySensorMode=args.no_battery_sensors)
 
         fan = FanController(hardwareController=hardwareController, socketController=socketController,
                             configPath=args.config, strategyName=args.strategy)
