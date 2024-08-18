@@ -141,10 +141,16 @@ function install() {
     cp "./fanctrl.py" "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
     chmod +x "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
 
-    if [ "$NO_BATTERY" = true ]; then
-        sed -i 's/"noBatteryMode": false/"noBatteryMode": true/' "./config.json"
-    fi
     cp -n "./config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
+
+    # add --no-battery flag to the fanctrl service if specified
+    if [ "$NO_BATTERY" = true ]; then
+        origLine=$(grep "ExecStart=/usr/bin/python3" ./services/fw-fanctrl.service)
+        if ! grep -q -- "--no-battery" <<< "$origLine"; then
+            newLine="${origLine} --no-battery"
+            sed -i "s#$origLine#$newLine#" ./services/fw-fanctrl.service
+        fi
+    fi
 
     # create program services based on the services present in the './services' folder
     echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/system'"

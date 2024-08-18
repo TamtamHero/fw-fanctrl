@@ -81,6 +81,11 @@ class CommandParser:
                 choices=["ectool"],
                 default="ectool"
             )
+            runCommand.add_argument(
+                "--no-battery",
+                help="disable ectool checking the battery sensor",
+                action="store_true",
+            )
 
         useCommand = commandsSubParser.add_parser(
             "use",
@@ -156,6 +161,10 @@ class CommandParser:
             "--no-log",
             action="store_true"
         )
+        runGroup.add_argument(
+            "--no-battery",
+            action="store_true",
+        )
         commandGroup = self.legacyParser.add_argument_group("configure")
         commandGroup.add_argument(
             "--query",
@@ -229,6 +238,8 @@ class CommandParser:
                 values.strategy = legacy_values.strategy
             if not hasattr(values, "command"):
                 raise Exception("not a valid legacy command")
+            if not hasattr(values, "no_battery") and legacy_values.no_battery is not None:
+                values.no_battery = legacy_values.no_battery
             if self.isRemote or values.command == "run":
                 print(
                     "[Warning] > this command is deprecated and will be removed soon, please use the new command format instead ('fw-fanctrl -h' for more details).")
@@ -308,12 +319,6 @@ class Configuration:
 
     def getDischargingStrategy(self):
         return self.getStrategy("strategyOnDischarging")
-    
-    def getNoBatteryMode(self):
-        noBatteryMode = self.data.get("noBatteryMode")
-        if noBatteryMode is None or noBatteryMode is False:
-            return False
-        return True
 
 
 class SocketController(ABC):
@@ -481,14 +486,16 @@ class FanController:
     tempHistory = collections.deque([0] * 100, maxlen=100)
     active = True
     timecount = 0
+    noBatteryMode = False
     nonBatterySensors = None
 
-    def __init__(self, hardwareController, socketController, configPath, strategyName):
+    def __init__(self, hardwareController, socketController, configPath, strategyName, noBatteryMode):
         self.hardwareController = hardwareController
         self.socketController = socketController
         self.configuration = Configuration(configPath)
         
-        if self.configuration.getNoBatteryMode():
+        if noBatteryMode:
+            self.noBatteryMode = True
             self.getNonBatterySensors()
 
         if strategyName is not None and strategyName != "":
@@ -507,7 +514,7 @@ class FanController:
                 self.nonBatterySensors.append(x)
 
     def getActualTemperature(self):
-        if self.configuration.getNoBatteryMode():
+        if self.noBatteryMode:
             return self.hardwareController.getTemperatureNoBattery(self.nonBatterySensors)
         return self.hardwareController.getTemperature()
 
@@ -553,8 +560,6 @@ class FanController:
                 raise InvalidStrategyException(f"The specified strategy is invalid: {args.strategy}")
         elif args.command == "reload":
             if self.configuration.reload():
-                if self.configuration.getNoBatteryMode():
-                    self.getNonBatterySensors()
                 if self.overwrittenStrategy is not None:
                     self.overwriteStrategy(self.overwrittenStrategy.name)
             else:
@@ -651,7 +656,7 @@ def main():
             hardwareController = EctoolHardwareController()
 
         fan = FanController(hardwareController=hardwareController, socketController=socketController,
-                            configPath=args.config, strategyName=args.strategy)
+                            configPath=args.config, strategyName=args.strategy, noBatteryMode=args.no_battery)
         fan.run(debug=not args.silent)
     else:
         try:
