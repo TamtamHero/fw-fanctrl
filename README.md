@@ -217,6 +217,7 @@ never need those.
 | --config                    | yes      | \[CONFIG_PATH] |                      | the configuration file path                                                       |
 | --silent, -s                | yes      |                |                      | disable printing speed/temp status to stdout                                      |
 | --hardware-controller, --hc | yes      | ectool         | ectool               | the hardware controller to use for fetching and setting the temp and fan(s) speed |
+| --no-battery-sensors        | yes      |                |                      | disable checking battery tempurature sensors (for mainboards without batteries)   |
 
 **use**
 
