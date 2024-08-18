@@ -39,9 +39,9 @@ If the service is paused or stopped, the fans will revert to their default behav
 Dependencies are downloaded and installed automatically, but can be excluded from the installation script if you wish to
 do this manually.
 
-| name           | version   | url                                                                                  | exclusion argument |
-|----------------|-----------|--------------------------------------------------------------------------------------|--------------------|
-| DHowett@ectool | build#899 | [https://gitlab.howett.net/DHowett/ectool](https://gitlab.howett.net/DHowett/ectool) | `--no-ectool`      |
+| name           | version   | url                                                                                  | sub-dependencies | exclusion argument |
+|----------------|-----------|--------------------------------------------------------------------------------------|------------------|--------------------|
+| DHowett@ectool | build#899 | [https://gitlab.howett.net/DHowett/ectool](https://gitlab.howett.net/DHowett/ectool) | libftdi          | `--no-ectool`      |
 
 ### Instructions
 
