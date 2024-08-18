@@ -83,7 +83,7 @@ class CommandParser:
             )
             runCommand.add_argument(
                 "--no-battery-sensors",
-                help="disable checking battery tempurature sensors",
+                help="disable checking battery temperature sensors",
                 action="store_true",
             )
 
