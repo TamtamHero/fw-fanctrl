@@ -75,6 +75,7 @@ You can add a number of arguments to the installation command to suit your needs
 | `--no-ectool`                                                                   | disable ectool installation and service activation |
 | `--no-post-install`                                                             | disable post-install process                       |
 | `--no-pre-uninstall`                                                            | disable pre-uninstall process                      |
+| `--no-battery`                                                                  | disable checking the battery sensor in ectool      |
 
 ## Update
 
