@@ -453,20 +453,12 @@ class EctoolHardwareController(HardwareController, ABC):
 
     def getTemperature(self):
         if self.noBatteryMode:
-            return self.__getTemperatureNoBattery()
-        rawOut = subprocess.run("ectool temps all", stdout=subprocess.PIPE, shell=True, text=True).stdout
-        rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
-        temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
-        # safety fallback to avoid damaging hardware
-        if len(temps) == 0:
-            return 50
-        return round(temps[0], 1)
-
-    def __getTemperatureNoBattery(self):
-        rawOut = "".join([
-            subprocess.run("ectool temps " + x, stdout=subprocess.PIPE, shell=True, text=True).stdout
-            for x in self.nonBatterySensors
-        ])
+            rawOut = "".join([
+                subprocess.run("ectool temps " + x, stdout=subprocess.PIPE, shell=True, text=True).stdout
+                for x in self.nonBatterySensors
+            ])
+        else:
+            rawOut = subprocess.run("ectool temps all", stdout=subprocess.PIPE, shell=True, text=True).stdout
         rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
         temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
         # safety fallback to avoid damaging hardware
