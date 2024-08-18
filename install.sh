@@ -146,7 +146,7 @@ function install() {
     # add --no-battery flag to the fanctrl service if specified
     if [ "$NO_BATTERY" = true ]; then
         origLine=$(grep "ExecStart=/usr/bin/python3" ./services/fw-fanctrl.service)
-        if ! grep -q -- "--no-battery" <<< "$origLine"; then
+        if ! grep -q -- "--no-battery-sensors" <<< "$origLine"; then
             newLine="${origLine} --no-battery-sensors"
             sed -i "s#$origLine#$newLine#" ./services/fw-fanctrl.service
         fi
