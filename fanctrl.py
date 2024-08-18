@@ -445,10 +445,10 @@ class EctoolHardwareController(HardwareController, ABC):
             return 50
         return round(temps[0], 1)
 
-    def getTemperatureNoBattery(self):
+    def getTemperatureNoBattery(self, sensors):
         rawOut = "".join([
             subprocess.run("ectool temps " + x, stdout=subprocess.PIPE, shell=True, text=True).stdout
-            for x in ["0", "1", "2", "4"]
+            for x in sensors
         ])
         rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
         temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
@@ -481,11 +481,15 @@ class FanController:
     tempHistory = collections.deque([0] * 100, maxlen=100)
     active = True
     timecount = 0
+    nonBatterySensors = None
 
     def __init__(self, hardwareController, socketController, configPath, strategyName):
         self.hardwareController = hardwareController
         self.socketController = socketController
         self.configuration = Configuration(configPath)
+        
+        if self.configuration.getNoBatteryMode():
+            self.getNonBatterySensors()
 
         if strategyName is not None and strategyName != "":
             self.overwriteStrategy(strategyName)
@@ -493,10 +497,18 @@ class FanController:
         t = threading.Thread(target=self.socketController.startServerSocket, args=[self.commandManager])
         t.daemon = True
         t.start()
+    
+    def getNonBatterySensors(self):
+        self.nonBatterySensors = []
+        rawOut = subprocess.run("ectool tempsinfo all", stdout=subprocess.PIPE, shell=True, text=True).stdout
+        batterySensor = re.findall(r"\d+ Battery", rawOut)[0].split(" ")[0]
+        for x in re.findall(r"^\d+", rawOut, re.MULTILINE):
+            if x != batterySensor:
+                self.nonBatterySensors.append(x)
 
     def getActualTemperature(self):
         if self.configuration.getNoBatteryMode():
-            return self.hardwareController.getTemperatureNoBattery()
+            return self.hardwareController.getTemperatureNoBattery(self.nonBatterySensors)
         return self.hardwareController.getTemperature()
 
     def setSpeed(self, speed):
@@ -541,6 +553,8 @@ class FanController:
                 raise InvalidStrategyException(f"The specified strategy is invalid: {args.strategy}")
         elif args.command == "reload":
             if self.configuration.reload():
+                if self.configuration.getNoBatteryMode():
+                    self.getNonBatterySensors()
                 if self.overwrittenStrategy is not None:
                     self.overwriteStrategy(self.overwrittenStrategy.name)
             else:
