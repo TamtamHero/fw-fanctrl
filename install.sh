@@ -8,7 +8,7 @@ fi
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -24,6 +24,7 @@ SHOULD_INSTALL_ECTOOL=true
 SHOULD_PRE_UNINSTALL=true
 SHOULD_POST_INSTALL=true
 SHOULD_REMOVE=false
+NO_BATTERY=false
 
 eval set -- "$VALID_ARGS"
 while true; do
@@ -51,6 +52,9 @@ while true; do
         ;;
     '--no-post-install')
         SHOULD_POST_INSTALL=false
+        ;;
+    '--no-battery')
+        NO_BATTERY=true
         ;;
     '--help' | '-h')
         echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall]" 1>&2
@@ -137,6 +141,9 @@ function install() {
     cp "./fanctrl.py" "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
     chmod +x "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
 
+    if [ "$NO_BATTERY" = true ]; then
+        sed -i 's/"noBatteryMode": false/"noBatteryMode": true/' "./config.json"
+    fi
     cp -n "./config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
 
     # create program services based on the services present in the './services' folder
