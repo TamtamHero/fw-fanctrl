@@ -143,7 +143,7 @@ function install() {
 
     cp -n "./config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
 
-    # add --no-battery flag to the fanctrl service if specified
+    # add --no-battery-sensors flag to the fanctrl service if specified
     if [ "$NO_BATTERY_SENSOR" = true ]; then
         NO_BATTERY_SENSOR_OPTION="--no-battery-sensors"
     fi
