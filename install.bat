@@ -22,6 +22,7 @@ echo running with administrative privileges...
 
 set "ARG_remove="
 set "ARG_r="
+set "ARG_no-battery-sensor="
 
 CALL :ARG-PARSER %*
 
@@ -359,7 +360,13 @@ GOTO :EOF
        exit /b 4
     )
 
-    powershell -Command "(gc '%ProgramFiles%\fw-fanctrl\run-service.bat') -replace '####CONFIG_PATH####', '%Appdata%\fw-fanctrl\config.json' | Out-File -encoding ASCII '%ProgramFiles%\fw-fanctrl\run-service.bat'"
+    set "no-battery-sensor-option="
+
+    if defined ARG_no-battery-sensor (
+        set "no-battery-sensor-option=--no-battery-sensors"
+    )
+
+    powershell -Command "(gc '%ProgramFiles%\fw-fanctrl\run-service.bat') -replace '####CONFIG_PATH####', '%Appdata%\fw-fanctrl\config.json' -replace '####NO_BATTERY_SENSOR_OPTION####', '%no-battery-sensor-option%' | Out-File -encoding ASCII '%ProgramFiles%\fw-fanctrl\run-service.bat'"
 
     echo installing '.\services\windows\fw-fanctrl.bat' to '%ProgramFiles%\fw-fanctrl'
     @echo on

@@ -78,6 +78,12 @@ Then run the installation script with administrator privileges (by double clicki
 install.bat
 ```
 
+You can add a number of arguments to the installation command to suit your needs
+
+| argument              | description                                  |
+|-----------------------|----------------------------------------------|
+| `/no-battery-sensors` | disable checking battery temperature sensors |
+
 ## Update
 
 To update, you can download or pull the appropriate branch from this repository, and run the installation script again.
