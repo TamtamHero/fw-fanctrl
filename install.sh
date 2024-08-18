@@ -24,7 +24,7 @@ SHOULD_INSTALL_ECTOOL=true
 SHOULD_PRE_UNINSTALL=true
 SHOULD_POST_INSTALL=true
 SHOULD_REMOVE=false
-NO_BATTERY=false
+NO_BATTERY_SENSOR=false
 
 eval set -- "$VALID_ARGS"
 while true; do
@@ -54,7 +54,7 @@ while true; do
         SHOULD_POST_INSTALL=false
         ;;
     '--no-battery-sensors')
-        NO_BATTERY=true
+        NO_BATTERY_SENSOR=true
         ;;
     '--help' | '-h')
         echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall]" 1>&2
@@ -144,7 +144,7 @@ function install() {
     cp -n "./config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
 
     # add --no-battery flag to the fanctrl service if specified
-    if [ "$NO_BATTERY" = true ]; then
+    if [ "$NO_BATTERY_SENSOR" = true ]; then
         origLine=$(grep "ExecStart=/usr/bin/python3" ./services/fw-fanctrl.service)
         if ! grep -q -- "--no-battery-sensors" <<< "$origLine"; then
             newLine="${origLine} --no-battery-sensors"
