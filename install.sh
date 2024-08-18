@@ -8,7 +8,7 @@ fi
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -53,7 +53,7 @@ while true; do
     '--no-post-install')
         SHOULD_POST_INSTALL=false
         ;;
-    '--no-battery')
+    '--no-battery-sensors')
         NO_BATTERY=true
         ;;
     '--help' | '-h')
@@ -147,7 +147,7 @@ function install() {
     if [ "$NO_BATTERY" = true ]; then
         origLine=$(grep "ExecStart=/usr/bin/python3" ./services/fw-fanctrl.service)
         if ! grep -q -- "--no-battery" <<< "$origLine"; then
-            newLine="${origLine} --no-battery"
+            newLine="${origLine} --no-battery-sensors"
             sed -i "s#$origLine#$newLine#" ./services/fw-fanctrl.service
         fi
     fi

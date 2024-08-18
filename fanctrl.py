@@ -82,8 +82,8 @@ class CommandParser:
                 default="ectool"
             )
             runCommand.add_argument(
-                "--no-battery",
-                help="disable ectool checking the battery sensor",
+                "--no-battery-sensors",
+                help="disable checking battery tempurature sensors",
                 action="store_true",
             )
 
@@ -161,10 +161,6 @@ class CommandParser:
             "--no-log",
             action="store_true"
         )
-        runGroup.add_argument(
-            "--no-battery",
-            action="store_true",
-        )
         commandGroup = self.legacyParser.add_argument_group("configure")
         commandGroup.add_argument(
             "--query",
@@ -238,8 +234,6 @@ class CommandParser:
                 values.strategy = legacy_values.strategy
             if not hasattr(values, "command"):
                 raise Exception("not a valid legacy command")
-            if not hasattr(values, "no_battery") and legacy_values.no_battery is not None:
-                values.no_battery = legacy_values.no_battery
             if self.isRemote or values.command == "run":
                 print(
                     "[Warning] > this command is deprecated and will be removed soon, please use the new command format instead ('fw-fanctrl -h' for more details).")
@@ -440,8 +434,26 @@ class HardwareController(ABC):
 
 
 class EctoolHardwareController(HardwareController, ABC):
+    noBatteryMode = False
+    nonBatterySensors = None
+    
+    def __init__(self, noBatteryMode=False):
+        self.noBatteryMode = noBatteryMode
+        if self.noBatteryMode:
+            self.getNonBatterySensors()
+    
+    def getNonBatterySensors(self):
+        self.nonBatterySensors = []
+        rawOut = subprocess.run("ectool tempsinfo all", stdout=subprocess.PIPE, shell=True, text=True).stdout
+        batterySensorsRaw = re.findall(r"\d+ Battery", rawOut, re.MULTILINE)
+        batterySensors = [x.split(" ")[0] for x in batterySensorsRaw]
+        for x in re.findall(r"^\d+", rawOut, re.MULTILINE):
+            if x not in batterySensors:
+                self.nonBatterySensors.append(x)
 
     def getTemperature(self):
+        if self.noBatteryMode:
+            return self.__getTemperatureNoBattery()
         rawOut = subprocess.run("ectool temps all", stdout=subprocess.PIPE, shell=True, text=True).stdout
         rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
         temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
@@ -450,10 +462,10 @@ class EctoolHardwareController(HardwareController, ABC):
             return 50
         return round(temps[0], 1)
 
-    def getTemperatureNoBattery(self, sensors):
+    def __getTemperatureNoBattery(self):
         rawOut = "".join([
             subprocess.run("ectool temps " + x, stdout=subprocess.PIPE, shell=True, text=True).stdout
-            for x in sensors
+            for x in self.nonBatterySensors
         ])
         rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
         temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
@@ -486,17 +498,11 @@ class FanController:
     tempHistory = collections.deque([0] * 100, maxlen=100)
     active = True
     timecount = 0
-    noBatteryMode = False
-    nonBatterySensors = None
 
-    def __init__(self, hardwareController, socketController, configPath, strategyName, noBatteryMode):
+    def __init__(self, hardwareController, socketController, configPath, strategyName):
         self.hardwareController = hardwareController
         self.socketController = socketController
         self.configuration = Configuration(configPath)
-        
-        if noBatteryMode:
-            self.noBatteryMode = True
-            self.getNonBatterySensors()
 
         if strategyName is not None and strategyName != "":
             self.overwriteStrategy(strategyName)
@@ -504,18 +510,8 @@ class FanController:
         t = threading.Thread(target=self.socketController.startServerSocket, args=[self.commandManager])
         t.daemon = True
         t.start()
-    
-    def getNonBatterySensors(self):
-        self.nonBatterySensors = []
-        rawOut = subprocess.run("ectool tempsinfo all", stdout=subprocess.PIPE, shell=True, text=True).stdout
-        batterySensor = re.findall(r"\d+ Battery", rawOut)[0].split(" ")[0]
-        for x in re.findall(r"^\d+", rawOut, re.MULTILINE):
-            if x != batterySensor:
-                self.nonBatterySensors.append(x)
 
     def getActualTemperature(self):
-        if self.noBatteryMode:
-            return self.hardwareController.getTemperatureNoBattery(self.nonBatterySensors)
         return self.hardwareController.getTemperature()
 
     def setSpeed(self, speed):
@@ -651,12 +647,12 @@ def main():
         socketController = UnixSocketController()
 
     if args.command == "run":
-        hardwareController = EctoolHardwareController()
+        hardwareController = EctoolHardwareController(noBatteryMode=args.no_battery_sensors)
         if args.hardware_controller == "ectool":
-            hardwareController = EctoolHardwareController()
+            hardwareController = EctoolHardwareController(noBatteryMode=args.no_battery_sensors)
 
         fan = FanController(hardwareController=hardwareController, socketController=socketController,
-                            configPath=args.config, strategyName=args.strategy, noBatteryMode=args.no_battery)
+                            configPath=args.config, strategyName=args.strategy)
         fan.run(debug=not args.silent)
     else:
         try:
