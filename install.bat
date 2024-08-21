@@ -397,6 +397,12 @@ GOTO :EOF
     "%ProgramFiles%\nssm\nssm" set "fw-fanctrl" AppStderr "%ProgramFiles%\fw-fanctrl\out.log"
     @echo off
 
+    echo creating service pause/resume on sleep/wake tasks
+    @echo on
+    schtasks /create /tn "fw-fanctrl_pauseOnSleep" /tr "powershell.exe -Command 'fw-fanctrl pause'" /sc onevent /ec System /mo *[System[Provider[@Name='Kernel-Power'] and (EventID=42 or EventID=40)]] /ru SYSTEM /RL HIGHEST
+    schtasks /create /tn "fw-fanctrl_resumeOnWake" /tr "powershell.exe -Command 'fw-fanctrl resume'" /sc onevent /ec System /mo *[System[Provider[@Name='Power-Troubleshooter'] and (EventID=1)]] /ru SYSTEM /RL HIGHEST
+    @echo off
+
     GOTO :EOF
 GOTO :EOF
 
@@ -420,6 +426,12 @@ GOTO :EOF
 
 :uninstall-fw-fanctrl
     echo removing 'fw-fanctrl'
+
+    echo removing service pause/resume on sleep/wake tasks
+    @echo on
+    schtasks /delete /tn "fw-fanctrl_pauseOnSleep" /f
+    schtasks /delete /tn "fw-fanctrl_resumeOnWake" /f
+    @echo off
 
     echo stopping 'fw-fanctrl' service
     @echo on
