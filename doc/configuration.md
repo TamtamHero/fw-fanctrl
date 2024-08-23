@@ -1,7 +1,7 @@
 # Table of Content
 - [Configuration](#configuration)
   * [Default strategy](#default-strategy)
-  * [Charging/Discharging strategies](#charging---discharging-strategies)
+  * [Charging/Discharging strategies](#chargingdischarging-strategies)
   * [Editing strategies](#editing-strategies)
 
 # Configuration
