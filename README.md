@@ -42,6 +42,11 @@ If the service is paused or stopped, the fans will revert to their default behav
 
 # Installation
 
+## Other Platforms
+| name  | branch        | documentation |
+|-------|---------------|---------------|
+| NixOS | [packaging/nix](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix) | [packaging/nix/doc/nix-flake](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md) |
+
 ## Requirements
 
 | name   | version | url                                                                  |
