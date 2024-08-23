@@ -26,7 +26,7 @@ It is compatible with all 13" and 16" models, both AMD/Intel CPUs, with or witho
 
 If the service is paused or stopped, the fans will revert to their default behaviour.
 
-# Table of Content
+## Table of Content
 
 - [Installation](#installation)
   * [Requirements](#requirements)
@@ -40,20 +40,20 @@ If the service is paused or stopped, the fans will revert to their default behav
   * [Editing strategies](#editing-strategies)
 - [Commands](#commands)
 
-# Installation
+## Installation
 
-## Other Platforms
+### Other Platforms
 | name  | branch        | documentation |
 |-------|---------------|---------------|
 | NixOS | [packaging/nix](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix) | [packaging/nix/doc/nix-flake](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md) |
 
-## Requirements
+### Requirements
 
 | name   | version | url                                                                  |
 |--------|---------|----------------------------------------------------------------------|
 | Python | 3.12.x  | [https://www.python.org/downloads](https://www.python.org/downloads) |
 
-## Dependencies
+### Dependencies
 
 Dependencies are downloaded and installed automatically, but can be excluded from the installation script if you wish to
 do this manually.
@@ -62,7 +62,7 @@ do this manually.
 |----------------|-----------|--------------------------------------------------------------------------------------|------------------|--------------------|
 | DHowett@ectool | build#899 | [https://gitlab.howett.net/DHowett/ectool](https://gitlab.howett.net/DHowett/ectool) | libftdi          | `--no-ectool`      |
 
-## Instructions
+### Instructions
 
 First, make sure that you have disabled secure boot in your BIOS/UEFI settings.
 (more details on why [here](https://www.howett.net/posts/2021-12-framework-ec/#using-fw-ectool))
@@ -96,11 +96,11 @@ You can add a number of arguments to the installation command to suit your needs
 | `--no-pre-uninstall`                                                            | disable pre-uninstall process                      |
 | `--no-battery-sensors`                                                          | disable checking battery temperature sensors       |
 
-# Update
+## Update
 
 To update, you can download or pull the appropriate branch from this repository, and run the installation script again.
 
-# Uninstall
+## Uninstall
 
 To uninstall, run the installation script with the `--remove` argument, as well as other
 corresponding [arguments if necessary](#instructions)
@@ -109,7 +109,7 @@ corresponding [arguments if necessary](#instructions)
 sudo ./install.sh --remove
 ```
 
-# Configuration
+## Configuration
 
 After installation, you will find the configuration file in the following location:
 
@@ -128,7 +128,7 @@ and a high fan speed strategy on AC (+ noise, - heat).
 You can add or edit strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this
 repo :)
 
-## Default strategy
+### Default strategy
 
 The default strategy is the one used when the service is started.
 
@@ -139,7 +139,7 @@ configuration.
 "defaultStrategy": "[STRATEGY NAME]"
 ```
 
-## Charging/Discharging strategies
+### Charging/Discharging strategies
 
 The discharging strategy is the one that will be used when the laptop is not on AC,
 Otherwise the default strategy is used.
@@ -153,7 +153,7 @@ configuration.
 
 This is optional and can be left empty to have the same strategy at all times.
 
-## Editing strategies
+### Editing strategies
 
 Strategies can be configured with the following parameters:
 
@@ -207,7 +207,7 @@ Once the configuration has been changed, you must reload it with the following c
 fw-fanctrl reload
 ```
 
-# Commands
+## Commands
 
 Here is a list of commands and options used to interact with the service.
 
