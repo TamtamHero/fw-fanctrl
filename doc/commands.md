@@ -57,6 +57,12 @@ resume the service
 
 print the selected information
 
-| Option             | Optional | Choices       | Default | Description            |
-|--------------------|----------|---------------|---------|------------------------|
-| \<print_selection> | yes      | current, list | current | what should be printed |
+| Option             | Optional | Choices              | Default | Description            |
+|--------------------|----------|----------------------|---------|------------------------|
+| \<print_selection> | yes      | current, list, speed | current | what should be printed |
+
+| Choice  | Description                      |
+|---------|----------------------------------|
+| current | The current strategy being used  |
+| list    | List available strategies        |
+| speed   | The current fan speed percentage |
