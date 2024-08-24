@@ -1,4 +1,5 @@
 # Table of Content
+
 - [Configuration](#configuration)
   * [Default strategy](#default-strategy)
   * [Charging/Discharging strategies](#chargingdischarging-strategies)

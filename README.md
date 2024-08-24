@@ -37,6 +37,7 @@ If the service is paused or stopped, the fans will revert to their default behav
 - [Uninstall](#uninstall)
 
 ## Documentation
+
 More documentation could be found [here](./doc/README.md).
 
 ## Installation
