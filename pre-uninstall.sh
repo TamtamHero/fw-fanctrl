@@ -1,16 +1,12 @@
 #!/bin/bash
 set -e
 
-if [ "$EUID" -ne 0 ]
-  then echo "This program requires root permissions"
-  exit 1
-fi
-
 HOME_DIR="$(eval echo "~$(logname)")"
 
 # Argument parsing
+NO_SUDO=false
 SHORT=h
-LONG=help
+LONG=no-sudo,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -19,8 +15,11 @@ fi
 eval set -- "$VALID_ARGS"
 while true; do
   case "$1" in
+    '--no-sudo')
+        NO_SUDO=true
+        ;;
     '--help' | '-h')
-        echo "Usage: $0" 1>&2
+        echo "Usage: $0 [--no-sudo]" 1>&2
         exit 0
         ;;
     --)
@@ -29,7 +28,11 @@ while true; do
   esac
   shift
 done
-#
+
+if [ "$EUID" -ne 0 ]
+  then echo "This program requires root permissions ore use the '--no-sudo' option"
+  exit 1
+fi
 
 SERVICES_DIR="./services"
 SERVICE_EXTENSION=".service"

@@ -1,14 +1,9 @@
 #!/bin/bash
 set -e
 
-if [ "$EUID" -ne 0 ]
-  then echo "This program requires root permissions"
-  exit 1
-fi
-
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -25,6 +20,7 @@ SHOULD_PRE_UNINSTALL=true
 SHOULD_POST_INSTALL=true
 SHOULD_REMOVE=false
 NO_BATTERY_SENSOR=false
+NO_SUDO=false
 
 eval set -- "$VALID_ARGS"
 while true; do
@@ -56,8 +52,11 @@ while true; do
     '--no-battery-sensors')
         NO_BATTERY_SENSOR=true
         ;;
+    '--no-sudo')
+        NO_SUDO=true
+        ;;
     '--help' | '-h')
-        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall]" 1>&2
+        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo]" 1>&2
         exit 0
         ;;
     --)
@@ -66,7 +65,12 @@ while true; do
   esac
   shift
 done
-#
+
+# Root check
+if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]
+  then echo "This program requires root permissions ore use the '--no-sudo' option"
+  exit 1
+fi
 
 SERVICES_DIR="./services"
 SERVICE_EXTENSION=".service"
@@ -93,7 +97,7 @@ function uninstall_legacy() {
 
 function uninstall() {
     if [ "$SHOULD_PRE_UNINSTALL" = true ]; then
-        ./pre-uninstall.sh
+        ./pre-uninstall.sh "$([ "$NO_SUDO" = true ] && echo "--no-sudo")"
     fi
     # remove program services based on the services present in the './services' folder
     echo "removing services"
@@ -185,7 +189,7 @@ function install() {
         done
     done
     if [ "$SHOULD_POST_INSTALL" = true ]; then
-        ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR"
+        ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR" "$([ "$NO_SUDO" = true ] && echo "--no-sudo")"
     fi
 }
 
