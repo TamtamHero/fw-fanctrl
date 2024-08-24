@@ -115,15 +115,17 @@ class CommandParser:
 
         printCommand = commandsSubParser.add_parser(
             "print",
-            description="print the selected information"
+            description="print the selected information",
+            formatter_class=argparse.RawTextHelpFormatter
         )
         printCommand.add_argument(
             "print_selection",
-            help="what should be printed",
+            help="current - The current strategy\nlist - List available strategies\nspeed - The current fan speed percentage",
             nargs="?",
             type=str,
             choices=["current",
-                     "list"],
+                     "list",
+                     "speed"],
             default="current"
         )
 
@@ -564,6 +566,8 @@ class FanController:
                 return self.getCurrentStrategy().name
             elif args.print_selection == "list":
                 return '\n'.join(self.configuration.getStrategies())
+            elif args.print_selection == "speed":
+                return str(self.speed) + '%'
         return "Unknown command, unexpected."
 
     # return mean temperature over a given time interval (in seconds)
