@@ -115,11 +115,12 @@ class CommandParser:
 
         printCommand = commandsSubParser.add_parser(
             "print",
-            description="print the selected information"
+            description="print the selected information",
+            formatter_class=argparse.RawTextHelpFormatter
         )
         printCommand.add_argument(
             "print_selection",
-            help="what should be printed",
+            help="current - The current strategy\nlist - List available strategies\nspeed - The current fan speed percentage",
             nargs="?",
             type=str,
             choices=["current",
