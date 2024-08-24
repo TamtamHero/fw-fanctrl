@@ -123,7 +123,8 @@ class CommandParser:
             nargs="?",
             type=str,
             choices=["current",
-                     "list"],
+                     "list",
+                     "speed"],
             default="current"
         )
 
@@ -564,6 +565,8 @@ class FanController:
                 return self.getCurrentStrategy().name
             elif args.print_selection == "list":
                 return '\n'.join(self.configuration.getStrategies())
+            elif args.print_selection == "speed":
+                return str(self.speed) + '%'
         return "Unknown command, unexpected."
 
     # return mean temperature over a given time interval (in seconds)
