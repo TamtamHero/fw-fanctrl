@@ -29,7 +29,7 @@ while true; do
   shift
 done
 
-if [ "$EUID" -ne 0 ]
+if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]
   then echo "This program requires root permissions ore use the '--no-sudo' option"
   exit 1
 fi
