@@ -1,6 +1,6 @@
 #!/bin/sh
 
 case $1 in
-    pre)  /usr/bin/python3 "%PREFIX_DIRECTORY%/bin/fw-fanctrl" --pause ;;
-    post) /usr/bin/python3 "%PREFIX_DIRECTORY%/bin/fw-fanctrl" --resume ;;
+    pre)  /usr/bin/python3 "%PREFIX_DIRECTORY%/bin/fw-fanctrl" pause ;;
+    post) /usr/bin/python3 "%PREFIX_DIRECTORY%/bin/fw-fanctrl" resume ;;
 esac

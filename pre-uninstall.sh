@@ -29,12 +29,10 @@ while true; do
   shift
 done
 
-# Root check
 if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]
-  then echo "This program requires root permissions"
+  then echo "This program requires root permissions ore use the '--no-sudo' option"
   exit 1
 fi
-
 
 SERVICES_DIR="./services"
 SERVICE_EXTENSION=".service"

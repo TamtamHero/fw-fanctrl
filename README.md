@@ -1,111 +1,111 @@
 # fw-fanctrl
 
-This is a simple Python service for Linux that drives Framework Laptop's fan(s) speed according to a configurable speed/temp curve.
-Its default configuration targets very silent fan operation, but it's easy to configure it for a different comfort/performance trade-off.
-Its possible to specify two separate fan curves depending on whether the Laptop is charging/discharging.
-Under the hood, it uses [ectool](https://gitlab.howett.net/DHowett/ectool) to change parameters in Framework's embedded controller (EC).
+[![Static Badge](https://img.shields.io/badge/Linux%2FGlobal-FCC624?style=flat&logo=linux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fmain)](https://github.com/TamtamHero/fw-fanctrl/tree/main)
+![Static Badge](https://img.shields.io/badge/no%20binary%20blobs-30363D?style=flat&logo=GitHub-Sponsors&logoColor=4dff61)
 
-It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs, with or without a discrete GPU.
+[![Static Badge](https://img.shields.io/badge/Python__3.12-FFDE57?style=flat&label=Requirement&link=https%3A%2F%2Fwww.python.org%2Fdownloads)](https://www.python.org/downloads)
+
+## Additional platforms:
+
+[![Static Badge](https://img.shields.io/badge/NixOS-5277C3?style=flat&logo=nixos&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fnix)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md)
+
+## Description
+
+Fw-fanctrl is a simple Python CLI service that controls Framework Laptop's fan(s)
+speed according to a configurable speed/temperature curve.
+
+Its default strategy aims for very quiet fan operation, but you can choose amongst the other provided strategies, or
+easily configure your own for a different comfort/performance trade-off.
+
+It also is possible to assign separate strategies depending on whether the laptop is charging or discharging.
+
+Under the hood, it uses [ectool](https://gitlab.howett.net/DHowett/ectool)
+to change parameters in Framework's embedded controller (EC).
+
+It is compatible with all 13" and 16" models, both AMD/Intel CPUs, with or without a discrete GPU.
 
 If the service is paused or stopped, the fans will revert to their default behaviour.
 
-# Install
-For NixOS this repo contains an Flake. You could add it to your config like this:
+## Table of Content
 
-```nix
-{
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
-    fw-fanctrl = {
-      url = "github:TamtamHero/fw-fanctrl/packaging/nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-  };
-  outputs = {nixpkgs, fw-fanctrl}: {
-    nixosConfigurations.foo = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      modules = [
-          fw-fanctrl.nixosModules.default
-          configuration.nix
-      ];
-    };
-  }
-}
-```
-and then add in your *configuration.nix*:
-```nix
-# Enable fw-fanctrl
-programs.fw-fanctrl.enable = true;
+- [Documentation](#documentation)
+- [Installation](#installation)
+  * [Requirements](#requirements)
+  * [Dependencies](#dependencies)
+  * [Instructions](#instructions)
+- [Update](#update)
+- [Uninstall](#uninstall)
 
-# Add a custom config
-programs.fw-fanctrl.config = {
-  defaultStrategy = "lazy";
-  strategies = {
-    "lazy" = {
-      fanSpeedUpdateFrequency = 5;
-      movingAverageInterval = 30;
-      speedCurve = [
-        { temp = 0; speed = 15; }
-        { temp = 50; speed = 15; }
-        { temp = 65; speed = 25; }
-        { temp = 70; speed = 35; }
-        { temp = 75; speed = 50; }
-        { temp = 85; speed = 100; }
-      ];
-    };
-  };
-};
+## Documentation
 
-# Add a custom config from an existing JSON file
-programs.fw-fanctrl.config = builtins.fromJSON (builtins.readFile ./config.json)
+More documentation could be found [here](./doc/README.md).
 
-# Or just change the default strategy form the default config
-programs.fw-fanctrl.config.defaultStrategy = "medium";
+## Installation
+
+### Other Platforms
+| name  | branch        | documentation |
+|-------|---------------|---------------|
+| NixOS | [packaging/nix](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix) | [packaging/nix/doc/nix-flake](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md) |
+
+### Requirements
+
+| name   | version | url                                                                  |
+|--------|---------|----------------------------------------------------------------------|
+| Python | 3.12.x  | [https://www.python.org/downloads](https://www.python.org/downloads) |
+
+### Dependencies
+
+Dependencies are downloaded and installed automatically, but can be excluded from the installation script if you wish to
+do this manually.
+
+| name           | version   | url                                                                                  | sub-dependencies | exclusion argument |
+|----------------|-----------|--------------------------------------------------------------------------------------|------------------|--------------------|
+| DHowett@ectool | build#899 | [https://gitlab.howett.net/DHowett/ectool](https://gitlab.howett.net/DHowett/ectool) | libftdi          | `--no-ectool`      |
+
+### Instructions
+
+First, make sure that you have disabled secure boot in your BIOS/UEFI settings.
+(more details on why [here](https://www.howett.net/posts/2021-12-framework-ec/#using-fw-ectool))
+
+[Download the repo](https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip) and extract it manually, or
+download/clone it with the appropriate tools:
+
+```shell
+git clone "https://github.com/TamtamHero/fw-fanctrl.git"
 ```
 
-Non NixOS install is described [here](https://github.com/TamtamHero/fw-fanctrl/blob/main/README.md#Install)
+```shell
+curl -L "https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip" -o "./fw-fanctrl.zip" && unzip "./fw-fanctrl.zip" -d "./fw-fanctrl" && rm -rf "./fw-fanctrl.zip"
+```
 
+Then run the installation script with administrator privileges
 
-# Configuration
+```bash
+sudo ./install.sh
+```
 
-The default config contains different strategies, ranked from the most silent to the noisiest. It is possible to specify two different strategies for charging/discharging allowing for different optimization goals.
-On discharging one could have fan curve optimized for low fan speeds in order to save power while accepting a bit more heat. 
-On charging one could have a fan curve that focuses on keeping the CPU from throttling and the system cool, at the expense of fan noise.
-You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
+You can add a number of arguments to the installation command to suit your needs
 
-Strategies can be configured with the following parameters:
+| argument                                                                        | description                                        |
+|---------------------------------------------------------------------------------|----------------------------------------------------|
+| `--dest-dir <installation destination directory (defaults to /)>`               | specify an installation destination directory      |
+| `--prefix-dir <installation prefix directory (defaults to /usr)>`               | specify an installation prefix directory           |
+| `--sysconf-dir <system configuration destination directory (defaults to /etc)>` | specify a default configuration directory          |
+| `--no-ectool`                                                                   | disable ectool installation and service activation |
+| `--no-post-install`                                                             | disable post-install process                       |
+| `--no-pre-uninstall`                                                            | disable pre-uninstall process                      |
+| `--no-battery-sensors`                                                          | disable checking battery temperature sensors       |
 
-- **SpeedCurve**:
+## Update
 
-    This is the curve points for `f(temperature) = fan speeds`
+To update, you can download or pull the appropriate branch from this repository, and run the installation script again.
 
-    `fw-fanctrl` measures the CPU temperature, compute a moving average of it, and then find an appropriate `fan speed` value by interpolation on the curve.
+## Uninstall
 
-- **FanSpeedUpdateFrequency**:
+To uninstall, run the installation script with the `--remove` argument, as well as other
+corresponding [arguments if necessary](#instructions)
 
-    Time interval between every update to the fan's speed. `fw-fanctrl` measures temperature every second and add it to its moving average, but the actual update to fan speed is controlled using this configuration. This is for comfort, otherwise the speed is changed too often and it is noticeable and annoying, especially at low speed.
-    For a more reactive fan, you can lower this setting. **Defaults to 5 seconds.**
+```bash
+sudo ./install.sh --remove
+```
 
-- **MovingAverageInterval**:
-
-    Number of seconds on which the moving average of temperature is computed. Increase it, and the fan speed will change more gradually. Lower it, and it will gain in reactivity. **Defaults to 20 seconds.**
-
-## Charging/Discharging strategies
-
-The strategy active by default is the one specified in the `defaultStrategy` entry. Optionally a separate strategy only active during discharge can be defined, using the `strategyOnDischarging` entry. By default no extra strategy for discharging is provided, the default strategy is active during all times.
-
-# Commands
-
-| Option                      | Context         | Description                                                                   |
-|-----------------------------|-----------------|-------------------------------------------------------------------------------|
-| \<strategy>                 | run & configure | the name of the strategy to use                                               |
-| --run                       | run             | run the service                                                               |
-| --config                    | run             | specify the configuration path                                                |
-| --no-log                    | run             | disable state logging                                                         |
-| --query, -q                 | configure       | print the current strategy name                                               |
-| --list-strategies           | configure       | print the available strategies                                                |
-| --reload, -r                | configure       | reload the configuration file                                                 |
-| --pause                     | configure       | temporarily disable the service and reset the fans to their default behaviour |
-| --resume                    | configure       | resume the service                                                            |
-| --hardware-controller, --hc | run             | select the hardware controller. choices: ectool                               |
-| --socket-controller, --sc   | run & configure | select the socket controller. choices: unix                                   |
