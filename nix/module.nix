@@ -16,6 +16,13 @@ in
         Enable fw-fanctrl systemd service and install the needed packages.
       '';
     };
+    disableBatteryTempCheck = mkOption {
+      type = bool;
+      default = false;
+      description = ''
+        Disable checking battery temperature sensor
+      '';
+    };
     config = {
       defaultStrategy = mkOption {
         type = str;
@@ -100,7 +107,7 @@ in
       serviceConfig = {
         Type = "simple";
         Restart = "always";
-        ExecStart = "${fw-fanctrl}/bin/fw-fanctrl --run --config /etc/fw-fanctrl/config.json --no-log";
+        ExecStart = "${fw-fanctrl}/bin/fw-fanctrl run --config /etc/fw-fanctrl/config.json --silent" + lib.strings.optionalString cfg.disableBatteryTempCheck " --no-battery-sensors";
         ExecStopPost = "${pkgs.fw-ectool}/bin/ectool autofanctrl";
       };
       enable = true;
