@@ -267,6 +267,7 @@ class Strategy:
     name = None
     fanSpeedUpdateFrequency = None
     movingAverageInterval = None
+    criticalTemp = None
     speedCurve = None
 
     def __init__(self, name, parameters):
@@ -277,6 +278,7 @@ class Strategy:
         self.movingAverageInterval = parameters["movingAverageInterval"]
         if self.movingAverageInterval is None or self.movingAverageInterval == "":
             self.movingAverageInterval = 20
+        self.criticalTemp = parameters.get("criticalTemp")
         self.speedCurve = parameters["speedCurve"]
 
 
@@ -583,7 +585,9 @@ class FanController:
 
     def adaptSpeed(self, currentTemp):
         currentStrategy = self.getCurrentStrategy()
-        currentTemp = self.getEffectiveTemperature(currentTemp, currentStrategy.movingAverageInterval)
+        criticalTemp = currentStrategy.criticalTemp
+        if criticalTemp is not None and currentTemp < criticalTemp:
+            currentTemp = self.getEffectiveTemperature(currentTemp, currentStrategy.movingAverageInterval)
         minPoint = currentStrategy.speedCurve[0]
         maxPoint = currentStrategy.speedCurve[-1]
         for e in currentStrategy.speedCurve:

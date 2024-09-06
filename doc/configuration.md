@@ -95,6 +95,21 @@ Strategies can be configured with the following parameters:
 >
 > **Defaults to 20 seconds.** (minimum 1)
 
+> **CriticalTemp**:
+>
+> It is a temperature after which the moving average is ignored and only the current temperature is considered.
+>
+> ```json
+> "criticalTemp": [CRITICAL TEMPERATURE]
+> ```
+>
+> Increase it, and the moving average applies for longer. Lower it, and the moving average is disabled sooner.
+>
+> If it is unset or set to null, the moving average is always considered (effectively the same as setting it to a
+> very high number).
+>
+> **Defaults to null.**
+
 ---
 
 Once the configuration has been changed, you must reload it with the following command
