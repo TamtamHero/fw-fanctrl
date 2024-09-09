@@ -42,7 +42,7 @@ done
 
 # Root check
 if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]
-  then echo "This program requires root permissions ore use the '--no-sudo' option"
+  then echo "This program requires root permissions or use the '--no-sudo' option"
   exit 1
 fi
 
