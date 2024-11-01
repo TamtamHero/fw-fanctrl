@@ -8,7 +8,7 @@
 
 [![Static Badge](https://img.shields.io/badge/Linux%2FGlobal-FCC624?style=flat&logo=linux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fmain)](https://github.com/TamtamHero/fw-fanctrl/tree/main)
 
-[![Static Badge](https://img.shields.io/badge/NixOS-5277C3?style=flat&logo=nixos&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fnix)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix)
+[![Static Badge](https://img.shields.io/badge/NixOS-5277C3?style=flat&logo=nixos&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fnix)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md)
 
 ## Description
 
@@ -27,7 +27,26 @@ It is compatible with all 13" and 16" models, both AMD/Intel CPUs, with or witho
 
 If the service is paused or stopped, the fans will revert to their default behaviour.
 
+## Table of Content
+
+- [Documentation](#documentation)
+- [Installation](#installation)
+  * [Requirements](#requirements)
+  * [Dependencies](#dependencies)
+  * [Instructions](#instructions)
+- [Update](#update)
+- [Uninstall](#uninstall)
+
+## Documentation
+
+More documentation could be found [here](./doc/README.md).
+
 ## Installation
+
+### Other Platforms
+| name  | branch        | documentation |
+|-------|---------------|---------------|
+| NixOS | [packaging/nix](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix) | [packaging/nix/doc/nix-flake](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md) |
 
 ### Requirements
 
