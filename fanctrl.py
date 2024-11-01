@@ -541,7 +541,7 @@ class FanController:
     def commandManager(self, args):
         if args.command == "reset" or (args.command == "use" and args.strategy == "defaultStrategy"):
             self.clearOverwrittenStrategy()
-            return "Strategy reset to default"
+            return f"Strategy reset to default! Strategy in use: '{self.getCurrentStrategy().name}'"
         elif args.command == "use":
             try:
                 self.overwriteStrategy(args.strategy)
