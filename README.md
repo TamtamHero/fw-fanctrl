@@ -29,13 +29,20 @@ If the service is paused or stopped, the fans will revert to their default behav
 
 ## Table of Content
 
-- [Documentation](#documentation)
-- [Installation](#installation)
-  * [Requirements](#requirements)
-  * [Dependencies](#dependencies)
-  * [Instructions](#instructions)
-- [Update](#update)
-- [Uninstall](#uninstall)
+<!-- TOC -->
+* [fw-fanctrl](#fw-fanctrl)
+  * [Additional platforms:](#additional-platforms)
+  * [Description](#description)
+  * [Table of Content](#table-of-content)
+  * [Documentation](#documentation)
+  * [Installation](#installation)
+    * [Other Platforms](#other-platforms)
+    * [Requirements](#requirements)
+    * [Dependencies](#dependencies)
+    * [Instructions](#instructions)
+  * [Update](#update)
+  * [Uninstall](#uninstall)
+<!-- TOC -->
 
 ## Documentation
 
