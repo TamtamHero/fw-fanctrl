@@ -1,97 +1,126 @@
 # fw-fanctrl
 
-This is a simple Python service for Linux that drives Framework Laptop's fan(s) speed according to a configurable speed/temp curve.
-Its default configuration targets very silent fan operation, but it's easy to configure it for a different comfort/performance trade-off.
-Its possible to specify two separate fan curves depending on whether the Laptop is charging/discharging.
-Under the hood, it uses [ectool](https://gitlab.howett.net/DHowett/ectool) to change parameters in Framework's embedded controller (EC).
+[![Static Badge](https://img.shields.io/badge/Windows-0078D6?style=flat&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fwindows)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/windows)
 
-It is compatible with all kinds of 13" and 16" models, both AMD/Intel CPUs, with or without a discrete GPU.
+[![Static Badge](https://img.shields.io/badge/Python__3.12-FFDE57?style=flat&label=Requirement&link=https%3A%2F%2Fwww.python.org%2Fdownloads)](https://www.python.org/downloads)
+
+## Additional platforms:
+
+[![Static Badge](https://img.shields.io/badge/Linux%2FGlobal-FCC624?style=flat&logo=linux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fmain)](https://github.com/TamtamHero/fw-fanctrl/tree/main)
+
+[![Static Badge](https://img.shields.io/badge/NixOS-5277C3?style=flat&logo=nixos&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fnix)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md)
+
+## Description
+
+Fw-fanctrl is a simple Python CLI service that controls Framework Laptop's fan(s)
+speed according to a configurable speed/temperature curve.
+
+Its default strategy aims for very quiet fan operation, but you can choose amongst the other provided strategies, or
+easily configure your own for a different comfort/performance trade-off.
+
+It also is possible to assign separate strategies depending on whether the laptop is charging or discharging.
+
+Under the hood, it uses [ectool](https://gitlab.howett.net/DHowett/ectool)
+to change parameters in Framework's embedded controller (EC).
+
+It is compatible with all 13" and 16" models, both AMD/Intel CPUs, with or without a discrete GPU.
 
 If the service is paused or stopped, the fans will revert to their default behaviour.
 
-# Install
+## Table of Content
 
-## Dependencies
+<!-- TOC -->
+* [fw-fanctrl](#fw-fanctrl)
+  * [Additional platforms:](#additional-platforms)
+  * [Description](#description)
+  * [Table of Content](#table-of-content)
+  * [Documentation](#documentation)
+  * [Installation](#installation)
+    * [Other Platforms](#other-platforms)
+    * [Requirements](#requirements)
+    * [Dependencies](#dependencies)
+    * [Instructions](#instructions)
+  * [Update](#update)
+  * [Uninstall](#uninstall)
+<!-- TOC -->
 
-To communicate with the embedded controller the `ectool` is required.
-You can either let the script download it from the [gitlab repository](https://gitlab.howett.net/DHowett/ectool) artifacts, 
-or disable its installation (`--no-ectool`) and install your own.
+## Documentation
 
-You also need to disable secure boot of your device for `ectool` to work (more details about why [here](https://www.howett.net/posts/2021-12-framework-ec/#using-fw-ectool))
+More documentation could be found [here](./doc/README.md).
 
-Then run:
-```bash
-sudo ./install.sh
+## Installation
+
+### Other Platforms
+
+| name         | branch                                                                       | documentation                                                                                               |
+|--------------|------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| Linux/Global | [main](https://github.com/TamtamHero/fw-fanctrl/tree/main)                   | [main/doc](https://github.com/TamtamHero/fw-fanctrl/tree/main/doc/README.md)                                |
+| NixOS        | [packaging/nix](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix) | [packaging/nix/doc/nix-flake](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md) |
+
+### Requirements
+
+| name   | version | url                                                                  |
+|--------|---------|----------------------------------------------------------------------|
+| Python | 3.12.x  | [https://www.python.org/downloads](https://www.python.org/downloads) |
+
+### Dependencies
+
+Dependencies are downloaded and installed automatically.
+
+| name           | version      | url                                                                                                  |
+|----------------|--------------|------------------------------------------------------------------------------------------------------|
+| DHowett@crosec | v0.0.2       | [https://github.com/DHowett/FrameworkWindowsUtils](https://github.com/DHowett/FrameworkWindowsUtils) |
+| DHowett@ectool | artifact#904 | [https://gitlab.howett.net/DHowett/ectool](https://gitlab.howett.net/DHowett/ectool)                 |
+| nssm           | 2.24         | [https://nssm.cc](https://nssm.cc)                                                                   |
+
+### Instructions
+
+Please note that the windows version of this service uses an unsigned
+experimental [crosec](https://github.com/DHowett/FrameworkWindowsUtils) driver that may be unstable.
+We are not responsible for any damage or data loss that this may cause.
+
+First, make sure that you have disabled secure boot in your BIOS/UEFI settings.
+(more details on why [here](https://www.howett.net/posts/2021-12-framework-ec/#using-fw-ectool))
+
+```
+============================================================================
+IF YOU HAVE BITLOCKER ENABLED, YOU WILL NEED YOUR RECOVERY CODE ON BOOT !!!!
+PLEASE MAKE A BACKUP OF YOUR BITLOCKER RECOVERY KEY BEFORE YOU DO ANYTHING !
+YOU GET LOCKED OUT OF YOUR COMPUTER IF YOU ARE NOT CAREFUL ENOUGH !
+============================================================================
 ```
 
-This bash script will to create and activate a service that runs this repo's main script, `fanctrl.py`.
-It will copy `fanctrl.py` (to an executable file `fw-fanctrl`), download the ectool to `[dest-dir(/)]/bin` and create a config file
-in `[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`
+[Download the repo](https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/packaging/windows.zip) and extract it
+manually, or download/clone it with the appropriate tools:
 
-this script also includes options to:
-- specify an installation destination directory (`--dest-dir <installation destination directory (defaults to /)>`).
-- specify an installation prefix directory (`--prefix-dir <installation prefix directory (defaults to /usr)>`).
-- specify a default configuration directory (`--sysconf-dir <system configuration destination directory (defaults to /etc)>`).
-- disable ectool installation and service activation (`--no-ectool`)
-- disable post-install process (`--no-post-install`)
-- disable pre-uninstall process (`--no-pre-uninstall`)
-
-# Update
-
-To install an update, you can pull the latest commit on the `main` branch of this repository, and run the install script again.
-
-# Uninstall
-```bash
-sudo ./install.sh --remove
+```shell
+git clone --branch "packaging/windows" "https://github.com/TamtamHero/fw-fanctrl.git"
 ```
 
-# Configuration
-
-There is a single `config.json` file located at `[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`.
-
-(You will need to reload the configuration with)
-```bash
-fw-fanctrl --reload
+```shell
+curl -L "https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/packaging/windows.zip" -o "./fw-fanctrl.zip" && tar -xf "./fw-fanctrl.zip" && del "./fw-fanctrl.zip"
 ```
 
-It contains different strategies, ranked from the most silent to the noisiest. It is possible to specify two different strategies for charging/discharging allowing for different optimization goals.
-On discharging one could have fan curve optimized for low fan speeds in order to save power while accepting a bit more heat. 
-On charging one could have a fan curve that focuses on keeping the CPU from throttling and the system cool, at the expense of fan noise.
-You can add new strategies, and if you think you have one that deserves to be shared, feel free to make a PR to this repo :)
+Then run the installation script with administrator privileges (by double clicking it, or with the following command)
 
-Strategies can be configured with the following parameters:
+```shell
+install.bat
+```
 
-- **SpeedCurve**:
+You can add a number of arguments to the installation command to suit your needs
 
-    This is the curve points for `f(temperature) = fan speed`
+| argument              | description                                  |
+|-----------------------|----------------------------------------------|
+| `/no-battery-sensors` | disable checking battery temperature sensors |
 
-    `fw-fanctrl` measures the CPU temperature, compute a moving average of it, and then find an appropriate `fan speed` value by interpolation on the curve.
+## Update
 
-- **FanSpeedUpdateFrequency**:
+To update, you can download or pull the appropriate branch from this repository, and run the installation script again.
 
-    Time interval between every update to the fan's speed. `fw-fanctrl` measures temperature every second and add it to its moving average, but the actual update to fan speed is controlled using this configuration. This is for comfort, otherwise the speed is changed too often and it is noticeable and annoying, especially at low speed.
-    For a more reactive fan, you can lower this setting. **Defaults to 5 seconds.**
+## Uninstall
 
-- **MovingAverageInterval**:
+To uninstall, run the uninstallation script `uninstall.bat` (by double clicking it, or with the following command)
 
-    Number of seconds on which the moving average of temperature is computed. Increase it, and the fan speed will change more gradually. Lower it, and it will gain in reactivity. **Defaults to 20 seconds.**
-
-## Charging/Discharging strategies
-
-The strategy active by default is the one specified in the `defaultStrategy` entry. Optionally a separate strategy only active during discharge can be defined, using the `strategyOnDischarging` entry. By default no extra strategy for discharging is provided, the default strategy is active during all times.
-
-# Commands
-
-| Option                      | Context         | Description                                                                   |
-|-----------------------------|-----------------|-------------------------------------------------------------------------------|
-| \<strategy>                 | run & configure | the name of the strategy to use                                               |
-| --run                       | run             | run the service                                                               |
-| --config                    | run             | specify the configuration path                                                |
-| --no-log                    | run             | disable state logging                                                         |
-| --query, -q                 | configure       | print the current strategy name                                               |
-| --list-strategies           | configure       | print the available strategies                                                |
-| --reload, -r                | configure       | reload the configuration file                                                 |
-| --pause                     | configure       | temporarily disable the service and reset the fans to their default behaviour |
-| --resume                    | configure       | resume the service                                                            |
-| --hardware-controller, --hc | run             | select the hardware controller. choices: ectool                               |
-| --socket-controller, --sc   | run & configure | select the socket controller. choices: unix                                   |
+```shell
+uninstall.bat
+```

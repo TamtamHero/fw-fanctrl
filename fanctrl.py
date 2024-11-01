@@ -1,22 +1,133 @@
 #! /usr/bin/python3
 import argparse
 import collections
+import io
 import json
-import os
 import re
 import shlex
-import socket
 import subprocess
 import sys
 import threading
+import traceback
+import textwrap
 from time import sleep
 from abc import ABC, abstractmethod
 
-DEFAULT_CONFIGURATION_FILE_PATH = "/etc/fw-fanctrl/config.json"
-SOCKETS_FOLDER_PATH = "/run/fw-fanctrl"
-COMMANDS_SOCKET_FILE_PATH = os.path.join(SOCKETS_FOLDER_PATH, ".fw-fanctrl.commands.sock")
+DEFAULT_CONFIGURATION_FILE_PATH = "%%appdata%%/fw-fanctrl/config.json"
+WINDOWS_SOCKET_PATH = r"\\.\pipe\fw-fanctrl.socket"
 
-parser = None
+
+class CommandParser:
+    isRemote = True
+
+    legacyParser = None
+    parser = None
+
+    def __init__(self, isRemote=False):
+        self.isRemote = isRemote
+        self.initParser()
+
+    def initParser(self):
+        self.parser = argparse.ArgumentParser(
+            prog="fw-fanctrl",
+            description="control Framework's laptop fan(s) with a speed curve",
+            epilog=textwrap.dedent(
+                "obtain more help about a command or subcommand using `fw-fanctrl <command> [subcommand...] -h/--help`"),
+            formatter_class=argparse.RawTextHelpFormatter
+        )
+        self.parser.add_argument(
+            "--socket-controller",
+            "--sc",
+            help="the socket controller to use for communication between the cli and the service",
+            type=str,
+            choices=["win32"],
+            default="win32"
+        )
+
+        commandsSubParser = self.parser.add_subparsers(dest="command")
+
+        if not self.isRemote:
+            runCommand = commandsSubParser.add_parser(
+                "run",
+                description="run the service",
+                formatter_class=argparse.RawTextHelpFormatter
+            )
+            runCommand.add_argument(
+                "strategy",
+                help='name of the strategy to use e.g: "lazy" (use `print strategies` to list available strategies)',
+                nargs=argparse.OPTIONAL
+            )
+            runCommand.add_argument(
+                "--config",
+                "-c",
+                help=f"the configuration file path (default: {DEFAULT_CONFIGURATION_FILE_PATH})",
+                type=str,
+                default=DEFAULT_CONFIGURATION_FILE_PATH
+            )
+            runCommand.add_argument(
+                "--silent",
+                "-s",
+                help="disable printing speed/temp status to stdout",
+                action="store_true"
+            )
+            runCommand.add_argument(
+                "--hardware-controller",
+                "--hc",
+                help="the hardware controller to use for fetching and setting the temp and fan(s) speed",
+                type=str,
+                choices=["ectool"],
+                default="ectool"
+            )
+            runCommand.add_argument(
+                "--no-battery-sensors",
+                help="disable checking battery temperature sensors",
+                action="store_true",
+            )
+
+        useCommand = commandsSubParser.add_parser(
+            "use",
+            description="change the current strategy"
+        )
+        useCommand.add_argument(
+            "strategy",
+            help='name of the strategy to use e.g: "lazy". (use `print strategies` to list available strategies)'
+        )
+
+        commandsSubParser.add_parser(
+            "reset",
+            description="reset to the default strategy"
+        )
+        commandsSubParser.add_parser(
+            "reload",
+            description="reload the configuration file"
+        )
+        commandsSubParser.add_parser(
+            "pause",
+            description="pause the service"
+        )
+        commandsSubParser.add_parser(
+            "resume",
+            description="resume the service"
+        )
+
+        printCommand = commandsSubParser.add_parser(
+            "print",
+            description="print the selected information",
+            formatter_class=argparse.RawTextHelpFormatter
+        )
+        printCommand.add_argument(
+            "print_selection",
+            help="current - The current strategy\nlist - List available strategies\nspeed - The current fan speed percentage",
+            nargs="?",
+            type=str,
+            choices=["current",
+                     "list",
+                     "speed"],
+            default="current"
+        )
+
+    def parseArgs(self, args=None):
+        return self.parser.parse_args(args)
 
 
 class JSONException(Exception):
@@ -54,7 +165,7 @@ class Strategy:
 
 class Configuration:
     path = None
-    data: None
+    data = None
 
     def __init__(self, path):
         self.path = path
@@ -107,67 +218,137 @@ class SocketController(ABC):
         raise UnimplementedException()
 
 
-class UnixSocketController(SocketController, ABC):
+class WindowsSocketController(SocketController, ABC):
+    import ctypes
+    from ctypes import wintypes, windll
+
+    _ctypes = ctypes
+
+    CreateNamedPipe = windll.kernel32.CreateNamedPipeW
+    ConnectNamedPipe = windll.kernel32.ConnectNamedPipe
+    DisconnectNamedPipe = windll.kernel32.DisconnectNamedPipe
+    CreateFile = windll.kernel32.CreateFileW
+    ReadFile = windll.kernel32.ReadFile
+    WriteFile = windll.kernel32.WriteFile
+    CloseHandle = windll.kernel32.CloseHandle
+
+    LPSECURITY_ATTRIBUTES = ctypes.c_void_p
+    LPDWORD = ctypes.POINTER(wintypes.DWORD)
+    LPVOID = ctypes.c_void_p
+    DWORD = wintypes.DWORD
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
+
+    ConvertStringSecurityDescriptorToSecurityDescriptorW = advapi32.ConvertStringSecurityDescriptorToSecurityDescriptorW
+    ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, ctypes.POINTER(wintypes.LPVOID), ctypes.POINTER(wintypes.DWORD)]
+    ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = wintypes.HANDLE
+
+    sddl_string = "D:P(A;;GA;;;WD)"
+
+    security_descriptor = wintypes.LPVOID()
+    ConvertStringSecurityDescriptorToSecurityDescriptorW(sddl_string, 1, ctypes.byref(security_descriptor), None)
+
+    class SECURITY_ATTRIBUTES(ctypes.Structure):
+        from ctypes import wintypes
+
+        _fields_ = [
+            ("nLength", wintypes.DWORD),
+            ("lpSecurityDescriptor", wintypes.LPVOID),
+            ("nLength", wintypes.BOOL),
+        ]
+
+    security_attributes = SECURITY_ATTRIBUTES()
+    security_attributes.nLength = ctypes.sizeof(SECURITY_ATTRIBUTES)
+    security_attributes.lpSecurityDescriptor = security_descriptor
+    security_attributes.bInheritHandle = False
+
     server_socket = None
 
     def startServerSocket(self, commandCallback=None):
         if self.server_socket:
             raise SocketAlreadyRunningException(self.server_socket)
-        self.server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        if os.path.exists(COMMANDS_SOCKET_FILE_PATH):
-            os.remove(COMMANDS_SOCKET_FILE_PATH)
+        self.server_socket = self.CreateNamedPipe(
+            WINDOWS_SOCKET_PATH,
+            self.ctypes.wintypes.DWORD(3),  # PIPE_ACCESS_DUPLEX
+            self.ctypes.wintypes.DWORD(4),  # PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT
+            1,  # nMaxInstances
+            65536,  # nOutBufferSize
+            65536,  # nInBufferSize
+            0,  # nDefaultTimeOut
+            self.ctypes.byref(self.security_attributes)  # lpSecurityAttributes
+        )
         try:
-            if not os.path.exists(SOCKETS_FOLDER_PATH):
-                os.makedirs(SOCKETS_FOLDER_PATH)
-            self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.server_socket.bind(COMMANDS_SOCKET_FILE_PATH)
-            os.chmod(COMMANDS_SOCKET_FILE_PATH, 0o777)
-            self.server_socket.listen(1)
             while True:
-                client_socket, _ = self.server_socket.accept()
+                self.ConnectNamedPipe(self.server_socket, None)
+                parsePrintCapture = io.StringIO()
                 try:
                     # Receive data from the client
-                    data = client_socket.recv(4096).decode()
-                    args = parser.parse_args(shlex.split(data))
+                    buffer = self.ctypes.create_string_buffer(65536)
+                    bytes_read = self.ctypes.wintypes.DWORD(0)
+                    self.ReadFile(self.server_socket, buffer, 65536, self.ctypes.byref(bytes_read), None)
+                    data = buffer.raw[:bytes_read.value].decode('utf-8')
+
+                    original_stderr = sys.stderr
+                    original_stdout = sys.stdout
+                    # capture parsing std outputs for the client
+                    sys.stderr = parsePrintCapture
+                    sys.stdout = parsePrintCapture
+                    try:
+                        args = CommandParser(True).parseArgs(shlex.split(data))
+                    finally:
+                        sys.stderr = original_stderr
+                        sys.stdout = original_stdout
                     commandReturn = commandCallback(args)
                     if not commandReturn:
                         commandReturn = "Success!"
-                    client_socket.sendall(commandReturn.encode('utf-8'))
+                    if parsePrintCapture.getvalue().strip():
+                        commandReturn = parsePrintCapture.getvalue() + commandReturn
+                    commandReturn = commandReturn.encode('utf-8')
+                    bytes_written = self.ctypes.wintypes.DWORD(0)
+                    self.WriteFile(self.server_socket, commandReturn, len(commandReturn),
+                                   self.ctypes.byref(bytes_written), None)
                 except Exception as e:
-                    client_socket.sendall(f"[Error] > An error occurred: {e}".encode('utf-8'))
+                    print(f"[Error] > An error occurred while treating a socket command: {e}", file=sys.stderr)
+                    message = f"[Error] > An error occurred: {e}".encode('utf-8')
+                    bytes_written = self.wintypes.DWORD(0)
+                    self.WriteFile(self.server_socket, message, len(message), self.ctypes.byref(bytes_written), None)
                 finally:
-                    client_socket.shutdown(socket.SHUT_WR)
-                    client_socket.close()
+                    self.DisconnectNamedPipe(self.server_socket)
         finally:
             self.stopServerSocket()
 
     def stopServerSocket(self):
         if self.server_socket:
-            self.server_socket.close()
+            self.CloseHandle(self.server_socket)
             self.server_socket = None
 
     def isServerSocketRunning(self):
         return self.server_socket is not None
 
     def sendViaClientSocket(self, command):
-        client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        client_socket = self.CreateFile(
+            WINDOWS_SOCKET_PATH,
+            self.ctypes.wintypes.DWORD(0x00000003),  # GENERIC_READ | GENERIC_WRITE
+            0,
+            None,
+            self.ctypes.wintypes.DWORD(3),  # OPEN_EXISTING
+            0,
+            None
+        )
         try:
-            client_socket.connect(COMMANDS_SOCKET_FILE_PATH)
-            client_socket.sendall(command.encode('utf-8'))
-            received_data = b""
-            while True:
-                data_chunk = client_socket.recv(1024)
-                if not data_chunk:
-                    break
-                received_data += data_chunk
-            # Receive data from the server
-            data = received_data.decode()
+            message = command.encode('utf-8')
+            bytes_written = self.ctypes.wintypes.DWORD(0)
+            self.WriteFile(client_socket, message, len(message), self.ctypes.byref(bytes_written), None)
+            buffer = self.ctypes.create_string_buffer(65536)
+            bytes_read = self.ctypes.wintypes.DWORD(0)
+            self.ReadFile(client_socket, buffer, 65536, self.ctypes.byref(bytes_read), None)
+            data = buffer.raw[:bytes_read.value].decode('utf-8')
             if data.startswith("[Error] > "):
                 raise Exception(data)
             return data
         finally:
-            if client_socket:
-                client_socket.close()
+            self.CloseHandle(client_socket)
 
 
 class HardwareController(ABC):
@@ -193,9 +374,31 @@ class HardwareController(ABC):
 
 
 class EctoolHardwareController(HardwareController, ABC):
+    noBatterySensorMode = False
+    nonBatterySensors = None
+    
+    def __init__(self, noBatterySensorMode=False):
+        if noBatterySensorMode:
+            self.noBatterySensorMode = True
+            self.populateNonBatterySensors()
+
+    def populateNonBatterySensors(self):
+        self.nonBatterySensors = []
+        rawOut = subprocess.run("ectool tempsinfo all", stdout=subprocess.PIPE, shell=True, text=True).stdout
+        batterySensorsRaw = re.findall(r"\d+ Battery", rawOut, re.MULTILINE)
+        batterySensors = [x.split(" ")[0] for x in batterySensorsRaw]
+        for x in re.findall(r"^\d+", rawOut, re.MULTILINE):
+            if x not in batterySensors:
+                self.nonBatterySensors.append(x)
 
     def getTemperature(self):
-        rawOut = subprocess.run("ectool temps all", stdout=subprocess.PIPE, shell=True, text=True).stdout
+        if self.noBatterySensorMode:
+            rawOut = "".join([
+                subprocess.run("ectool temps " + x, stdout=subprocess.PIPE, shell=True, text=True).stdout
+                for x in self.nonBatterySensors
+            ])
+        else:
+            rawOut = subprocess.run("ectool temps all", stdout=subprocess.PIPE, shell=True, text=True).stdout
         rawTemps = re.findall(r'\(= (\d+) C\)', rawOut)
         temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
         # safety fallback to avoid damaging hardware
@@ -273,33 +476,37 @@ class FanController:
             return self.configuration.getDefaultStrategy()
         return self.configuration.getDischargingStrategy()
 
-    def commandManager(self, command):
-        if command.strategy or command._strategy:
-            strategy = command.strategy
-            if strategy is None:
-                strategy = command._strategy
+    def commandManager(self, args):
+        if args.command == "reset" or (args.command == "use" and args.strategy == "defaultStrategy"):
+            self.clearOverwrittenStrategy()
+            return
+        elif args.command == "use":
             try:
-                if strategy == "defaultStrategy":
-                    self.clearOverwrittenStrategy()
-                else:
-                    self.overwriteStrategy(strategy)
+                self.overwriteStrategy(args.strategy)
                 return self.getCurrentStrategy().name
             except InvalidStrategyException:
-                raise InvalidStrategyException(f"The specified strategy is invalid: {strategy}")
-        elif command.pause:
-            self.pause()
-        elif command.resume:
-            self.resume()
-        elif command.query:
-            return self.getCurrentStrategy().name
-        elif command.list_strategies:
-            return '\n'.join(self.configuration.getStrategies())
-        elif command.reload:
+                raise InvalidStrategyException(f"The specified strategy is invalid: {args.strategy}")
+        elif args.command == "reload":
             if self.configuration.reload():
                 if self.overwrittenStrategy is not None:
                     self.overwriteStrategy(self.overwrittenStrategy.name)
             else:
                 raise JSONException("Config file could not be parsed due to JSON Error")
+            return
+        elif args.command == "pause":
+            self.pause()
+            return
+        elif args.command == "resume":
+            self.resume()
+            return
+        elif args.command == "print":
+            if args.print_selection == "current":
+                return self.getCurrentStrategy().name
+            elif args.print_selection == "list":
+                return '\n'.join(self.configuration.getStrategies())
+            elif args.print_selection == "speed":
+                return str(self.speed) + '%'
+        return "Unknown command, unexpected."
 
     # return mean temperature over a given time interval (in seconds)
     def getMovingAverageTemperature(self, timeInterval):
@@ -360,70 +567,28 @@ class FanController:
                 else:
                     sleep(5)
         except InvalidStrategyException as e:
-            print("Error: missing strategy, exiting for safety reasons: " + e.args[0])
-            exit(1)
+            print(f"[Error] > Missing strategy, exiting for safety reasons: {e.args[0]}", file=sys.stderr)
+        except Exception as e:
+            print(f"[Error] > Critical error, exiting for safety reasons: {e}", file=sys.stderr)
+            traceback.print_exc()
+        exit(1)
 
 
 def main():
-    global parser
-    parser = argparse.ArgumentParser(
-        description="Control Framework's laptop fan with a speed curve",
-    )
+    args = CommandParser().parseArgs()
 
-    bothGroup = parser.add_argument_group("both")
-    bothGroup.add_argument(
-        "_strategy",
-        nargs="?",
-        help='Name of the strategy to use e.g: "lazy" (check config.json for others). Use "defaultStrategy" to go '
-             'back to the default strategy',
-    )
-    bothGroup.add_argument(
-        "--strategy",
-        nargs="?",
-        help='Name of the strategy to use e.g: "lazy" (check config.json for others). Use "defaultStrategy" to go '
-             'back to the default strategy',
-    )
+    socketController = WindowsSocketController()
+    if args.socket_controller == "win32":
+        socketController = WindowsSocketController()
 
-    runGroup = parser.add_argument_group("run")
-    runGroup.add_argument("--run", help="run the service", action="store_true")
-    runGroup.add_argument("--config", type=str, help="Path to config file", default=DEFAULT_CONFIGURATION_FILE_PATH)
-    runGroup.add_argument(
-        "--no-log", help="Disable print speed/meanTemp to stdout", action="store_true"
-    )
-    commandGroup = parser.add_argument_group("configure")
-    commandGroup.add_argument(
-        "--query", "-q", help="Query the currently active strategy", action="store_true"
-    )
-    commandGroup.add_argument(
-        "--list-strategies", help="List the available strategies", action="store_true"
-    )
-    commandGroup.add_argument(
-        "--reload", "-r", help="Reload the configuration from file", action="store_true"
-    )
-    commandGroup.add_argument("--pause", help="Pause the program", action="store_true")
-    commandGroup.add_argument("--resume", help="Resume the program", action="store_true")
-    commandGroup.add_argument("--hardware-controller", "--hc", help="Select the hardware controller", type=str,
-                              choices=["ectool"], default="ectool")
-    commandGroup.add_argument("--socket-controller", "--sc", help="Select the socket controller", type=str,
-                              choices=["unix"], default="unix")
-
-    args = parser.parse_args()
-
-    socketController = None
-    if args.socket_controller == "unix":
-        socketController = UnixSocketController()
-
-    if args.run:
-        hardwareController = None
+    if args.command == "run":
+        hardwareController = EctoolHardwareController(noBatterySensorMode=args.no_battery_sensors)
         if args.hardware_controller == "ectool":
-            hardwareController = EctoolHardwareController()
+            hardwareController = EctoolHardwareController(noBatterySensorMode=args.no_battery_sensors)
 
-        strategy = args.strategy
-        if strategy is None:
-            strategy = args._strategy
         fan = FanController(hardwareController=hardwareController, socketController=socketController,
                             configPath=args.config, strategyName=args.strategy)
-        fan.run(debug=not args.no_log)
+        fan.run(debug=not args.silent)
     else:
         try:
             commandResult = socketController.sendViaClientSocket(' '.join(sys.argv[1:]))
