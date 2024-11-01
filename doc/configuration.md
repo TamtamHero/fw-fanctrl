@@ -1,19 +1,18 @@
 # Table of Content
 
-- [Configuration](#configuration)
+<!-- TOC -->
+* [Table of Content](#table-of-content)
+* [Configuration](#configuration)
   * [Default strategy](#default-strategy)
   * [Charging/Discharging strategies](#chargingdischarging-strategies)
   * [Editing strategies](#editing-strategies)
+<!-- TOC -->
 
 # Configuration
 
 After installation, you will find the configuration file in the following location:
 
-`/etc/fw-fanctrl/config.json`
-
-If you have modified the `dest-dir` or `sysconf-dir`, here is the corresponding pattern
-
-`[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`
+`%Appdata%\fw-fanctrl\config.json`
 
 It contains a list of strategies, ranked from the quietest to loudest, as well as the default and discharging
 strategies.

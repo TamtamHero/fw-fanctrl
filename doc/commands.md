@@ -1,3 +1,17 @@
+# Table of Content
+
+<!-- TOC -->
+* [Table of Content](#table-of-content)
+* [Commands](#commands)
+  * [run](#run)
+  * [use](#use)
+  * [reset](#reset)
+  * [reload](#reload)
+  * [pause](#pause)
+  * [resume](#resume)
+  * [print](#print)
+<!-- TOC -->
+
 # Commands
 
 Here is a list of commands and options used to interact with the service.
@@ -12,9 +26,9 @@ First, the global options
 
 | Option                    | Optional | Choices | Default | Description                                                                    |
 |---------------------------|----------|---------|---------|--------------------------------------------------------------------------------|
-| --socket-controller, --sc | yes      | unix    | unix    | the socket controller to use for communication between the cli and the service |
+| --socket-controller, --sc | yes      | win32   | win32   | the socket controller to use for communication between the cli and the service |
 
-**run**
+## run
 
 run the service manually
 
@@ -29,7 +43,7 @@ never need those.
 | --hardware-controller, --hc | yes      | ectool         | ectool               | the hardware controller to use for fetching and setting the temp and fan(s) speed |
 | --no-battery-sensors        | yes      |                |                      | disable checking battery temperature sensors (for mainboards without batteries)   |
 
-**use**
+## use
 
 change the current strategy
 
@@ -37,23 +51,23 @@ change the current strategy
 |-------------|----------|---------------------------------|
 | \<strategy> | no       | the name of the strategy to use |
 
-**reset**
+## reset
 
 reset to the default strategy
 
-**reload**
+## reload
 
 reload the configuration file
 
-**pause**
+## pause
 
 pause the service
 
-**resume**
+## resume
 
 resume the service
 
-**print**
+## print
 
 print the selected information
 
