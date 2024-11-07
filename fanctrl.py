@@ -541,11 +541,11 @@ class FanController:
     def commandManager(self, args):
         if args.command == "reset" or (args.command == "use" and args.strategy == "defaultStrategy"):
             self.clearOverwrittenStrategy()
-            return
+            return f"Strategy reset to default! Strategy in use: '{self.getCurrentStrategy().name}'"
         elif args.command == "use":
             try:
                 self.overwriteStrategy(args.strategy)
-                return self.getCurrentStrategy().name
+                return f"Strategy in use: '{self.getCurrentStrategy().name}'"
             except InvalidStrategyException:
                 raise InvalidStrategyException(f"The specified strategy is invalid: {args.strategy}")
         elif args.command == "reload":
@@ -554,13 +554,13 @@ class FanController:
                     self.overwriteStrategy(self.overwrittenStrategy.name)
             else:
                 raise JSONException("Config file could not be parsed due to JSON Error")
-            return
+            return f"Reloaded with success! Strategy in use: '{self.getCurrentStrategy().name}'"
         elif args.command == "pause":
             self.pause()
-            return
+            return "Service paused! The hardware fan control will take over"
         elif args.command == "resume":
             self.resume()
-            return
+            return f"Service resumed! Strategy in use: '{self.getCurrentStrategy().name}'"
         elif args.command == "print":
             if args.print_selection == "current":
                 return self.getCurrentStrategy().name
@@ -568,7 +568,7 @@ class FanController:
                 return '\n'.join(self.configuration.getStrategies())
             elif args.print_selection == "speed":
                 return str(self.speed) + '%'
-        return "Unknown command, unexpected."
+        raise "Unknown command, unexpected."
 
     # return mean temperature over a given time interval (in seconds)
     def getMovingAverageTemperature(self, timeInterval):
