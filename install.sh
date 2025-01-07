@@ -3,7 +3,7 @@ set -e
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,no-pip-install,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -21,6 +21,7 @@ SHOULD_POST_INSTALL=true
 SHOULD_REMOVE=false
 NO_BATTERY_SENSOR=false
 NO_SUDO=false
+NO_PIP_INSTALL=false
 
 eval set -- "$VALID_ARGS"
 while true; do
@@ -55,8 +56,11 @@ while true; do
     '--no-sudo')
         NO_SUDO=true
         ;;
+    '--no-pip-install')
+        NO_PIP_INSTALL=true
+        ;;
     '--help' | '-h')
-        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo]" 1>&2
+        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo] [--no-pip-install]" 1>&2
         exit 0
         ;;
     --)
@@ -86,6 +90,12 @@ function sanitizePath() {
     echo "$SANITIZED_PATH"
 }
 
+function build() {
+    echo "building package"
+    python -m build -s
+    rm -rf "fw_fanctrl.egg-info" 2> "/dev/null" || true
+}
+
 # remove remaining legacy files
 function uninstall_legacy() {
     echo "removing legacy files"
@@ -93,6 +103,7 @@ function uninstall_legacy() {
     rm "/usr/local/bin/ectool" 2> "/dev/null" || true
     rm "/usr/local/bin/fanctrl.py" 2> "/dev/null" || true
     rm "/etc/systemd/system/fw-fanctrl.service" 2> "/dev/null" || true
+    rm "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl" 2> "/dev/null" || true
 }
 
 function uninstall() {
@@ -120,7 +131,11 @@ function uninstall() {
         done
     done
 
-    rm "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl" 2> "/dev/null" || true
+    if [ "$NO_PIP_INSTALL" = false ]; then
+        echo "uninstalling python package"
+        python -m pip uninstall -y fw-fanctrl 2> "/dev/null" || true
+    fi
+
     ectool autofanctrl 2> "/dev/null" || true # restore default fan manager
     if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
         rm "$DEST_DIR$PREFIX_DIR/bin/ectool" 2> "/dev/null" || true
@@ -142,8 +157,14 @@ function install() {
         rm -rf "$TEMP_FOLDER"
     fi
     mkdir -p "$DEST_DIR$SYSCONF_DIR/fw-fanctrl"
-    cp "./fanctrl.py" "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
-    chmod +x "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
+
+    build
+
+    if [ "$NO_PIP_INSTALL" = false ]; then
+        echo "installing python package"
+        python -m pip install --prefix="$PREFIX_DIR" dist/*.tar.gz
+        which python
+    fi
 
     cp -n "./config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
 
