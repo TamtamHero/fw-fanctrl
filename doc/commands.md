@@ -10,9 +10,10 @@ fw-fanctrl [commands and options]
 
 First, the global options
 
-| Option                    | Optional | Choices | Default | Description                                                                    |
-|---------------------------|----------|---------|---------|--------------------------------------------------------------------------------|
-| --socket-controller, --sc | yes      | unix    | unix    | the socket controller to use for communication between the cli and the service |
+| Option                    | Optional | Choices       | Default | Description                                                                    |
+|---------------------------|----------|---------------|---------|--------------------------------------------------------------------------------|
+| --socket-controller, --sc | yes      | unix          | unix    | the socket controller to use for communication between the cli and the service |
+| --output-format           | yes      | NATURAL, JSON | NATURAL | the client socket controller output format                                     |
 
 **run**
 
