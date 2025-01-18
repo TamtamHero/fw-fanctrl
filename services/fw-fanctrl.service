@@ -4,7 +4,7 @@ After=multi-user.target
 [Service]
 Type=simple
 Restart=always
-ExecStart=/usr/bin/python3 "%BIN_DIR%/fw-fanctrl" run --config "%ETC_DIR%/fw-fanctrl/config.json" --silent %NO_BATTERY_SENSOR_OPTION%
+ExecStart=/usr/bin/python3 "%BIN_DIR%/fw-fanctrl" run --config "%CONF_DIR%/fw-fanctrl/config.json" --silent %NO_BATTERY_SENSOR_OPTION%
 ExecStopPost=/bin/sh -c "ectool autofanctrl"
 [Install]
 WantedBy=multi-user.target

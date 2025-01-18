@@ -78,7 +78,7 @@ fi
 
 # set the directories
 BIN_DIR="$DEST_DIR$PREFIX_DIR/bin"
-ETC_DIR="$DEST_DIR$SYSCONF_DIR"
+CONF_DIR="$DEST_DIR$SYSCONF_DIR"
 LIB_DIR="$DEST_DIR$PREFIX_DIR/lib"
 SERVICES_DIR="./services"
 SERVICE_EXTENSION=".service"
@@ -90,7 +90,7 @@ SERVICES_SUBCONFIGS="$(cd "$SERVICES_DIR" && find . -mindepth 1 -maxdepth 1 -typ
 if [ "$ATOMIC" = true ]; then
   # override the destination directories
   BIN_DIR="/var/usrlocal/bin"
-  ETC_DIR="/etc"
+  CONF_DIR="/etc"
   LIB_DIR="/etc"
 fi
 
@@ -141,7 +141,7 @@ function uninstall() {
     if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
         rm "$BIN_DIR/ectool" 2> "/dev/null" || true
     fi
-    rm -rf "$ETC_DIR/fw-fanctrl" 2> "/dev/null" || true
+    rm -rf "$CONF_DIR/fw-fanctrl" 2> "/dev/null" || true
     rm -rf "/run/fw-fanctrl" 2> "/dev/null" || true
 
     uninstall_legacy
@@ -166,8 +166,8 @@ function install() {
     chmod +x "$BIN_DIR/fw-fanctrl"
 
     # copy the fanctrl configuration in the etc directory
-    mkdir -p "$ETC_DIR/fw-fanctrl"
-    cp -n "./config.json" "$ETC_DIR/fw-fanctrl" 2> "/dev/null" || true
+    mkdir -p "$CONF_DIR/fw-fanctrl"
+    cp -n "./config.json" "$CONF_DIR/fw-fanctrl" 2> "/dev/null" || true
 
     # add --no-battery-sensors flag to the fanctrl service if specified
     if [ "$NO_BATTERY_SENSOR" = true ]; then
@@ -185,7 +185,7 @@ function install() {
             systemctl stop "$SERVICE"
         fi
         echo "creating '$LIB_DIR/systemd/system/$SERVICE$SERVICE_EXTENSION'"
-        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%BIN_DIR%/${BIN_DIR//\//\\/}/" | sed -e "s/%ETC_DIR%/${ETC_DIR//\//\\/}/" | sed -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | tee "$LIB_DIR/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
+        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%BIN_DIR%/${BIN_DIR//\//\\/}/" | sed -e "s/%CONF_DIR%/${CONF_DIR//\//\\/}/" | sed -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | tee "$LIB_DIR/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
     done
 
     # add program services sub-configurations based on the sub-configurations present in the './services' folder
