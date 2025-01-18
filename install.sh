@@ -3,7 +3,7 @@ set -e
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,atomic,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -21,6 +21,7 @@ SHOULD_POST_INSTALL=true
 SHOULD_REMOVE=false
 NO_BATTERY_SENSOR=false
 NO_SUDO=false
+ATOMIC=false
 
 eval set -- "$VALID_ARGS"
 while true; do
@@ -55,6 +56,9 @@ while true; do
     '--no-sudo')
         NO_SUDO=true
         ;;
+    '--atomic')
+        ATOMIC=true
+        ;;
     '--help' | '-h')
         echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo]" 1>&2
         exit 0
@@ -72,11 +76,23 @@ if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]
   exit 1
 fi
 
+# set the directories
+BIN_DIR="$DEST_DIR$PREFIX_DIR/bin"
+CONF_DIR="$DEST_DIR$SYSCONF_DIR"
+LIB_DIR="$DEST_DIR$PREFIX_DIR/lib"
 SERVICES_DIR="./services"
 SERVICE_EXTENSION=".service"
 
 SERVICES="$(cd "$SERVICES_DIR" && find . -maxdepth 1 -maxdepth 1 -type f -name "*$SERVICE_EXTENSION" -exec basename {} "$SERVICE_EXTENSION" \;)"
 SERVICES_SUBCONFIGS="$(cd "$SERVICES_DIR" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
+
+# if atomic flag is set
+if [ "$ATOMIC" = true ]; then
+  # override the destination directories
+  BIN_DIR="/var/usrlocal/bin"
+  CONF_DIR="/etc"
+  LIB_DIR="/etc"
+fi
 
 function sanitizePath() {
     local SANITIZED_PATH="$1"
@@ -104,7 +120,7 @@ function uninstall() {
     for SERVICE in $SERVICES ; do
         SERVICE=$(sanitizePath "$SERVICE")
         # be EXTRA CAREFUL about the validity of the paths (dont wanna delete something important, right?... O_O)
-        rm -rf "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION"
+        rm -rf "$LIB_DIR/systemd/system/$SERVICE$SERVICE_EXTENSION"
     done
 
     # remove program services sub-configurations based on the sub-configurations present in the './services' folder
@@ -115,17 +131,17 @@ function uninstall() {
         SUBCONFIGS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -type f)"
         for SUBCONFIG in $SUBCONFIGS ; do
             SUBCONFIG=$(sanitizePath "$SUBCONFIG")
-            echo "removing '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
-            rm -rf "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" 2> "/dev/null" || true
+            echo "removing '$LIB_DIR/systemd/$SERVICE/$SUBCONFIG'"
+            rm -rf "$LIB_DIR/systemd/$SERVICE/$SUBCONFIG" 2> "/dev/null" || true
         done
     done
 
-    rm "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl" 2> "/dev/null" || true
+    rm "$BIN_DIR/fw-fanctrl" 2> "/dev/null" || true
     ectool autofanctrl 2> "/dev/null" || true # restore default fan manager
     if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
-        rm "$DEST_DIR$PREFIX_DIR/bin/ectool" 2> "/dev/null" || true
+        rm "$BIN_DIR/ectool" 2> "/dev/null" || true
     fi
-    rm -rf "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
+    rm -rf "$CONF_DIR/fw-fanctrl" 2> "/dev/null" || true
     rm -rf "/run/fw-fanctrl" 2> "/dev/null" || true
 
     uninstall_legacy
@@ -134,18 +150,24 @@ function uninstall() {
 function install() {
     uninstall_legacy
 
+    # remove the temporary folder if it exists
     rm -rf "$TEMP_FOLDER"
-    mkdir -p "$DEST_DIR$PREFIX_DIR/bin"
+
+    # install ectool if specified
     if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
         mkdir "$TEMP_FOLDER"
         installEctool "$TEMP_FOLDER" || (echo "an error occurred when installing ectool." && echo "please check your internet connection or consider installing it manually and using --no-ectool on the installation script." && exit 1)
         rm -rf "$TEMP_FOLDER"
     fi
-    mkdir -p "$DEST_DIR$SYSCONF_DIR/fw-fanctrl"
-    cp "./fanctrl.py" "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
-    chmod +x "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
 
-    cp -n "./config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
+    # install the fanctrl program in the bin directory
+    mkdir -p $BIN_DIR
+    cp "./fanctrl.py" "$BIN_DIR/fw-fanctrl"
+    chmod +x "$BIN_DIR/fw-fanctrl"
+
+    # copy the fanctrl configuration in the etc directory
+    mkdir -p "$CONF_DIR/fw-fanctrl"
+    cp -n "./config.json" "$CONF_DIR/fw-fanctrl" 2> "/dev/null" || true
 
     # add --no-battery-sensors flag to the fanctrl service if specified
     if [ "$NO_BATTERY_SENSOR" = true ]; then
@@ -153,8 +175,8 @@ function install() {
     fi
 
     # create program services based on the services present in the './services' folder
-    echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/system'"
-    mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/system"
+    echo "creating '$LIB_DIR/systemd/system'"
+    mkdir -p "$LIB_DIR/systemd/system"
     echo "creating services"
     for SERVICE in $SERVICES ; do
         SERVICE=$(sanitizePath "$SERVICE")
@@ -162,8 +184,8 @@ function install() {
             echo "stopping [$SERVICE]"
             systemctl stop "$SERVICE"
         fi
-        echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION'"
-        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | sed -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
+        echo "creating '$LIB_DIR/systemd/system/$SERVICE$SERVICE_EXTENSION'"
+        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%BIN_DIR%/${BIN_DIR//\//\\/}/" | sed -e "s/%CONF_DIR%/${CONF_DIR//\//\\/}/" | sed -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | tee "$LIB_DIR/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
     done
 
     # add program services sub-configurations based on the sub-configurations present in the './services' folder
@@ -173,31 +195,33 @@ function install() {
         echo "adding sub-configurations for [$SERVICE]"
         SUBCONFIG_FOLDERS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
         # ensure folders exists
-        mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE"
+        mkdir -p "$LIB_DIR/systemd/$SERVICE"
         for SUBCONFIG_FOLDER in $SUBCONFIG_FOLDERS ; do
             SUBCONFIG_FOLDER=$(sanitizePath "$SUBCONFIG_FOLDER")
-            echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER'"
-            mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER"
+            echo "creating '$LIB_DIR/systemd/$SERVICE/$SUBCONFIG_FOLDER'"
+            mkdir -p "$LIB_DIR/systemd/$SERVICE/$SUBCONFIG_FOLDER"
         done
         SUBCONFIGS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -type f)"
         # add sub-configurations
         for SUBCONFIG in $SUBCONFIGS ; do
             SUBCONFIG=$(sanitizePath "$SUBCONFIG")
-            echo "adding '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
-            cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
-            chmod +x "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG"
+            echo "adding '$LIB_DIR/systemd/$SERVICE/$SUBCONFIG'"
+            cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | tee "$LIB_DIR/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
+            chmod +x "$LIB_DIR/systemd/$SERVICE/$SUBCONFIG"
         done
     done
+
     if [ "$SHOULD_POST_INSTALL" = true ]; then
         ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR" "$([ "$NO_SUDO" = true ] && echo "--no-sudo")"
     fi
+
 }
 
 function installEctool() {
     workingDirectory=$1
     echo "installing ectool"
 
-    ectoolDestPath="$DEST_DIR$PREFIX_DIR/bin/ectool"
+    ectoolDestPath="$BIN_DIR/ectool"
 
     ectoolJobId="$(cat './fetch/ectool/linux/gitlab_job_id')"
     ectoolSha256Hash="$(cat './fetch/ectool/linux/hash.sha256')"
@@ -224,6 +248,7 @@ function installEctool() {
     if [[ $? -ne 0 ]]; then return 1; fi
 
     echo "ectool installed"
+
 }
 
 if [ "$SHOULD_REMOVE" = true ]; then
