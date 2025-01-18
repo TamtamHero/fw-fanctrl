@@ -3,7 +3,7 @@ set -e
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,atomic,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -21,6 +21,7 @@ SHOULD_POST_INSTALL=true
 SHOULD_REMOVE=false
 NO_BATTERY_SENSOR=false
 NO_SUDO=false
+ATOMIC=true
 
 eval set -- "$VALID_ARGS"
 while true; do
@@ -54,6 +55,9 @@ while true; do
         ;;
     '--no-sudo')
         NO_SUDO=true
+        ;;
+    '--atomic')
+        ATOMIC=true
         ;;
     '--help' | '-h')
         echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo]" 1>&2
@@ -128,6 +132,17 @@ function uninstall() {
     rm -rf "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
     rm -rf "/run/fw-fanctrl" 2> "/dev/null" || true
 
+    #  remove ectool symlink if atomic flag is set
+    if [ "$ATOMIC" = true ]; then
+        rm "/var/usrlocal/bin/ectool" 2> "/dev/null" || true
+
+        # remove the symlink to the fw-fanctrl service if specified
+        rm "/etc/systemd/system/fw-fanctrl.service" 2> "/dev/null" || true
+
+        # remove the symlink to the fw-fanctrl-suspend service if specified
+        rm "/etc/systemd/system-sleep/fw-fanctrl-suspend" 2> "/dev/null" || true
+    fi
+
     uninstall_legacy
 }
 
@@ -188,9 +203,23 @@ function install() {
             chmod +x "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG"
         done
     done
+
+    # if atomic flag is set
+    if [ "$ATOMIC" = true ]; then
+        # symlink the fw-fanctrl service to /etc/systemd/system
+        mkdir -p "/etc/systemd/system/"
+        ln -s "$DEST_DIR$PREFIX_DIR/lib/systemd/system/fw-fanctrl.service" "/etc/systemd/system/fw-fanctrl.service"
+        echo "symlinked fw-fanctrl.service to /etc/systemd/system"
+
+        # symlink the fw-fanctrl-suspend service to /etc/systemd/system-sleep
+        mkdir -p "/etc/systemd/system-sleep/"
+        ln -s "$DEST_DIR$PREFIX_DIR/lib/systemd/system-sleep/fw-fanctrl-suspend" "/etc/systemd/system-sleep/fw-fanctrl-suspend"
+    fi
+
     if [ "$SHOULD_POST_INSTALL" = true ]; then
         ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR" "$([ "$NO_SUDO" = true ] && echo "--no-sudo")"
     fi
+
 }
 
 function installEctool() {
@@ -224,6 +253,15 @@ function installEctool() {
     if [[ $? -ne 0 ]]; then return 1; fi
 
     echo "ectool installed"
+
+    # if atomic flag is set
+    if [ "$ATOMIC" = true ]; then
+        # symlink the ectool to /var/usrlocal/bin
+        mkdir -p "/var/usrlocal/bin/"
+        ln -s "$ectoolDestPath" "/var/usrlocal/bin/ectool"
+
+        echo "ectool symlinked to /var/usrlocal/bin"
+    fi
 }
 
 if [ "$SHOULD_REMOVE" = true ]; then
