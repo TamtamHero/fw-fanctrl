@@ -21,7 +21,7 @@ SHOULD_POST_INSTALL=true
 SHOULD_REMOVE=false
 NO_BATTERY_SENSOR=false
 NO_SUDO=false
-ATOMIC=true
+ATOMIC=false
 
 eval set -- "$VALID_ARGS"
 while true; do
