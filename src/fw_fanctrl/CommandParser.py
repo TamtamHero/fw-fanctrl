@@ -3,7 +3,7 @@ import os
 import sys
 import textwrap
 
-from src import DEFAULT_CONFIGURATION_FILE_PATH
+from fw_fanctrl import DEFAULT_CONFIGURATION_FILE_PATH
 
 
 class CommandParser:

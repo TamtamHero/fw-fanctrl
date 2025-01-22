@@ -5,10 +5,10 @@ import socket
 import sys
 from abc import ABC
 
-from src import COMMANDS_SOCKET_FILE_PATH, SOCKETS_FOLDER_PATH
-from .CommandParser import CommandParser
-from .exception.SocketAlreadyRunningException import SocketAlreadyRunningException
-from .socketController.SocketController import SocketController
+from fw_fanctrl import COMMANDS_SOCKET_FILE_PATH, SOCKETS_FOLDER_PATH
+from fw_fanctrl.CommandParser import CommandParser
+from fw_fanctrl.exception.SocketAlreadyRunningException import SocketAlreadyRunningException
+from fw_fanctrl.socketController.SocketController import SocketController
 
 
 class UnixSocketController(SocketController, ABC):

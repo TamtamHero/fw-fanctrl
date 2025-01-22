@@ -1,7 +1,7 @@
 import json
 
-from .Strategy import Strategy
-from .exception.InvalidStrategyException import InvalidStrategyException
+from fw_fanctrl.Strategy import Strategy
+from fw_fanctrl.exception.InvalidStrategyException import InvalidStrategyException
 
 
 class Configuration:

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from .exception.UnimplementedException import UnimplementedException
+from fw_fanctrl.exception.UnimplementedException import UnimplementedException
 
 
 class HardwareController(ABC):

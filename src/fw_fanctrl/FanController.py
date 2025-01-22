@@ -3,9 +3,9 @@ import sys
 import threading
 from time import sleep
 
-from .Configuration import Configuration
-from .exception.InvalidStrategyException import InvalidStrategyException
-from .exception.JSONException import JSONException
+from fw_fanctrl.Configuration import Configuration
+from fw_fanctrl.exception.InvalidStrategyException import InvalidStrategyException
+from fw_fanctrl.exception.JSONException import JSONException
 
 
 class FanController:

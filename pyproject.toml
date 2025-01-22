@@ -51,3 +51,6 @@ Issues = "https://github.com/TamtamHero/fw-fanctrl/issues"
 
 [project.scripts]
 fw-fanctrl = "fw_fanctrl.__main__:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}

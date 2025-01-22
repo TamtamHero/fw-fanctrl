@@ -2,7 +2,7 @@ import re
 import subprocess
 from abc import ABC
 
-from .hardwareController.HardwareController import HardwareController
+from fw_fanctrl.hardwareController.HardwareController import HardwareController
 
 
 class EctoolHardwareController(HardwareController, ABC):
