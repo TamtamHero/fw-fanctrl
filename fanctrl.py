@@ -129,13 +129,14 @@ class CommandParser:
         )
         printCommand.add_argument(
             "print_selection",
-            help=f"current - The current strategy{os.linesep}list - List available strategies{os.linesep}speed - The current fan speed percentage",
+            help=f"all - All details{os.linesep}current - The current strategy{os.linesep}list - List available strategies{os.linesep}speed - The current fan speed percentage",
             nargs="?",
             type=str,
-            choices=["current",
+            choices=["all",
+                     "current",
                      "list",
                      "speed"],
-            default="current"
+            default="all"
         )
 
     def initLegacyParser(self):
@@ -709,7 +710,9 @@ class FanController:
             self.resume()
             return ServiceResumeCommandResult(self.getCurrentStrategy().name)
         elif args.command == "print":
-            if args.print_selection == "current":
+            if args.print_selection == "all":
+                return self.dumpDetails()
+            elif args.print_selection == "current":
                 return PrintCurrentStrategyCommandResult(self.getCurrentStrategy().name)
             elif args.print_selection == "list":
                 return PrintStrategyListCommandResult(list(self.configuration.getStrategies()))
@@ -750,15 +753,17 @@ class FanController:
         if self.active:
             self.setSpeed(newSpeed)
 
-    def printState(self):
+    def dumpDetails(self):
         currentStrategy = self.getCurrentStrategy()
         currentTemperture = self.getActualTemperature()
         movingAverageTemp = self.getMovingAverageTemperature(currentStrategy.movingAverageInterval)
         effectiveTemp = self.getEffectiveTemperature(currentTemperture, currentStrategy.movingAverageInterval)
 
-        _state = StatusRuntimeResult(currentStrategy.name, self.speed, currentTemperture,
+        return StatusRuntimeResult(currentStrategy.name, self.speed, currentTemperture,
                                      movingAverageTemp, effectiveTemp)
-        print(_state.toOutputFormat(self.outputFormat))
+
+    def printState(self):
+        print(self.dumpDetails().toOutputFormat(self.outputFormat))
 
     def run(self, debug=True):
         try:
