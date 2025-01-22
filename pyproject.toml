@@ -50,8 +50,4 @@ Repository = "https://github.com/TamtamHero/fw-fanctrl.git"
 Issues = "https://github.com/TamtamHero/fw-fanctrl/issues"
 
 [project.scripts]
-fw-fanctrl = "src.__main__:main"
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["*"]
+fw-fanctrl = "fw_fanctrl.__main__:main"

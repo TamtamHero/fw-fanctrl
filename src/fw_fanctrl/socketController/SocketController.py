@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.exception.UnimplementedException import UnimplementedException
+from .exception.UnimplementedException import UnimplementedException
 
 
 class SocketController(ABC):

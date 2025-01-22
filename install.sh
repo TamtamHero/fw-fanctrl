@@ -93,7 +93,7 @@ function sanitizePath() {
 function build() {
     echo "building package"
     python -m build -s
-    rm -rf "fw_fanctrl.egg-info" 2> "/dev/null" || true
+    find . -type d -name "*.egg-info" -exec rm -rf {} + 2> "/dev/null" || true
 }
 
 # remove remaining legacy files
@@ -162,8 +162,9 @@ function install() {
 
     if [ "$NO_PIP_INSTALL" = false ]; then
         echo "installing python package"
-        python -m pip install --prefix="$PREFIX_DIR" dist/*.tar.gz
+        python -m pip install --prefix="$PREFIX_DIR" "dist/*.tar.gz"
         which python
+        rm -rf "dist/" 2> "/dev/null" || true
     fi
 
     cp -n "./config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true

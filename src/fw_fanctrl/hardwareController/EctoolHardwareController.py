@@ -2,7 +2,7 @@ import re
 import subprocess
 from abc import ABC
 
-from src.hardwareController.HardwareController import HardwareController
+from .hardwareController.HardwareController import HardwareController
 
 
 class EctoolHardwareController(HardwareController, ABC):

@@ -1,7 +1,7 @@
 import json
 
-from src.Strategy import Strategy
-from src.exception.InvalidStrategyException import InvalidStrategyException
+from .Strategy import Strategy
+from .exception.InvalidStrategyException import InvalidStrategyException
 
 
 class Configuration:

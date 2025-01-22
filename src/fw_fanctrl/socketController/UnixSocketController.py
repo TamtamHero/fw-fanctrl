@@ -6,9 +6,9 @@ import sys
 from abc import ABC
 
 from src import COMMANDS_SOCKET_FILE_PATH, SOCKETS_FOLDER_PATH
-from src.CommandParser import CommandParser
-from src.exception.SocketAlreadyRunningException import SocketAlreadyRunningException
-from src.socketController.SocketController import SocketController
+from .CommandParser import CommandParser
+from .exception.SocketAlreadyRunningException import SocketAlreadyRunningException
+from .socketController.SocketController import SocketController
 
 
 class UnixSocketController(SocketController, ABC):
