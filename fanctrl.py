@@ -129,10 +129,11 @@ class CommandParser:
         )
         printCommand.add_argument(
             "print_selection",
-            help=f"all - All details{os.linesep}current - The current strategy{os.linesep}list - List available strategies{os.linesep}speed - The current fan speed percentage",
+            help=f"all - All details{os.linesep}current - The current strategy{os.linesep}list - List available strategies{os.linesep}speed - The current fan speed percentage{os.linesep}active - The service activity status",
             nargs="?",
             type=str,
             choices=["all",
+                     "active",
                      "current",
                      "list",
                      "speed"],
@@ -353,6 +354,15 @@ class ServiceResumeCommandResult(CommandResult):
         return f"Service resumed! Strategy in use: '{self.strategy}'"
 
 
+class PrintActiveCommandResult(CommandResult):
+    def __init__(self, active):
+        super().__init__(CommandStatus.SUCCESS)
+        self.active = active
+
+    def __str__(self):
+        return f"Active: {self.active}"
+
+
 class PrintCurrentStrategyCommandResult(CommandResult):
     def __init__(self, strategy):
         super().__init__(CommandStatus.SUCCESS)
@@ -386,16 +396,17 @@ class RuntimeResult(CommandResult):
 
 
 class StatusRuntimeResult(RuntimeResult):
-    def __init__(self, strategy, speed, temperature, movingAverageTemperature, effectiveTemperature):
+    def __init__(self, strategy, speed, temperature, movingAverageTemperature, effectiveTemperature, active):
         super().__init__(CommandStatus.SUCCESS)
         self.strategy = strategy
         self.speed = speed
         self.temperature = temperature
         self.movingAverageTemperature = movingAverageTemperature
         self.effectiveTemperature = effectiveTemperature
+        self.active = active
 
     def __str__(self):
-        return f"Strategy: '{self.strategy}'{os.linesep}Speed: {self.speed}%{os.linesep}Temp: {self.temperature}°C{os.linesep}MovingAverageTemp: {self.movingAverageTemperature}°C{os.linesep}EffectiveTemp: {self.effectiveTemperature}°C"
+        return f"Strategy: '{self.strategy}'{os.linesep}Speed: {self.speed}%{os.linesep}Temp: {self.temperature}°C{os.linesep}MovingAverageTemp: {self.movingAverageTemperature}°C{os.linesep}EffectiveTemp: {self.effectiveTemperature}°C{os.linesep}Active: {self.active}"
 
 
 class Strategy:
@@ -712,6 +723,8 @@ class FanController:
         elif args.command == "print":
             if args.print_selection == "all":
                 return self.dumpDetails()
+            elif args.print_selection == "active":
+                return PrintActiveCommandResult(self.active)
             elif args.print_selection == "current":
                 return PrintCurrentStrategyCommandResult(self.getCurrentStrategy().name)
             elif args.print_selection == "list":
@@ -760,7 +773,7 @@ class FanController:
         effectiveTemp = self.getEffectiveTemperature(currentTemperture, currentStrategy.movingAverageInterval)
 
         return StatusRuntimeResult(currentStrategy.name, self.speed, currentTemperture,
-                                     movingAverageTemp, effectiveTemp)
+                                     movingAverageTemp, effectiveTemp, self.active)
 
     def printState(self):
         print(self.dumpDetails().toOutputFormat(self.outputFormat))
