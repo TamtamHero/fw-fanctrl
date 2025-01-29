@@ -9,28 +9,28 @@ class EctoolHardwareController(HardwareController, ABC):
     noBatterySensorMode = False
     nonBatterySensors = None
 
-    def __init__(self, noBatterySensorMode=False):
-        if noBatterySensorMode:
+    def __init__(self, no_battery_sensor_mode=False):
+        if no_battery_sensor_mode:
             self.noBatterySensorMode = True
-            self.populateNonBatterySensors()
+            self.populate_non_battery_sensors()
 
-    def populateNonBatterySensors(self):
+    def populate_non_battery_sensors(self):
         self.nonBatterySensors = []
-        rawOut = subprocess.run(
+        raw_out = subprocess.run(
             "ectool tempsinfo all",
             stdout=subprocess.PIPE,
             shell=True,
             text=True,
         ).stdout
-        batterySensorsRaw = re.findall(r"\d+ Battery", rawOut, re.MULTILINE)
-        batterySensors = [x.split(" ")[0] for x in batterySensorsRaw]
-        for x in re.findall(r"^\d+", rawOut, re.MULTILINE):
-            if x not in batterySensors:
+        battery_sensors_raw = re.findall(r"\d+ Battery", raw_out, re.MULTILINE)
+        battery_sensors = [x.split(" ")[0] for x in battery_sensors_raw]
+        for x in re.findall(r"^\d+", raw_out, re.MULTILINE):
+            if x not in battery_sensors:
                 self.nonBatterySensors.append(x)
 
-    def getTemperature(self):
+    def get_temperature(self):
         if self.noBatterySensorMode:
-            rawOut = "".join(
+            raw_out = "".join(
                 [
                     subprocess.run(
                         "ectool temps " + x,
@@ -42,31 +42,31 @@ class EctoolHardwareController(HardwareController, ABC):
                 ]
             )
         else:
-            rawOut = subprocess.run(
+            raw_out = subprocess.run(
                 "ectool temps all",
                 stdout=subprocess.PIPE,
                 shell=True,
                 text=True,
             ).stdout
-        rawTemps = re.findall(r"\(= (\d+) C\)", rawOut)
-        temps = sorted([x for x in [int(x) for x in rawTemps] if x > 0], reverse=True)
+        raw_temps = re.findall(r"\(= (\d+) C\)", raw_out)
+        temps = sorted([x for x in [int(x) for x in raw_temps] if x > 0], reverse=True)
         # safety fallback to avoid damaging hardware
         if len(temps) == 0:
             return 50
         return round(temps[0], 1)
 
-    def setSpeed(self, speed):
+    def set_speed(self, speed):
         subprocess.run(f"ectool fanduty {speed}", stdout=subprocess.PIPE, shell=True)
 
-    def isOnAC(self):
-        rawOut = subprocess.run(
+    def is_on_ac(self):
+        raw_out = subprocess.run(
             "ectool battery",
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
             shell=True,
             text=True,
         ).stdout
-        return len(re.findall(r"Flags.*(AC_PRESENT)", rawOut)) > 0
+        return len(re.findall(r"Flags.*(AC_PRESENT)", raw_out)) > 0
 
     def pause(self):
         subprocess.run("ectool autofanctrl", stdout=subprocess.PIPE, shell=True)

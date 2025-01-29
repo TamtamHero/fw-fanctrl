@@ -22,168 +22,168 @@ from fw_fanctrl.exception.UnknownCommandException import UnknownCommandException
 
 
 class FanController:
-    hardwareController = None
-    socketController = None
+    hardware_controller = None
+    socket_controller = None
     configuration = None
-    overwrittenStrategy = None
-    outputFormat = None
+    overwritten_strategy = None
+    output_format = None
     speed = 0
-    tempHistory = collections.deque([0] * 100, maxlen=100)
+    temp_history = collections.deque([0] * 100, maxlen=100)
     active = True
     timecount = 0
 
-    def __init__(self, hardwareController, socketController, configPath, strategyName, outputFormat):
-        self.hardwareController = hardwareController
-        self.socketController = socketController
-        self.configuration = Configuration(configPath)
+    def __init__(self, hardware_controller, socket_controller, config_path, strategy_name, output_format):
+        self.hardware_controller = hardware_controller
+        self.socket_controller = socket_controller
+        self.configuration = Configuration(config_path)
 
-        if strategyName is not None and strategyName != "":
-            self.overwriteStrategy(strategyName)
+        if strategy_name is not None and strategy_name != "":
+            self.overwrite_strategy(strategy_name)
 
-        self.outputFormat = outputFormat
+        self.output_format = output_format
 
         t = threading.Thread(
-            target=self.socketController.startServerSocket,
-            args=[self.commandManager],
+            target=self.socket_controller.start_server_socket,
+            args=[self.command_manager],
         )
         t.daemon = True
         t.start()
 
-    def getActualTemperature(self):
-        return self.hardwareController.getTemperature()
+    def get_actual_temperature(self):
+        return self.hardware_controller.get_temperature()
 
-    def setSpeed(self, speed):
+    def set_speed(self, speed):
         self.speed = speed
-        self.hardwareController.setSpeed(speed)
+        self.hardware_controller.set_speed(speed)
 
-    def isOnAC(self):
-        return self.hardwareController.isOnAC()
+    def is_on_ac(self):
+        return self.hardware_controller.is_on_ac()
 
     def pause(self):
         self.active = False
-        self.hardwareController.pause()
+        self.hardware_controller.pause()
 
     def resume(self):
         self.active = True
-        self.hardwareController.resume()
+        self.hardware_controller.resume()
 
-    def overwriteStrategy(self, strategyName):
-        self.overwrittenStrategy = self.configuration.getStrategy(strategyName)
+    def overwrite_strategy(self, strategy_name):
+        self.overwritten_strategy = self.configuration.get_strategy(strategy_name)
         self.timecount = 0
 
-    def clearOverwrittenStrategy(self):
-        self.overwrittenStrategy = None
+    def clear_overwritten_strategy(self):
+        self.overwritten_strategy = None
         self.timecount = 0
 
-    def getCurrentStrategy(self):
-        if self.overwrittenStrategy is not None:
-            return self.overwrittenStrategy
-        if self.isOnAC():
-            return self.configuration.getDefaultStrategy()
-        return self.configuration.getDischargingStrategy()
+    def get_current_strategy(self):
+        if self.overwritten_strategy is not None:
+            return self.overwritten_strategy
+        if self.is_on_ac():
+            return self.configuration.get_default_strategy()
+        return self.configuration.get_discharging_strategy()
 
-    def commandManager(self, args):
+    def command_manager(self, args):
         if args.command == "reset" or (args.command == "use" and args.strategy == "defaultStrategy"):
-            self.clearOverwrittenStrategy()
-            return StrategyResetCommandResult(self.getCurrentStrategy().name)
+            self.clear_overwritten_strategy()
+            return StrategyResetCommandResult(self.get_current_strategy().name)
         elif args.command == "use":
             try:
-                self.overwriteStrategy(args.strategy)
-                return StrategyChangeCommandResult(self.getCurrentStrategy().name)
+                self.overwrite_strategy(args.strategy)
+                return StrategyChangeCommandResult(self.get_current_strategy().name)
             except InvalidStrategyException:
                 raise InvalidStrategyException(f"The specified strategy is invalid: {args.strategy}")
         elif args.command == "reload":
             if self.configuration.reload():
-                if self.overwrittenStrategy is not None:
-                    self.overwriteStrategy(self.overwrittenStrategy.name)
+                if self.overwritten_strategy is not None:
+                    self.overwrite_strategy(self.overwritten_strategy.name)
             else:
                 raise JSONException("Config file could not be parsed due to JSON Error")
-            return ConfigurationReloadCommandResult(self.getCurrentStrategy().name)
+            return ConfigurationReloadCommandResult(self.get_current_strategy().name)
         elif args.command == "pause":
             self.pause()
             return ServicePauseCommandResult()
         elif args.command == "resume":
             self.resume()
-            return ServiceResumeCommandResult(self.getCurrentStrategy().name)
+            return ServiceResumeCommandResult(self.get_current_strategy().name)
         elif args.command == "print":
             if args.print_selection == "all":
-                return self.dumpDetails()
+                return self.dump_details()
             elif args.print_selection == "active":
                 return PrintActiveCommandResult(self.active)
             elif args.print_selection == "current":
-                return PrintCurrentStrategyCommandResult(self.getCurrentStrategy().name)
+                return PrintCurrentStrategyCommandResult(self.get_current_strategy().name)
             elif args.print_selection == "list":
-                return PrintStrategyListCommandResult(list(self.configuration.getStrategies()))
+                return PrintStrategyListCommandResult(list(self.configuration.get_strategies()))
             elif args.print_selection == "speed":
                 return PrintFanSpeedCommandResult(str(self.speed))
         raise UnknownCommandException(f"Unknown command: '{args.command}', unexpected.")
 
     # return mean temperature over a given time interval (in seconds)
-    def getMovingAverageTemperature(self, timeInterval):
-        slicedTempHistory = [x for x in self.tempHistory if x > 0][-timeInterval:]
-        if len(slicedTempHistory) == 0:
-            return self.getActualTemperature()
-        return round(sum(slicedTempHistory) / len(slicedTempHistory), 1)
+    def get_moving_average_temperature(self, time_interval):
+        sliced_temp_history = [x for x in self.temp_history if x > 0][-time_interval:]
+        if len(sliced_temp_history) == 0:
+            return self.get_actual_temperature()
+        return round(sum(sliced_temp_history) / len(sliced_temp_history), 1)
 
-    def getEffectiveTemperature(self, currentTemp, timeInterval):
+    def get_effective_temperature(self, current_temp, time_interval):
         # the moving average temperature count for 2/3 of the effective temperature
-        return round(min(self.getMovingAverageTemperature(timeInterval), currentTemp), 1)
+        return round(min(self.get_moving_average_temperature(time_interval), current_temp), 1)
 
-    def adaptSpeed(self, currentTemp):
-        currentStrategy = self.getCurrentStrategy()
-        currentTemp = self.getEffectiveTemperature(currentTemp, currentStrategy.movingAverageInterval)
-        minPoint = currentStrategy.speedCurve[0]
-        maxPoint = currentStrategy.speedCurve[-1]
-        for e in currentStrategy.speedCurve:
-            if currentTemp > e["temp"]:
-                minPoint = e
+    def adapt_speed(self, current_temp):
+        current_strategy = self.get_current_strategy()
+        current_temp = self.get_effective_temperature(current_temp, current_strategy.moving_average_interval)
+        min_point = current_strategy.speed_curve[0]
+        max_point = current_strategy.speed_curve[-1]
+        for e in current_strategy.speed_curve:
+            if current_temp > e["temp"]:
+                min_point = e
             else:
-                maxPoint = e
+                max_point = e
                 break
 
-        if minPoint == maxPoint:
-            newSpeed = minPoint["speed"]
+        if min_point == max_point:
+            new_speed = min_point["speed"]
         else:
-            slope = (maxPoint["speed"] - minPoint["speed"]) / (maxPoint["temp"] - minPoint["temp"])
-            newSpeed = int(minPoint["speed"] + (currentTemp - minPoint["temp"]) * slope)
+            slope = (max_point["speed"] - min_point["speed"]) / (max_point["temp"] - min_point["temp"])
+            new_speed = int(min_point["speed"] + (current_temp - min_point["temp"]) * slope)
         if self.active:
-            self.setSpeed(newSpeed)
+            self.set_speed(new_speed)
 
-    def dumpDetails(self):
-        currentStrategy = self.getCurrentStrategy()
-        currentTemperture = self.getActualTemperature()
-        movingAverageTemp = self.getMovingAverageTemperature(currentStrategy.movingAverageInterval)
-        effectiveTemp = self.getEffectiveTemperature(currentTemperture, currentStrategy.movingAverageInterval)
+    def dump_details(self):
+        current_strategy = self.get_current_strategy()
+        current_temperature = self.get_actual_temperature()
+        moving_average_temp = self.get_moving_average_temperature(current_strategy.moving_average_interval)
+        effective_temp = self.get_effective_temperature(current_temperature, current_strategy.moving_average_interval)
 
         return StatusRuntimeResult(
-            currentStrategy.name, self.speed, currentTemperture, movingAverageTemp, effectiveTemp, self.active
+            current_strategy.name, self.speed, current_temperature, moving_average_temp, effective_temp, self.active
         )
 
-    def printState(self):
-        print(self.dumpDetails().toOutputFormat(self.outputFormat))
+    def print_state(self):
+        print(self.dump_details().to_output_format(self.output_format))
 
     def run(self, debug=True):
         try:
             while True:
                 if self.active:
-                    temp = self.getActualTemperature()
+                    temp = self.get_actual_temperature()
                     # update fan speed every "fanSpeedUpdateFrequency" seconds
-                    if self.timecount % self.getCurrentStrategy().fanSpeedUpdateFrequency == 0:
-                        self.adaptSpeed(temp)
+                    if self.timecount % self.get_current_strategy().fan_speed_update_frequency == 0:
+                        self.adapt_speed(temp)
                         self.timecount = 0
 
-                    self.tempHistory.append(temp)
+                    self.temp_history.append(temp)
 
                     if debug:
-                        self.printState()
+                        self.print_state()
                     self.timecount += 1
                     sleep(1)
                 else:
                     sleep(5)
         except InvalidStrategyException as e:
             _rte = RuntimeResult(CommandStatus.ERROR, f"Missing strategy, exiting for safety reasons: {e.args[0]}")
-            print(_rte.toOutputFormat(self.outputFormat), file=sys.stderr)
+            print(_rte.to_output_format(self.output_format), file=sys.stderr)
         except Exception as e:
             _rte = RuntimeResult(CommandStatus.ERROR, f"Critical error, exiting for safety reasons: {e}")
-            print(_rte.toOutputFormat(self.outputFormat), file=sys.stderr)
+            print(_rte.to_output_format(self.output_format), file=sys.stderr)
         exit(1)

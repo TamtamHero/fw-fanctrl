@@ -5,13 +5,13 @@ from fw_fanctrl.enum.CommandStatus import CommandStatus
 
 
 class StatusRuntimeResult(RuntimeResult):
-    def __init__(self, strategy, speed, temperature, movingAverageTemperature, effectiveTemperature, active):
+    def __init__(self, strategy, speed, temperature, moving_average_temperature, effective_temperature, active):
         super().__init__(CommandStatus.SUCCESS)
         self.strategy = strategy
         self.speed = speed
         self.temperature = temperature
-        self.movingAverageTemperature = movingAverageTemperature
-        self.effectiveTemperature = effectiveTemperature
+        self.movingAverageTemperature = moving_average_temperature
+        self.effectiveTemperature = effective_temperature
         self.active = active
 
     def __str__(self):

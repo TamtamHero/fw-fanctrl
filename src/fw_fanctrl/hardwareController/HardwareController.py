@@ -5,11 +5,11 @@ from fw_fanctrl.exception.UnimplementedException import UnimplementedException
 
 class HardwareController(ABC):
     @abstractmethod
-    def getTemperature(self):
+    def get_temperature(self):
         raise UnimplementedException()
 
     @abstractmethod
-    def setSpeed(self, speed):
+    def set_speed(self, speed):
         raise UnimplementedException()
 
     @abstractmethod
@@ -21,5 +21,5 @@ class HardwareController(ABC):
         pass
 
     @abstractmethod
-    def isOnAC(self):
+    def is_on_ac(self):
         raise UnimplementedException()

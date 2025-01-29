@@ -9,17 +9,17 @@ from fw_fanctrl.exception.UnknownCommandException import UnknownCommandException
 
 
 class CommandParser:
-    isRemote = True
+    is_remote = True
 
-    legacyParser = None
+    legacy_parser = None
     parser = None
 
-    def __init__(self, isRemote=False):
-        self.isRemote = isRemote
-        self.initParser()
-        self.initLegacyParser()
+    def __init__(self, is_remote=False):
+        self.is_remote = is_remote
+        self.init_parser()
+        self.init_legacy_parser()
 
-    def initParser(self):
+    def init_parser(self):
         self.parser = argparse.ArgumentParser(
             prog="fw-fanctrl",
             description="control Framework's laptop fan(s) with a speed curve",
@@ -44,34 +44,34 @@ class CommandParser:
             default=OutputFormat.NATURAL,
         )
 
-        commandsSubParser = self.parser.add_subparsers(dest="command")
-        commandsSubParser.required = True
+        commands_sub_parser = self.parser.add_subparsers(dest="command")
+        commands_sub_parser.required = True
 
-        if not self.isRemote:
-            runCommand = commandsSubParser.add_parser(
+        if not self.is_remote:
+            run_command = commands_sub_parser.add_parser(
                 "run",
                 description="run the service",
                 formatter_class=argparse.RawTextHelpFormatter,
             )
-            runCommand.add_argument(
+            run_command.add_argument(
                 "strategy",
                 help='name of the strategy to use e.g: "lazy" (use `print strategies` to list available strategies)',
                 nargs=argparse.OPTIONAL,
             )
-            runCommand.add_argument(
+            run_command.add_argument(
                 "--config",
                 "-c",
                 help=f"the configuration file path (default: {DEFAULT_CONFIGURATION_FILE_PATH})",
                 type=str,
                 default=DEFAULT_CONFIGURATION_FILE_PATH,
             )
-            runCommand.add_argument(
+            run_command.add_argument(
                 "--silent",
                 "-s",
                 help="disable printing speed/temp status to stdout",
                 action="store_true",
             )
-            runCommand.add_argument(
+            run_command.add_argument(
                 "--hardware-controller",
                 "--hc",
                 help="the hardware controller to use for fetching and setting the temp and fan(s) speed",
@@ -79,29 +79,29 @@ class CommandParser:
                 choices=["ectool"],
                 default="ectool",
             )
-            runCommand.add_argument(
+            run_command.add_argument(
                 "--no-battery-sensors",
                 help="disable checking battery temperature sensors",
                 action="store_true",
             )
 
-        useCommand = commandsSubParser.add_parser("use", description="change the current strategy")
-        useCommand.add_argument(
+        use_command = commands_sub_parser.add_parser("use", description="change the current strategy")
+        use_command.add_argument(
             "strategy",
             help='name of the strategy to use e.g: "lazy". (use `print strategies` to list available strategies)',
         )
 
-        commandsSubParser.add_parser("reset", description="reset to the default strategy")
-        commandsSubParser.add_parser("reload", description="reload the configuration file")
-        commandsSubParser.add_parser("pause", description="pause the service")
-        commandsSubParser.add_parser("resume", description="resume the service")
+        commands_sub_parser.add_parser("reset", description="reset to the default strategy")
+        commands_sub_parser.add_parser("reload", description="reload the configuration file")
+        commands_sub_parser.add_parser("pause", description="pause the service")
+        commands_sub_parser.add_parser("resume", description="resume the service")
 
-        printCommand = commandsSubParser.add_parser(
+        print_command = commands_sub_parser.add_parser(
             "print",
             description="print the selected information",
             formatter_class=argparse.RawTextHelpFormatter,
         )
-        printCommand.add_argument(
+        print_command.add_argument(
             "print_selection",
             help=f"all - All details{os.linesep}current - The current strategy{os.linesep}list - List available strategies{os.linesep}speed - The current fan speed percentage{os.linesep}active - The service activity status",
             nargs="?",
@@ -110,11 +110,11 @@ class CommandParser:
             default="all",
         )
 
-    def initLegacyParser(self):
-        self.legacyParser = argparse.ArgumentParser(add_help=False)
+    def init_legacy_parser(self):
+        self.legacy_parser = argparse.ArgumentParser(add_help=False)
 
         # avoid collision with the new parser commands
-        def excludedPositionalArguments(value):
+        def excluded_positional_arguments(value):
             if value in [
                 "run",
                 "use",
@@ -127,28 +127,28 @@ class CommandParser:
                 raise argparse.ArgumentTypeError("%s is an excluded value" % value)
             return value
 
-        bothGroup = self.legacyParser.add_argument_group("both")
-        bothGroup.add_argument("_strategy", nargs="?", type=excludedPositionalArguments)
-        bothGroup.add_argument("--strategy", nargs="?")
+        both_group = self.legacy_parser.add_argument_group("both")
+        both_group.add_argument("_strategy", nargs="?", type=excluded_positional_arguments)
+        both_group.add_argument("--strategy", nargs="?")
 
-        runGroup = self.legacyParser.add_argument_group("run")
-        runGroup.add_argument("--run", action="store_true")
-        runGroup.add_argument("--config", type=str, default=DEFAULT_CONFIGURATION_FILE_PATH)
-        runGroup.add_argument("--no-log", action="store_true")
-        commandGroup = self.legacyParser.add_argument_group("configure")
-        commandGroup.add_argument("--query", "-q", action="store_true")
-        commandGroup.add_argument("--list-strategies", action="store_true")
-        commandGroup.add_argument("--reload", "-r", action="store_true")
-        commandGroup.add_argument("--pause", action="store_true")
-        commandGroup.add_argument("--resume", action="store_true")
-        commandGroup.add_argument(
+        run_group = self.legacy_parser.add_argument_group("run")
+        run_group.add_argument("--run", action="store_true")
+        run_group.add_argument("--config", type=str, default=DEFAULT_CONFIGURATION_FILE_PATH)
+        run_group.add_argument("--no-log", action="store_true")
+        command_group = self.legacy_parser.add_argument_group("configure")
+        command_group.add_argument("--query", "-q", action="store_true")
+        command_group.add_argument("--list-strategies", action="store_true")
+        command_group.add_argument("--reload", "-r", action="store_true")
+        command_group.add_argument("--pause", action="store_true")
+        command_group.add_argument("--resume", action="store_true")
+        command_group.add_argument(
             "--hardware-controller",
             "--hc",
             type=str,
             choices=["ectool"],
             default="ectool",
         )
-        commandGroup.add_argument(
+        command_group.add_argument(
             "--socket-controller",
             "--sc",
             type=str,
@@ -156,13 +156,12 @@ class CommandParser:
             default="unix",
         )
 
-    def parseArgs(self, args=None):
-        values = None
+    def parse_args(self, args=None):
         original_stderr = sys.stderr
         # silencing legacy parser output
         sys.stderr = open(os.devnull, "w")
         try:
-            legacy_values = self.legacyParser.parse_args(args)
+            legacy_values = self.legacy_parser.parse_args(args)
             if legacy_values.strategy is None:
                 legacy_values.strategy = legacy_values._strategy
             # converting legacy values into new ones
@@ -192,7 +191,7 @@ class CommandParser:
                 values.strategy = legacy_values.strategy
             if not hasattr(values, "command"):
                 raise UnknownCommandException("not a valid legacy command")
-            if self.isRemote or values.command == "run":
+            if self.is_remote or values.command == "run":
                 # Legacy commands do not support other formats than NATURAL, so there is no need to use a CommandResult.
                 print(
                     "[Warning] > this command is deprecated and will be removed soon, please use the new command format instead ('fw-fanctrl -h' for more details)."

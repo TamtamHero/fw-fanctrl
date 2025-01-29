@@ -11,40 +11,40 @@ from fw_fanctrl.socketController.UnixSocketController import UnixSocketControlle
 
 def main():
     try:
-        args = CommandParser().parseArgs()
+        args = CommandParser().parse_args()
     except Exception as e:
         _cre = CommandResult(CommandStatus.ERROR, str(e))
-        print(_cre.toOutputFormat(OutputFormat.NATURAL), file=sys.stderr)
+        print(_cre.to_output_format(OutputFormat.NATURAL), file=sys.stderr)
         exit(1)
 
-    socketController = UnixSocketController()
+    socket_controller = UnixSocketController()
     if args.socket_controller == "unix":
-        socketController = UnixSocketController()
+        socket_controller = UnixSocketController()
 
     if args.command == "run":
-        hardwareController = EctoolHardwareController(noBatterySensorMode=args.no_battery_sensors)
+        hardware_controller = EctoolHardwareController(no_battery_sensor_mode=args.no_battery_sensors)
         if args.hardware_controller == "ectool":
-            hardwareController = EctoolHardwareController(noBatterySensorMode=args.no_battery_sensors)
+            hardware_controller = EctoolHardwareController(no_battery_sensor_mode=args.no_battery_sensors)
 
         fan = FanController(
-            hardwareController=hardwareController,
-            socketController=socketController,
-            configPath=args.config,
-            strategyName=args.strategy,
-            outputFormat=getattr(args, "output_format", None),
+            hardware_controller=hardware_controller,
+            socket_controller=socket_controller,
+            config_path=args.config,
+            strategy_name=args.strategy,
+            output_format=getattr(args, "output_format", None),
         )
         fan.run(debug=not args.silent)
     else:
         try:
-            commandResult = socketController.sendViaClientSocket(" ".join(sys.argv[1:]))
-            if commandResult:
-                print(commandResult)
+            command_result = socket_controller.send_via_client_socket(" ".join(sys.argv[1:]))
+            if command_result:
+                print(command_result)
         except Exception as e:
             if str(e).startswith("[Error] >"):
                 print(str(e), file=sys.stderr)
             else:
                 _cre = CommandResult(CommandStatus.ERROR, str(e))
-                print(_cre.toOutputFormat(getattr(args, "output_format", None)), file=sys.stderr)
+                print(_cre.to_output_format(getattr(args, "output_format", None)), file=sys.stderr)
             exit(1)
 
 

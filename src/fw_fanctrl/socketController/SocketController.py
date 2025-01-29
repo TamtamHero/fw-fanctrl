@@ -5,17 +5,17 @@ from fw_fanctrl.exception.UnimplementedException import UnimplementedException
 
 class SocketController(ABC):
     @abstractmethod
-    def startServerSocket(self, commandCallback=None):
+    def start_server_socket(self, command_callback=None):
         raise UnimplementedException()
 
     @abstractmethod
-    def stopServerSocket(self):
+    def stop_server_socket(self):
         raise UnimplementedException()
 
     @abstractmethod
-    def isServerSocketRunning(self):
+    def is_server_socket_running(self):
         raise UnimplementedException()
 
     @abstractmethod
-    def sendViaClientSocket(self, command):
+    def send_via_client_socket(self, command):
         raise UnimplementedException()

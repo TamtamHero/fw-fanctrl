@@ -20,22 +20,22 @@ class Configuration:
                 return False
         return True
 
-    def getStrategies(self):
+    def get_strategies(self):
         return self.data["strategies"].keys()
 
-    def getStrategy(self, strategyName):
-        if strategyName == "strategyOnDischarging":
-            strategyName = self.data[strategyName]
-            if strategyName == "":
-                strategyName = "defaultStrategy"
-        if strategyName == "defaultStrategy":
-            strategyName = self.data[strategyName]
-        if strategyName is None or strategyName not in self.data["strategies"]:
-            raise InvalidStrategyException(strategyName)
-        return Strategy(strategyName, self.data["strategies"][strategyName])
+    def get_strategy(self, strategy_name):
+        if strategy_name == "strategyOnDischarging":
+            strategy_name = self.data[strategy_name]
+            if strategy_name == "":
+                strategy_name = "defaultStrategy"
+        if strategy_name == "defaultStrategy":
+            strategy_name = self.data[strategy_name]
+        if strategy_name is None or strategy_name not in self.data["strategies"]:
+            raise InvalidStrategyException(strategy_name)
+        return Strategy(strategy_name, self.data["strategies"][strategy_name])
 
-    def getDefaultStrategy(self):
-        return self.getStrategy("defaultStrategy")
+    def get_default_strategy(self):
+        return self.get_strategy("defaultStrategy")
 
-    def getDischargingStrategy(self):
-        return self.getStrategy("strategyOnDischarging")
+    def get_discharging_strategy(self):
+        return self.get_strategy("strategyOnDischarging")

@@ -1,15 +1,15 @@
 class Strategy:
     name = None
-    fanSpeedUpdateFrequency = None
-    movingAverageInterval = None
-    speedCurve = None
+    fan_speed_update_frequency = None
+    moving_average_interval = None
+    speed_curve = None
 
     def __init__(self, name, parameters):
         self.name = name
-        self.fanSpeedUpdateFrequency = parameters["fanSpeedUpdateFrequency"]
-        if self.fanSpeedUpdateFrequency is None or self.fanSpeedUpdateFrequency == "":
-            self.fanSpeedUpdateFrequency = 5
-        self.movingAverageInterval = parameters["movingAverageInterval"]
-        if self.movingAverageInterval is None or self.movingAverageInterval == "":
-            self.movingAverageInterval = 20
-        self.speedCurve = parameters["speedCurve"]
+        self.fan_speed_update_frequency = parameters["fanSpeedUpdateFrequency"]
+        if self.fan_speed_update_frequency is None or self.fan_speed_update_frequency == "":
+            self.fan_speed_update_frequency = 5
+        self.moving_average_interval = parameters["movingAverageInterval"]
+        if self.moving_average_interval is None or self.moving_average_interval == "":
+            self.moving_average_interval = 20
+        self.speed_curve = parameters["speedCurve"]

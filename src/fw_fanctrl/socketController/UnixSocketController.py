@@ -18,7 +18,7 @@ from fw_fanctrl.socketController.SocketController import SocketController
 class UnixSocketController(SocketController, ABC):
     server_socket = None
 
-    def startServerSocket(self, commandCallback=None):
+    def start_server_socket(self, command_callback=None):
         if self.server_socket:
             raise SocketAlreadyRunningException(self.server_socket)
         self.server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -33,7 +33,7 @@ class UnixSocketController(SocketController, ABC):
             self.server_socket.listen(1)
             while True:
                 client_socket, _ = self.server_socket.accept()
-                parsePrintCapture = io.StringIO()
+                parse_print_capture = io.StringIO()
                 args = None
                 try:
                     # Receive data from the client
@@ -41,47 +41,47 @@ class UnixSocketController(SocketController, ABC):
                     original_stderr = sys.stderr
                     original_stdout = sys.stdout
                     # capture parsing std outputs for the client
-                    sys.stderr = parsePrintCapture
-                    sys.stdout = parsePrintCapture
+                    sys.stderr = parse_print_capture
+                    sys.stdout = parse_print_capture
 
                     try:
-                        args = CommandParser(True).parseArgs(shlex.split(data))
+                        args = CommandParser(True).parse_args(shlex.split(data))
                     finally:
                         sys.stderr = original_stderr
                         sys.stdout = original_stdout
 
-                        commandResult = commandCallback(args)
+                        command_result = command_callback(args)
 
                         if args.output_format == OutputFormat.JSON:
-                            if parsePrintCapture.getvalue().strip():
-                                commandResult.info = parsePrintCapture.getvalue()
-                            client_socket.sendall(commandResult.toOutputFormat(args.output_format).encode("utf-8"))
+                            if parse_print_capture.getvalue().strip():
+                                command_result.info = parse_print_capture.getvalue()
+                            client_socket.sendall(command_result.to_output_format(args.output_format).encode("utf-8"))
                         else:
-                            naturalResult = commandResult.toOutputFormat(args.output_format)
-                            if parsePrintCapture.getvalue().strip():
-                                naturalResult = parsePrintCapture.getvalue() + naturalResult
-                            client_socket.sendall(naturalResult.encode("utf-8"))
+                            natural_result = command_result.to_output_format(args.output_format)
+                            if parse_print_capture.getvalue().strip():
+                                natural_result = parse_print_capture.getvalue() + natural_result
+                            client_socket.sendall(natural_result.encode("utf-8"))
                 except (SystemExit, Exception) as e:
                     _cre = CommandResult(
                         CommandStatus.ERROR, f"An error occurred while treating a socket command: {e}"
-                    ).toOutputFormat(getattr(args, "output_format", None))
+                    ).to_output_format(getattr(args, "output_format", None))
                     print(_cre, file=sys.stderr)
                     client_socket.sendall(_cre.encode("utf-8"))
                 finally:
                     client_socket.shutdown(socket.SHUT_WR)
                     client_socket.close()
         finally:
-            self.stopServerSocket()
+            self.stop_server_socket()
 
-    def stopServerSocket(self):
+    def stop_server_socket(self):
         if self.server_socket:
             self.server_socket.close()
             self.server_socket = None
 
-    def isServerSocketRunning(self):
+    def is_server_socket_running(self):
         return self.server_socket is not None
 
-    def sendViaClientSocket(self, command):
+    def send_via_client_socket(self, command):
         client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         try:
             client_socket.connect(COMMANDS_SOCKET_FILE_PATH)

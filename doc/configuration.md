@@ -31,7 +31,7 @@ The default strategy is the one used when the service is started.
 It can be changed by replacing the value of the `defaultStrategy` field with one of the strategies present in the
 configuration.
 
-```json
+```
 "defaultStrategy": "[STRATEGY NAME]"
 ```
 
@@ -43,7 +43,7 @@ Otherwise the default strategy is used.
 It can be changed by replacing the value of the `strategyOnDischarging` field with one of the strategies present in the
 configuration.
 
-```json
+```
 "strategyOnDischarging": "[STRATEGY NAME]"
 ```
 
@@ -57,7 +57,7 @@ Strategies can be configured with the following parameters:
 >
 > It is represented by the curve points for `f(temperature) = fan(s) speed`.
 >
-> ```json
+> ```
 > "speedCurve": [
 >     { "temp": [TEMPERATURE POINT], "speed": [PERCENTAGE SPEED] },
 >     ...
@@ -72,7 +72,7 @@ Strategies can be configured with the following parameters:
 >
 > It is the interval in seconds between fan speed calculations.
 >
-> ```json
+> ```
 > "fanSpeedUpdateFrequency": [UPDATE FREQUENCY]
 > ```
 >
@@ -87,7 +87,7 @@ Strategies can be configured with the following parameters:
 >
 > It is the number of seconds over which the moving average of temperature is calculated.
 >
-> ```json
+> ```
 > "movingAverageInterval": [AVERAGING INTERVAL]
 > ```
 >
