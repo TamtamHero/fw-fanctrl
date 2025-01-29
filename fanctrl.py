@@ -9,10 +9,11 @@ import shlex
 import socket
 import subprocess
 import sys
-import threading
-from time import sleep
-from abc import ABC, abstractmethod
 import textwrap
+import threading
+from abc import ABC, abstractmethod
+from enum import Enum
+from time import sleep
 
 DEFAULT_CONFIGURATION_FILE_PATH = "/etc/fw-fanctrl/config.json"
 SOCKETS_FOLDER_PATH = "/run/fw-fanctrl"
@@ -46,8 +47,16 @@ class CommandParser:
             choices=["unix"],
             default="unix"
         )
+        self.parser.add_argument(
+            "--output-format",
+            help="the output format to use for the command result",
+            type=lambda s: (lambda: OutputFormat[s])() if hasattr(OutputFormat, s) else s,
+            choices=list(OutputFormat._member_names_),
+            default=OutputFormat.NATURAL
+        )
 
         commandsSubParser = self.parser.add_subparsers(dest="command")
+        commandsSubParser.required = True
 
         if not self.isRemote:
             runCommand = commandsSubParser.add_parser(
@@ -120,13 +129,15 @@ class CommandParser:
         )
         printCommand.add_argument(
             "print_selection",
-            help="current - The current strategy\nlist - List available strategies\nspeed - The current fan speed percentage",
+            help=f"all - All details{os.linesep}current - The current strategy{os.linesep}list - List available strategies{os.linesep}speed - The current fan speed percentage{os.linesep}active - The service activity status",
             nargs="?",
             type=str,
-            choices=["current",
+            choices=["all",
+                     "active",
+                     "current",
                      "list",
                      "speed"],
-            default="current"
+            default="all"
         )
 
     def initLegacyParser(self):
@@ -213,6 +224,7 @@ class CommandParser:
             # converting legacy values into new ones
             values = argparse.Namespace()
             values.socket_controller = legacy_values.socket_controller
+            values.output_format = OutputFormat.NATURAL
             if legacy_values.query:
                 values.command = "print"
                 values.print_selection = "current"
@@ -235,8 +247,9 @@ class CommandParser:
                 values.command = "use"
                 values.strategy = legacy_values.strategy
             if not hasattr(values, "command"):
-                raise Exception("not a valid legacy command")
+                raise UnknownCommandException("not a valid legacy command")
             if self.isRemote or values.command == "run":
+                # Legacy commands do not support other formats than NATURAL, so there is no need to use a CommandResult.
                 print(
                     "[Warning] > this command is deprecated and will be removed soon, please use the new command format instead ('fw-fanctrl -h' for more details).")
         except (SystemExit, Exception):
@@ -261,6 +274,139 @@ class InvalidStrategyException(Exception):
 
 class SocketAlreadyRunningException(Exception):
     pass
+
+
+class UnknownCommandException(Exception):
+    pass
+
+
+class SocketCallException(Exception):
+    pass
+
+
+class CommandStatus(str, Enum):
+    SUCCESS = "success"
+    ERROR = "error"
+
+
+class OutputFormat(str, Enum):
+    NATURAL = "NATURAL"
+    JSON = "JSON"
+
+
+class CommandResult:
+    def __init__(self, status, reason="Unexpected"):
+        self.status = status
+        if status == CommandStatus.ERROR:
+            self.reason = reason
+
+    def __str__(self):
+        return "Success!" if self.status == CommandStatus.SUCCESS else f"[Error] > An error occurred: {self.reason}"
+
+    def toOutputFormat(self, outputFormat):
+        if outputFormat == OutputFormat.JSON:
+            return json.dumps(self.__dict__)
+        else:
+            return str(self)
+
+
+class StrategyChangeCommandResult(CommandResult):
+    def __init__(self, strategy):
+        super().__init__(CommandStatus.SUCCESS)
+        self.strategy = strategy
+
+    def __str__(self):
+        return f"Strategy in use: '{self.strategy}'"
+
+
+class StrategyResetCommandResult(CommandResult):
+    def __init__(self, strategy):
+        super().__init__(CommandStatus.SUCCESS)
+        self.strategy = strategy
+
+    def __str__(self):
+        return f"Strategy reset to default! Strategy in use: '{self.strategy}'"
+
+
+class ConfigurationReloadCommandResult(CommandResult):
+    def __init__(self, strategy):
+        super().__init__(CommandStatus.SUCCESS)
+        self.strategy = strategy
+
+    def __str__(self):
+        return f"Reloaded with success! Strategy in use: '{self.strategy}'"
+
+
+class ServicePauseCommandResult(CommandResult):
+    def __init__(self):
+        super().__init__(CommandStatus.SUCCESS)
+
+    def __str__(self):
+        return "Service paused! The hardware fan control will take over"
+
+
+class ServiceResumeCommandResult(CommandResult):
+    def __init__(self, strategy):
+        super().__init__(CommandStatus.SUCCESS)
+        self.strategy = strategy
+
+    def __str__(self):
+        return f"Service resumed! Strategy in use: '{self.strategy}'"
+
+
+class PrintActiveCommandResult(CommandResult):
+    def __init__(self, active):
+        super().__init__(CommandStatus.SUCCESS)
+        self.active = active
+
+    def __str__(self):
+        return f"Active: {self.active}"
+
+
+class PrintCurrentStrategyCommandResult(CommandResult):
+    def __init__(self, strategy):
+        super().__init__(CommandStatus.SUCCESS)
+        self.strategy = strategy
+
+    def __str__(self):
+        return f"Strategy in use: '{self.strategy}'"
+
+
+class PrintStrategyListCommandResult(CommandResult):
+    def __init__(self, strategies):
+        super().__init__(CommandStatus.SUCCESS)
+        self.strategies = strategies
+
+    def __str__(self):
+        return f"Strategy list: {os.linesep}- {f"{os.linesep}- ".join(self.strategies)}"
+
+
+class PrintFanSpeedCommandResult(CommandResult):
+    def __init__(self, speed):
+        super().__init__(CommandStatus.SUCCESS)
+        self.speed = speed
+
+    def __str__(self):
+        return f"Current fan speed: '{self.speed}%'"
+
+
+class RuntimeResult(CommandResult):
+    def __init__(self, status, reason="Unexpected"):
+        super().__init__(status, reason)
+
+
+class StatusRuntimeResult(RuntimeResult):
+    def __init__(self, strategy, speed, temperature, movingAverageTemperature, effectiveTemperature, active):
+        super().__init__(CommandStatus.SUCCESS)
+        self.strategy = strategy
+        self.speed = speed
+        self.temperature = temperature
+        self.movingAverageTemperature = movingAverageTemperature
+        self.effectiveTemperature = effectiveTemperature
+        self.active = active
+
+    def __str__(self):
+        return f"Strategy: '{self.strategy}'{os.linesep}Speed: {self.speed}%{os.linesep}Temp: {self.temperature}°C{os.linesep}MovingAverageTemp: {self.movingAverageTemperature}°C{os.linesep}EffectiveTemp: {self.effectiveTemperature}°C{os.linesep}Active: {self.active}"
 
 
 class Strategy:
@@ -354,6 +500,7 @@ class UnixSocketController(SocketController, ABC):
             while True:
                 client_socket, _ = self.server_socket.accept()
                 parsePrintCapture = io.StringIO()
+                args = None
                 try:
                     # Receive data from the client
                     data = client_socket.recv(4096).decode()
@@ -362,22 +509,30 @@ class UnixSocketController(SocketController, ABC):
                     # capture parsing std outputs for the client
                     sys.stderr = parsePrintCapture
                     sys.stdout = parsePrintCapture
+
                     try:
                         args = CommandParser(True).parseArgs(shlex.split(data))
                     finally:
                         sys.stderr = original_stderr
                         sys.stdout = original_stdout
-                    commandReturn = commandCallback(args)
-                    if not commandReturn:
-                        commandReturn = "Success!"
-                    if parsePrintCapture.getvalue().strip():
-                        commandReturn = parsePrintCapture.getvalue() + commandReturn
-                    client_socket.sendall(commandReturn.encode('utf-8'))
-                except SystemExit:
-                    client_socket.sendall(f"{parsePrintCapture.getvalue()}".encode('utf-8'))
-                except Exception as e:
-                    print(f"[Error] > An error occurred while treating a socket command: {e}", file=sys.stderr)
-                    client_socket.sendall(f"[Error] > An error occurred: {e}".encode('utf-8'))
+
+                    commandResult = commandCallback(args)
+
+                    if args.output_format == OutputFormat.JSON:
+                        if parsePrintCapture.getvalue().strip():
+                            commandResult.info = parsePrintCapture.getvalue()
+                        client_socket.sendall(commandResult.toOutputFormat(args.output_format).encode('utf-8'))
+                    else:
+                        naturalResult = commandResult.toOutputFormat(args.output_format)
+                        if parsePrintCapture.getvalue().strip():
+                            naturalResult = parsePrintCapture.getvalue() + naturalResult
+                        client_socket.sendall(naturalResult.encode('utf-8'))
+                except (SystemExit, Exception) as e:
+                    _cre = (
+                        CommandResult(CommandStatus.ERROR, f"An error occurred while treating a socket command: {e}")
+                        .toOutputFormat(getattr(args, "output_format", None)))
+                    print(_cre, file=sys.stderr)
+                    client_socket.sendall(_cre.encode('utf-8'))
                 finally:
                     client_socket.shutdown(socket.SHUT_WR)
                     client_socket.close()
@@ -406,7 +561,7 @@ class UnixSocketController(SocketController, ABC):
             # Receive data from the server
             data = received_data.decode()
             if data.startswith("[Error] > "):
-                raise Exception(data)
+                raise SocketCallException(data)
             return data
         finally:
             if client_socket:
@@ -480,6 +635,7 @@ class EctoolHardwareController(HardwareController, ABC):
         subprocess.run("ectool autofanctrl", stdout=subprocess.PIPE, shell=True)
 
     def resume(self):
+        # Empty for ectool, as setting an arbitrary speed disables the automatic fan control
         pass
 
 
@@ -488,18 +644,21 @@ class FanController:
     socketController = None
     configuration = None
     overwrittenStrategy = None
+    outputFormat = None
     speed = 0
     tempHistory = collections.deque([0] * 100, maxlen=100)
     active = True
     timecount = 0
 
-    def __init__(self, hardwareController, socketController, configPath, strategyName):
+    def __init__(self, hardwareController, socketController, configPath, strategyName, outputFormat):
         self.hardwareController = hardwareController
         self.socketController = socketController
         self.configuration = Configuration(configPath)
 
         if strategyName is not None and strategyName != "":
             self.overwriteStrategy(strategyName)
+
+        self.outputFormat = outputFormat
 
         t = threading.Thread(target=self.socketController.startServerSocket, args=[self.commandManager])
         t.daemon = True
@@ -541,11 +700,11 @@ class FanController:
     def commandManager(self, args):
         if args.command == "reset" or (args.command == "use" and args.strategy == "defaultStrategy"):
             self.clearOverwrittenStrategy()
-            return f"Strategy reset to default! Strategy in use: '{self.getCurrentStrategy().name}'"
+            return StrategyResetCommandResult(self.getCurrentStrategy().name)
         elif args.command == "use":
             try:
                 self.overwriteStrategy(args.strategy)
-                return f"Strategy in use: '{self.getCurrentStrategy().name}'"
+                return StrategyChangeCommandResult(self.getCurrentStrategy().name)
             except InvalidStrategyException:
                 raise InvalidStrategyException(f"The specified strategy is invalid: {args.strategy}")
         elif args.command == "reload":
@@ -554,21 +713,25 @@ class FanController:
                     self.overwriteStrategy(self.overwrittenStrategy.name)
             else:
                 raise JSONException("Config file could not be parsed due to JSON Error")
-            return f"Reloaded with success! Strategy in use: '{self.getCurrentStrategy().name}'"
+            return ConfigurationReloadCommandResult(self.getCurrentStrategy().name)
         elif args.command == "pause":
             self.pause()
-            return "Service paused! The hardware fan control will take over"
+            return ServicePauseCommandResult()
         elif args.command == "resume":
             self.resume()
-            return f"Service resumed! Strategy in use: '{self.getCurrentStrategy().name}'"
+            return ServiceResumeCommandResult(self.getCurrentStrategy().name)
         elif args.command == "print":
-            if args.print_selection == "current":
-                return self.getCurrentStrategy().name
+            if args.print_selection == "all":
+                return self.dumpDetails()
+            elif args.print_selection == "active":
+                return PrintActiveCommandResult(self.active)
+            elif args.print_selection == "current":
+                return PrintCurrentStrategyCommandResult(self.getCurrentStrategy().name)
             elif args.print_selection == "list":
-                return '\n'.join(self.configuration.getStrategies())
+                return PrintStrategyListCommandResult(list(self.configuration.getStrategies()))
             elif args.print_selection == "speed":
-                return str(self.speed) + '%'
-        raise "Unknown command, unexpected."
+                return PrintFanSpeedCommandResult(str(self.speed))
+        raise UnknownCommandException(f"Unknown command: '{args.command}', unexpected.")
 
     # return mean temperature over a given time interval (in seconds)
     def getMovingAverageTemperature(self, timeInterval):
@@ -603,12 +766,17 @@ class FanController:
         if self.active:
             self.setSpeed(newSpeed)
 
-    def printState(self):
+    def dumpDetails(self):
         currentStrategy = self.getCurrentStrategy()
         currentTemperture = self.getActualTemperature()
-        print(
-            f"speed: {self.speed}%, temp: {currentTemperture}°C, movingAverageTemp: {self.getMovingAverageTemperature(currentStrategy.movingAverageInterval)}°C, effectureTemp: {self.getEffectiveTemperature(currentTemperture, currentStrategy.movingAverageInterval)}°C"
-        )
+        movingAverageTemp = self.getMovingAverageTemperature(currentStrategy.movingAverageInterval)
+        effectiveTemp = self.getEffectiveTemperature(currentTemperture, currentStrategy.movingAverageInterval)
+
+        return StatusRuntimeResult(currentStrategy.name, self.speed, currentTemperture,
+                                     movingAverageTemp, effectiveTemp, self.active)
+
+    def printState(self):
+        print(self.dumpDetails().toOutputFormat(self.outputFormat))
 
     def run(self, debug=True):
         try:
@@ -629,14 +797,21 @@ class FanController:
                 else:
                     sleep(5)
         except InvalidStrategyException as e:
-            print(f"[Error] > Missing strategy, exiting for safety reasons: {e.args[0]}", file=sys.stderr)
+            _rte = RuntimeResult(CommandStatus.ERROR, f"Missing strategy, exiting for safety reasons: {e.args[0]}")
+            print(_rte.toOutputFormat(self.outputFormat), file=sys.stderr)
         except Exception as e:
-            print(f"[Error] > Critical error, exiting for safety reasons: {e}", file=sys.stderr)
+            _rte = RuntimeResult(CommandStatus.ERROR, f"Critical error, exiting for safety reasons: {e}")
+            print(_rte.toOutputFormat(self.outputFormat), file=sys.stderr)
         exit(1)
 
 
 def main():
-    args = CommandParser().parseArgs()
+    try:
+        args = CommandParser().parseArgs()
+    except Exception as e:
+        _cre = CommandResult(CommandStatus.ERROR, str(e))
+        print(_cre.toOutputFormat(OutputFormat.NATURAL), file=sys.stderr)
+        exit(1)
 
     socketController = UnixSocketController()
     if args.socket_controller == "unix":
@@ -648,7 +823,8 @@ def main():
             hardwareController = EctoolHardwareController(noBatterySensorMode=args.no_battery_sensors)
 
         fan = FanController(hardwareController=hardwareController, socketController=socketController,
-                            configPath=args.config, strategyName=args.strategy)
+                            configPath=args.config, strategyName=args.strategy,
+                            outputFormat=getattr(args, "output_format", None))
         fan.run(debug=not args.silent)
     else:
         try:
@@ -656,7 +832,11 @@ def main():
             if commandResult:
                 print(commandResult)
         except Exception as e:
-            print(f"[Error] > An error occurred: {e}", file=sys.stderr)
+            if str(e).startswith("[Error] >"):
+                print(str(e), file=sys.stderr)
+            else:
+                _cre = CommandResult(CommandStatus.ERROR, str(e))
+                print(_cre.toOutputFormat(getattr(args, "output_format", None)), file=sys.stderr)
             exit(1)
 
 
