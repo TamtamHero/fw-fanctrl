@@ -162,7 +162,7 @@ function install() {
 
     if [ "$NO_PIP_INSTALL" = false ]; then
         echo "installing python package"
-        python -m pip install --prefix="$PREFIX_DIR" "dist/*.tar.gz"
+        python -m pip install --prefix="$PREFIX_DIR" dist/*.tar.gz
         which python
         rm -rf "dist/" 2> "/dev/null" || true
     fi
