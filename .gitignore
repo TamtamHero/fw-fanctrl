@@ -258,3 +258,4 @@ fabric.properties
 ### Project ignores
 
 .idea/
+.temp/
