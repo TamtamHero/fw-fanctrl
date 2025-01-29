@@ -4,6 +4,7 @@ exclude = '''
 /(
     \.git
   | \.github
+  | \.idea
   | \.hg
   | \.mypy_cache
   | \.tox
@@ -13,6 +14,8 @@ exclude = '''
   | build
   | dist
   | services
+  | fetch
+  | \.temp
 )/
 '''
 
