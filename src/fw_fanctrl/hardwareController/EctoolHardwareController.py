@@ -72,4 +72,5 @@ class EctoolHardwareController(HardwareController, ABC):
         subprocess.run("ectool autofanctrl", stdout=subprocess.PIPE, shell=True)
 
     def resume(self):
+        # Empty for ectool, as setting an arbitrary speed disables the automatic fan control
         pass

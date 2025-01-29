@@ -4,6 +4,7 @@ import sys
 import textwrap
 
 from fw_fanctrl import DEFAULT_CONFIGURATION_FILE_PATH
+from fw_fanctrl.exception.UnknownCommandException import UnknownCommandException
 
 
 class CommandParser:
@@ -34,8 +35,16 @@ class CommandParser:
             choices=["unix"],
             default="unix",
         )
+        self.parser.add_argument(
+            "--output-format",
+            help="the output format to use for the command result",
+            type=lambda s: (lambda: OutputFormat[s])() if hasattr(OutputFormat, s) else s,
+            choices=list(OutputFormat._member_names_),
+            default=OutputFormat.NATURAL,
+        )
 
         commandsSubParser = self.parser.add_subparsers(dest="command")
+        commandsSubParser.required = True
 
         if not self.isRemote:
             runCommand = commandsSubParser.add_parser(
@@ -93,11 +102,11 @@ class CommandParser:
         )
         printCommand.add_argument(
             "print_selection",
-            help="current - The current strategy\nlist - List available strategies\nspeed - The current fan speed percentage",
+            help=f"all - All details{os.linesep}current - The current strategy{os.linesep}list - List available strategies{os.linesep}speed - The current fan speed percentage{os.linesep}active - The service activity status",
             nargs="?",
             type=str,
-            choices=["current", "list", "speed"],
-            default="current",
+            choices=["all", "active", "current", "list", "speed"],
+            default="all",
         )
 
     def initLegacyParser(self):
@@ -158,6 +167,7 @@ class CommandParser:
             # converting legacy values into new ones
             values = argparse.Namespace()
             values.socket_controller = legacy_values.socket_controller
+            values.output_format = OutputFormat.NATURAL
             if legacy_values.query:
                 values.command = "print"
                 values.print_selection = "current"
@@ -180,8 +190,9 @@ class CommandParser:
                 values.command = "use"
                 values.strategy = legacy_values.strategy
             if not hasattr(values, "command"):
-                raise Exception("not a valid legacy command")
+                raise UnknownCommandException("not a valid legacy command")
             if self.isRemote or values.command == "run":
+                # Legacy commands do not support other formats than NATURAL, so there is no need to use a CommandResult.
                 print(
                     "[Warning] > this command is deprecated and will be removed soon, please use the new command format instead ('fw-fanctrl -h' for more details)."
                 )

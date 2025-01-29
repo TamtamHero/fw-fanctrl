@@ -4,8 +4,21 @@ import threading
 from time import sleep
 
 from fw_fanctrl.Configuration import Configuration
+from fw_fanctrl.dto.command_result.ConfigurationReloadCommandResult import ConfigurationReloadCommandResult
+from fw_fanctrl.dto.command_result.PrintActiveCommandResult import PrintActiveCommandResult
+from fw_fanctrl.dto.command_result.PrintCurrentStrategyCommandResult import PrintCurrentStrategyCommandResult
+from fw_fanctrl.dto.command_result.PrintFanSpeedCommandResult import PrintFanSpeedCommandResult
+from fw_fanctrl.dto.command_result.PrintStrategyListCommandResult import PrintStrategyListCommandResult
+from fw_fanctrl.dto.command_result.ServicePauseCommandResult import ServicePauseCommandResult
+from fw_fanctrl.dto.command_result.ServiceResumeCommandResult import ServiceResumeCommandResult
+from fw_fanctrl.dto.command_result.StrategyChangeCommandResult import StrategyChangeCommandResult
+from fw_fanctrl.dto.command_result.StrategyResetCommandResult import StrategyResetCommandResult
+from fw_fanctrl.dto.runtime_result.RuntimeResult import RuntimeResult
+from fw_fanctrl.dto.runtime_result.StatusRuntimeResult import StatusRuntimeResult
+from fw_fanctrl.enum.CommandStatus import CommandStatus
 from fw_fanctrl.exception.InvalidStrategyException import InvalidStrategyException
 from fw_fanctrl.exception.JSONException import JSONException
+from fw_fanctrl.exception.UnknownCommandException import UnknownCommandException
 
 
 class FanController:
@@ -13,18 +26,21 @@ class FanController:
     socketController = None
     configuration = None
     overwrittenStrategy = None
+    outputFormat = None
     speed = 0
     tempHistory = collections.deque([0] * 100, maxlen=100)
     active = True
     timecount = 0
 
-    def __init__(self, hardwareController, socketController, configPath, strategyName):
+    def __init__(self, hardwareController, socketController, configPath, strategyName, outputFormat):
         self.hardwareController = hardwareController
         self.socketController = socketController
         self.configuration = Configuration(configPath)
 
         if strategyName is not None and strategyName != "":
             self.overwriteStrategy(strategyName)
+
+        self.outputFormat = outputFormat
 
         t = threading.Thread(
             target=self.socketController.startServerSocket,
@@ -69,11 +85,11 @@ class FanController:
     def commandManager(self, args):
         if args.command == "reset" or (args.command == "use" and args.strategy == "defaultStrategy"):
             self.clearOverwrittenStrategy()
-            return f"Strategy reset to default! Strategy in use: '{self.getCurrentStrategy().name}'"
+            return StrategyResetCommandResult(self.getCurrentStrategy().name)
         elif args.command == "use":
             try:
                 self.overwriteStrategy(args.strategy)
-                return f"Strategy in use: '{self.getCurrentStrategy().name}'"
+                return StrategyChangeCommandResult(self.getCurrentStrategy().name)
             except InvalidStrategyException:
                 raise InvalidStrategyException(f"The specified strategy is invalid: {args.strategy}")
         elif args.command == "reload":
@@ -82,21 +98,25 @@ class FanController:
                     self.overwriteStrategy(self.overwrittenStrategy.name)
             else:
                 raise JSONException("Config file could not be parsed due to JSON Error")
-            return f"Reloaded with success! Strategy in use: '{self.getCurrentStrategy().name}'"
+            return ConfigurationReloadCommandResult(self.getCurrentStrategy().name)
         elif args.command == "pause":
             self.pause()
-            return "Service paused! The hardware fan control will take over"
+            return ServicePauseCommandResult()
         elif args.command == "resume":
             self.resume()
-            return f"Service resumed! Strategy in use: '{self.getCurrentStrategy().name}'"
+            return ServiceResumeCommandResult(self.getCurrentStrategy().name)
         elif args.command == "print":
-            if args.print_selection == "current":
-                return self.getCurrentStrategy().name
+            if args.print_selection == "all":
+                return self.dumpDetails()
+            elif args.print_selection == "active":
+                return PrintActiveCommandResult(self.active)
+            elif args.print_selection == "current":
+                return PrintCurrentStrategyCommandResult(self.getCurrentStrategy().name)
             elif args.print_selection == "list":
-                return "\n".join(self.configuration.getStrategies())
+                return PrintStrategyListCommandResult(list(self.configuration.getStrategies()))
             elif args.print_selection == "speed":
-                return str(self.speed) + "%"
-        raise "Unknown command, unexpected."
+                return PrintFanSpeedCommandResult(str(self.speed))
+        raise UnknownCommandException(f"Unknown command: '{args.command}', unexpected.")
 
     # return mean temperature over a given time interval (in seconds)
     def getMovingAverageTemperature(self, timeInterval):
@@ -129,12 +149,18 @@ class FanController:
         if self.active:
             self.setSpeed(newSpeed)
 
-    def printState(self):
+    def dumpDetails(self):
         currentStrategy = self.getCurrentStrategy()
         currentTemperture = self.getActualTemperature()
-        print(
-            f"speed: {self.speed}%, temp: {currentTemperture}°C, movingAverageTemp: {self.getMovingAverageTemperature(currentStrategy.movingAverageInterval)}°C, effectureTemp: {self.getEffectiveTemperature(currentTemperture, currentStrategy.movingAverageInterval)}°C"
+        movingAverageTemp = self.getMovingAverageTemperature(currentStrategy.movingAverageInterval)
+        effectiveTemp = self.getEffectiveTemperature(currentTemperture, currentStrategy.movingAverageInterval)
+
+        return StatusRuntimeResult(
+            currentStrategy.name, self.speed, currentTemperture, movingAverageTemp, effectiveTemp, self.active
         )
+
+    def printState(self):
+        print(self.dumpDetails().toOutputFormat(self.outputFormat))
 
     def run(self, debug=True):
         try:
@@ -155,13 +181,9 @@ class FanController:
                 else:
                     sleep(5)
         except InvalidStrategyException as e:
-            print(
-                f"[Error] > Missing strategy, exiting for safety reasons: {e.args[0]}",
-                file=sys.stderr,
-            )
+            _rte = RuntimeResult(CommandStatus.ERROR, f"Missing strategy, exiting for safety reasons: {e.args[0]}")
+            print(_rte.toOutputFormat(self.outputFormat), file=sys.stderr)
         except Exception as e:
-            print(
-                f"[Error] > Critical error, exiting for safety reasons: {e}",
-                file=sys.stderr,
-            )
+            _rte = RuntimeResult(CommandStatus.ERROR, f"Critical error, exiting for safety reasons: {e}")
+            print(_rte.toOutputFormat(self.outputFormat), file=sys.stderr)
         exit(1)
