@@ -4,6 +4,7 @@ import sys
 import textwrap
 
 from fw_fanctrl import DEFAULT_CONFIGURATION_FILE_PATH
+from fw_fanctrl.enum.OutputFormat import OutputFormat
 from fw_fanctrl.exception.UnknownCommandException import UnknownCommandException
 
 
