@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-HOME_DIR="$(eval echo "~$(logname)")"
-
 # Argument parsing
 NO_SUDO=false
 SHORT=h

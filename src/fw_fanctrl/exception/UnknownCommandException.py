@@ -1,0 +1,2 @@
+class UnknownCommandException(Exception):
+    pass
