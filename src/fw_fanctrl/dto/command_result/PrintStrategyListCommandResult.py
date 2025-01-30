@@ -10,4 +10,4 @@ class PrintStrategyListCommandResult(CommandResult):
         self.strategies = strategies
 
     def __str__(self):
-        return f"Strategy list: {os.linesep}- {f"{os.linesep}- ".join(self.strategies)}"
+        return f"Strategy list: {os.linesep}- {f'{os.linesep}- '.join(self.strategies)}"
