@@ -20,13 +20,15 @@ exclude = '''
 '''
 
 [build-system]
-requires = ["setuptools~=75.7.0"]
+requires = ["setuptools>=75.7.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "fw-fanctrl"
 version = "1.0.0"
 description = "A simple systemd service to better control Framework Laptop's fan(s)."
+keywords = ["framework", "laptop", "fan", "control", "cli", "service"]
+readme = "README.md"
 authors = [
     { name = "TamtamHero" },
 ]
@@ -34,16 +36,19 @@ maintainers = [
     { name = "TamtamHero" },
     { name = "leopoldhub" },
 ]
-license = { text = "BSD-3-Clause" }
+license = { file = "LICENSE" }
 classifiers = [
     "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: System :: Hardware",
 ]
+requires-python = ">=3.12"
 dependencies = []
 optional-dependencies = { dev = [
-    "black~=24.8.0",
-    "build~=1.2.2.post1",
-    "setuptools~=75.7.0",
+    "black==24.8.0",
+    "build>=1.2.2.post1",
+    "setuptools>=75.7.0",
 ] }
 
 [project.urls]
@@ -52,8 +57,8 @@ Documentation = "https://github.com/TamtamHero/fw-fanctrl"
 Repository = "https://github.com/TamtamHero/fw-fanctrl.git"
 Issues = "https://github.com/TamtamHero/fw-fanctrl/issues"
 
+[tool.setuptools]
+package-dir = { "" = "src" }
+
 [project.scripts]
 fw-fanctrl = "fw_fanctrl.__main__:main"
-
-[tool.setuptools]
-package-dir = {"" = "src"}

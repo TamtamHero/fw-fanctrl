@@ -51,6 +51,7 @@ More documentation could be found [here](./doc/README.md).
 ## Installation
 
 ### Other Platforms
+
 | name  | branch                                                                       | documentation                                                                                               |
 |-------|------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
 | NixOS | [packaging/nix](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix) | [packaging/nix/doc/nix-flake](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md) |

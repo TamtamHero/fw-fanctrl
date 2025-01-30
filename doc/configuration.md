@@ -1,9 +1,12 @@
 # Table of Content
 
-- [Configuration](#configuration)
+<!-- TOC -->
+* [Table of Content](#table-of-content)
+* [Configuration](#configuration)
   * [Default strategy](#default-strategy)
   * [Charging/Discharging strategies](#chargingdischarging-strategies)
   * [Editing strategies](#editing-strategies)
+<!-- TOC -->
 
 # Configuration
 
