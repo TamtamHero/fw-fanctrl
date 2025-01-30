@@ -1,0 +1,2 @@
+class SocketAlreadyRunningException(Exception):
+    pass
