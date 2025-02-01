@@ -5,6 +5,7 @@ exclude = '''
     \.git
   | \.github
   | \.idea
+  | \.vscode
   | \.hg
   | \.mypy_cache
   | \.tox
