@@ -107,7 +107,7 @@ in
       serviceConfig = {
         Type = "simple";
         Restart = "always";
-        ExecStart= "${fw-fanctrl}/bin/fw-fanctrl --output-format \"JSON\" run --config \"/etc/fw-fanctrl/config.json\" --silent ${lib.strings.optionalString cfg.disableBatteryTempCheck}";
+        ExecStart= "${fw-fanctrl}/bin/fw-fanctrl --output-format \"JSON\" run --config \"/etc/fw-fanctrl/config.json\" --silent ${lib.strings.optionalString cfg.disableBatteryTempCheck "--no-battery-sensors"}";
         ExecStopPost = "${pkgs.fw-ectool}/bin/ectool autofanctrl";
       };
       enable = true;
