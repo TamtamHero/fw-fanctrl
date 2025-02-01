@@ -41,6 +41,7 @@ If the service is paused or stopped, the fans will revert to their default behav
     * [Instructions](#instructions)
   * [Update](#update)
   * [Uninstall](#uninstall)
+  * [Development Setup](#development-setup)
 <!-- TOC -->
 
 ## Documentation
@@ -50,8 +51,9 @@ More documentation could be found [here](./doc/README.md).
 ## Installation
 
 ### Other Platforms
-| name  | branch        | documentation |
-|-------|---------------|---------------|
+
+| name  | branch                                                                       | documentation                                                                                               |
+|-------|------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
 | NixOS | [packaging/nix](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix) | [packaging/nix/doc/nix-flake](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md) |
 
 ### Requirements
@@ -93,15 +95,16 @@ sudo ./install.sh
 
 You can add a number of arguments to the installation command to suit your needs
 
-| argument                                                                        | description                                        |
-|---------------------------------------------------------------------------------|----------------------------------------------------|
-| `--dest-dir <installation destination directory (defaults to /)>`               | specify an installation destination directory      |
-| `--prefix-dir <installation prefix directory (defaults to /usr)>`               | specify an installation prefix directory           |
-| `--sysconf-dir <system configuration destination directory (defaults to /etc)>` | specify a default configuration directory          |
-| `--no-ectool`                                                                   | disable ectool installation and service activation |
-| `--no-post-install`                                                             | disable post-install process                       |
-| `--no-pre-uninstall`                                                            | disable pre-uninstall process                      |
-| `--no-battery-sensors`                                                          | disable checking battery temperature sensors       |
+| argument                                                                        | description                                                    |
+|---------------------------------------------------------------------------------|----------------------------------------------------------------|
+| `--dest-dir <installation destination directory (defaults to /)>`               | specify an installation destination directory                  |
+| `--prefix-dir <installation prefix directory (defaults to /usr)>`               | specify an installation prefix directory                       |
+| `--sysconf-dir <system configuration destination directory (defaults to /etc)>` | specify a default configuration directory                      |
+| `--no-ectool`                                                                   | disable ectool installation and service activation             |
+| `--no-post-install`                                                             | disable post-install process                                   |
+| `--no-pre-uninstall`                                                            | disable pre-uninstall process                                  |
+| `--no-battery-sensors`                                                          | disable checking battery temperature sensors                   |
+| `--no-pip-install`                                                              | disable the pip installation (should be done manually instead) |
 
 ## Update
 
@@ -116,3 +119,20 @@ corresponding [arguments if necessary](#instructions)
 sudo ./install.sh --remove
 ```
 
+## Development Setup
+
+> It is recommended to use a virtual environment to install development dependencies
+
+Install the development dependencies with the following command:
+
+```shell
+pip install -e ".[dev]"
+```
+
+The project uses the [black](https://github.com/psf/black) formatter.
+
+Please format your contributions before commiting them.
+
+```shell
+python -m black .
+```
