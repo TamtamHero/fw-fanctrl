@@ -17,6 +17,7 @@ exclude = '''
   | services
   | fetch
   | \.temp
+  | result
 )/
 '''
 
