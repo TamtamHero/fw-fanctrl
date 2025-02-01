@@ -1,0 +1,66 @@
+[tool.black]
+line-length = 120
+exclude = '''
+/(
+    \.git
+  | \.github
+  | \.idea
+  | \.vscode
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | services
+  | fetch
+  | \.temp
+  | result
+)/
+'''
+
+[build-system]
+requires = ["setuptools>=75.2.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fw-fanctrl"
+version = "1.0.0"
+description = "A simple systemd service to better control Framework Laptop's fan(s)."
+keywords = ["framework", "laptop", "fan", "control", "cli", "service"]
+readme = "README.md"
+authors = [
+    { name = "TamtamHero" },
+]
+maintainers = [
+    { name = "TamtamHero" },
+    { name = "leopoldhub" },
+]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: System :: Hardware",
+]
+requires-python = ">=3.12"
+dependencies = []
+optional-dependencies = { dev = [
+    "black==24.8.0",
+    "build>=1.2.2.post1",
+    "setuptools>=75.2.0",
+] }
+
+[project.urls]
+Homepage = "https://github.com/TamtamHero/fw-fanctrl"
+Documentation = "https://github.com/TamtamHero/fw-fanctrl"
+Repository = "https://github.com/TamtamHero/fw-fanctrl.git"
+Issues = "https://github.com/TamtamHero/fw-fanctrl/issues"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[project.scripts]
+fw-fanctrl = "fw_fanctrl.__main__:main"
