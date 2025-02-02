@@ -11,13 +11,13 @@ from fw_fanctrl.dto.command_result.PrintFanSpeedCommandResult import PrintFanSpe
 from fw_fanctrl.dto.command_result.PrintStrategyListCommandResult import PrintStrategyListCommandResult
 from fw_fanctrl.dto.command_result.ServicePauseCommandResult import ServicePauseCommandResult
 from fw_fanctrl.dto.command_result.ServiceResumeCommandResult import ServiceResumeCommandResult
+from fw_fanctrl.dto.command_result.SetConfigurationCommandResult import SetConfigurationCommandResult
 from fw_fanctrl.dto.command_result.StrategyChangeCommandResult import StrategyChangeCommandResult
 from fw_fanctrl.dto.command_result.StrategyResetCommandResult import StrategyResetCommandResult
 from fw_fanctrl.dto.runtime_result.RuntimeResult import RuntimeResult
 from fw_fanctrl.dto.runtime_result.StatusRuntimeResult import StatusRuntimeResult
 from fw_fanctrl.enum.CommandStatus import CommandStatus
 from fw_fanctrl.exception.InvalidStrategyException import InvalidStrategyException
-from fw_fanctrl.exception.JSONException import JSONException
 from fw_fanctrl.exception.UnknownCommandException import UnknownCommandException
 
 
@@ -68,6 +68,9 @@ class FanController:
         self.hardware_controller.resume()
 
     def overwrite_strategy(self, strategy_name):
+        if strategy_name not in self.configuration.get_strategies():
+            self.clear_overwritten_strategy()
+            return
         self.overwritten_strategy = self.configuration.get_strategy(strategy_name)
         self.timecount = 0
 
@@ -85,37 +88,44 @@ class FanController:
     def command_manager(self, args):
         if args.command == "reset" or (args.command == "use" and args.strategy == "defaultStrategy"):
             self.clear_overwritten_strategy()
-            return StrategyResetCommandResult(self.get_current_strategy().name)
+            return StrategyResetCommandResult(self.get_current_strategy().name, self.overwritten_strategy is None)
         elif args.command == "use":
-            try:
-                self.overwrite_strategy(args.strategy)
-                return StrategyChangeCommandResult(self.get_current_strategy().name)
-            except InvalidStrategyException:
+            if args.strategy not in self.configuration.get_strategies():
                 raise InvalidStrategyException(f"The specified strategy is invalid: {args.strategy}")
+            self.overwrite_strategy(args.strategy)
+            return StrategyChangeCommandResult(self.get_current_strategy().name, self.overwritten_strategy is None)
         elif args.command == "reload":
-            if self.configuration.reload():
-                if self.overwritten_strategy is not None:
-                    self.overwrite_strategy(self.overwritten_strategy.name)
-            else:
-                raise JSONException("Config file could not be parsed due to JSON Error")
-            return ConfigurationReloadCommandResult(self.get_current_strategy().name)
+            self.configuration.reload()
+            if self.overwritten_strategy is not None:
+                self.overwrite_strategy(self.overwritten_strategy.name)
+            return ConfigurationReloadCommandResult(self.get_current_strategy().name, self.overwritten_strategy is None)
         elif args.command == "pause":
             self.pause()
             return ServicePauseCommandResult()
         elif args.command == "resume":
             self.resume()
-            return ServiceResumeCommandResult(self.get_current_strategy().name)
+            return ServiceResumeCommandResult(self.get_current_strategy().name, self.overwritten_strategy is None)
         elif args.command == "print":
             if args.print_selection == "all":
                 return self.dump_details()
             elif args.print_selection == "active":
                 return PrintActiveCommandResult(self.active)
             elif args.print_selection == "current":
-                return PrintCurrentStrategyCommandResult(self.get_current_strategy().name)
+                return PrintCurrentStrategyCommandResult(
+                    self.get_current_strategy().name, self.overwritten_strategy is None
+                )
             elif args.print_selection == "list":
                 return PrintStrategyListCommandResult(list(self.configuration.get_strategies()))
             elif args.print_selection == "speed":
                 return PrintFanSpeedCommandResult(str(self.speed))
+        elif args.command == "set_config":
+            self.configuration.data = self.configuration.parse(args.provided_config)
+            if self.overwritten_strategy is not None:
+                self.overwrite_strategy(self.overwritten_strategy.name)
+            self.configuration.save()
+            return SetConfigurationCommandResult(
+                self.get_current_strategy().name, vars(self.configuration), self.overwritten_strategy is None
+            )
         raise UnknownCommandException(f"Unknown command: '{args.command}', unexpected.")
 
     # return mean temperature over a given time interval (in seconds)
@@ -123,11 +133,11 @@ class FanController:
         sliced_temp_history = [x for x in self.temp_history if x > 0][-time_interval:]
         if len(sliced_temp_history) == 0:
             return self.get_actual_temperature()
-        return round(sum(sliced_temp_history) / len(sliced_temp_history), 1)
+        return float(round(sum(sliced_temp_history) / len(sliced_temp_history), 1))
 
     def get_effective_temperature(self, current_temp, time_interval):
         # the moving average temperature count for 2/3 of the effective temperature
-        return round(min(self.get_moving_average_temperature(time_interval), current_temp), 1)
+        return float(round(min(self.get_moving_average_temperature(time_interval), current_temp), 1))
 
     def adapt_speed(self, current_temp):
         current_strategy = self.get_current_strategy()
@@ -156,7 +166,14 @@ class FanController:
         effective_temp = self.get_effective_temperature(current_temperature, current_strategy.moving_average_interval)
 
         return StatusRuntimeResult(
-            current_strategy.name, self.speed, current_temperature, moving_average_temp, effective_temp, self.active
+            current_strategy.name,
+            self.overwritten_strategy is None,
+            self.speed,
+            current_temperature,
+            moving_average_temp,
+            effective_temp,
+            self.active,
+            vars(self.configuration),
         )
 
     def print_state(self):

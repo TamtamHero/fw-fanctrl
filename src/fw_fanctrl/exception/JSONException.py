@@ -1,2 +1,0 @@
-class JSONException(Exception):
-    pass

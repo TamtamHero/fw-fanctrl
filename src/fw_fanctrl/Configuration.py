@@ -1,7 +1,15 @@
 import json
+from json import JSONDecodeError
 
+import jsonschema
+
+from fw_fanctrl import INTERNAL_RESOURCES_PATH
 from fw_fanctrl.Strategy import Strategy
+from fw_fanctrl.exception.ConfigurationParsingException import ConfigurationParsingException
 from fw_fanctrl.exception.InvalidStrategyException import InvalidStrategyException
+
+VALIDATION_SCHEMA_PATH = INTERNAL_RESOURCES_PATH.joinpath("config.schema.json")
+ORIGINAL_CONFIG_PATH = INTERNAL_RESOURCES_PATH.joinpath("config.json")
 
 
 class Configuration:
@@ -12,13 +20,34 @@ class Configuration:
         self.path = path
         self.reload()
 
+    def parse(self, raw_config):
+        try:
+            config = json.loads(raw_config)
+            if "$schema" not in config:
+                original_config = json.load(ORIGINAL_CONFIG_PATH.open("r"))
+                config["$schema"] = original_config["$schema"]
+            jsonschema.Draft202012Validator(json.load(VALIDATION_SCHEMA_PATH.open("r"))).validate(config)
+            if config["defaultStrategy"] not in config["strategies"]:
+                raise ConfigurationParsingException(
+                    f"Default strategy '{config["defaultStrategy"]}' is not a valid strategy."
+                )
+            if config["strategyOnDischarging"] != "" and config["strategyOnDischarging"] not in config["strategies"]:
+                raise ConfigurationParsingException(
+                    f"Discharging strategy '{config['strategyOnDischarging']}' is not a valid strategy."
+                )
+            return config
+        except JSONDecodeError as e:
+            raise ConfigurationParsingException(f"Error parsing configuration file: {e}")
+
     def reload(self):
         with open(self.path, "r") as fp:
-            try:
-                self.data = json.load(fp)
-            except json.JSONDecodeError:
-                return False
-        return True
+            raw_config = fp.read()
+        self.data = self.parse(raw_config)
+
+    def save(self):
+        string_config = json.dumps(self.data, indent=4)
+        with open(self.path, "w") as fp:
+            fp.write(string_config)
 
     def get_strategies(self):
         return self.data["strategies"].keys()

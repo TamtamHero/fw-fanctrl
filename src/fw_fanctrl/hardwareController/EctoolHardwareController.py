@@ -53,7 +53,7 @@ class EctoolHardwareController(HardwareController, ABC):
         # safety fallback to avoid damaging hardware
         if len(temps) == 0:
             return 50
-        return round(temps[0], 1)
+        return float(round(temps[0], 1))
 
     def set_speed(self, speed):
         subprocess.run(f"ectool fanduty {speed}", stdout=subprocess.PIPE, shell=True)
