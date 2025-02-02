@@ -9,21 +9,13 @@
 
 [![Static Badge](https://img.shields.io/badge/NixOS-5277C3?style=flat&logo=nixos&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fnix)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md)
 
-## Third-party maintained platforms:
+### Third-party maintained platforms:
 
 _You are a package manager? Add your platform here!_
 
 [![Static Badge](https://img.shields.io/badge/Arch%20Linux-1793D1?style=flat&logo=archlinux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Faur.archlinux.org%2Fpackages%2Ffw-fanctrl-git)](https://aur.archlinux.org/packages/fw-fanctrl-git)
 
 [![Static Badge](https://img.shields.io/badge/Fedora-51A2DA?style=flat&logo=fedora&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2Ftulilirockz%2Ffw-fanctrl-rpm)](https://github.com/tulilirockz/fw-fanctrl-rpm)
-
-## Third-party projects
-
-_Have some cool project to show? Add yours to the list!_
-
-| Name                                                           | Description                                                     | Picture                                                                                                                                                                                                                                            |
-|----------------------------------------------------------------|-----------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [fw-fanctrl-gui](https://github.com/leopoldhub/fw-fanctrl-gui) | Simple customtkinter python gui with system tray for fw-fanctrl | [<img src="https://github.com/leopoldhub/fw-fanctrl-gui/blob/master/.documentationResources/screenshots/tray.png?raw=true" style="max-width: 300px; max-height: 300px; height: auto; width: auto;">](https://github.com/leopoldhub/fw-fanctrl-gui) |
 
 ## Description
 
@@ -47,10 +39,10 @@ If the service is paused or stopped, the fans will revert to their default behav
 <!-- TOC -->
 * [fw-fanctrl](#fw-fanctrl)
   * [Additional platforms:](#additional-platforms)
-  * [Third-party maintained platforms:](#third-party-maintained-platforms)
-  * [Third-party projects](#third-party-projects)
+    * [Third-party maintained platforms:](#third-party-maintained-platforms)
   * [Description](#description)
   * [Table of Content](#table-of-content)
+  * [Third-party projects](#third-party-projects)
   * [Documentation](#documentation)
   * [Installation](#installation)
     * [Other Platforms](#other-platforms)
@@ -61,6 +53,14 @@ If the service is paused or stopped, the fans will revert to their default behav
   * [Uninstall](#uninstall)
   * [Development Setup](#development-setup)
 <!-- TOC -->
+
+## Third-party projects
+
+_Have some cool project to show? Add yours to the list!_
+
+| Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description                                                     | Picture                                                                                                                                                                                |
+|------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [fw&#8209;fanctrl&#8209;gui](https://github.com/leopoldhub/fw-fanctrl-gui)                                       | Simple customtkinter python gui with system tray for fw-fanctrl | [<img src="https://github.com/leopoldhub/fw-fanctrl-gui/blob/master/.documentationResources/screenshots/tray.png?raw=true" width="200">](https://github.com/leopoldhub/fw-fanctrl-gui) |
 
 ## Documentation
 
