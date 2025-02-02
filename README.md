@@ -60,7 +60,7 @@ _Have some cool project to show? Add yours to the list!_
 
 | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description                                                     | Picture                                                                                                                                                                                |
 |------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [fw&#8209;fanctrl&#8209;gui](https://github.com/leopoldhub/fw-fanctrl-gui)                                       | Simple customtkinter python gui with system tray for fw-fanctrl | [<img src="https://github.com/leopoldhub/fw-fanctrl-gui/blob/master/.documentationResources/screenshots/tray.png?raw=true" width="200">](https://github.com/leopoldhub/fw-fanctrl-gui) |
+| [fw&#8209;fanctrl&#8209;gui](https://github.com/leopoldhub/fw-fanctrl-gui)                                       | Simple customtkinter python gui with system tray for fw&#8209;fanctrl | [<img src="https://github.com/leopoldhub/fw-fanctrl-gui/blob/master/.documentationResources/screenshots/tray.png?raw=true" width="200">](https://github.com/leopoldhub/fw-fanctrl-gui) |
 
 ## Documentation
 
