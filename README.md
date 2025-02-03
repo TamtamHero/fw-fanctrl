@@ -1,21 +1,21 @@
 # fw-fanctrl
 
-[![Static Badge](https://img.shields.io/badge/Linux%2FGlobal-FCC624?style=flat&logo=linux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fmain)](https://github.com/TamtamHero/fw-fanctrl/tree/main)
+[![Static Badge](https://img.shields.io/badge/Linux%E2%80%AF%2F%E2%80%AFGlobal-FCC624?style=flat&logo=linux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fmain)](https://github.com/TamtamHero/fw-fanctrl/tree/main)
 ![Static Badge](https://img.shields.io/badge/no%20binary%20blobs-30363D?style=flat&logo=GitHub-Sponsors&logoColor=4dff61)
 
-[![Static Badge](https://img.shields.io/badge/Python__3.12-FFDE57?style=flat&label=Requirement&link=https%3A%2F%2Fwww.python.org%2Fdownloads)](https://www.python.org/downloads)
+[![Static Badge](https://img.shields.io/badge/Python%203.12-FFDE57?style=flat&label=Requirement&link=https%3A%2F%2Fwww.python.org%2Fdownloads)](https://www.python.org/downloads)
 
-## Additional platforms:
+## Platforms:
 
+[![Static Badge](https://img.shields.io/badge/Linux%E2%80%AF%2F%E2%80%AFGlobal-FCC624?style=flat&logo=linux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fmain)](https://github.com/TamtamHero/fw-fanctrl/tree/main)
 [![Static Badge](https://img.shields.io/badge/NixOS-5277C3?style=flat&logo=nixos&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fnix)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md)
 
-### Third-party maintained platforms:
-
-_You are a package manager? Add your platform here!_
+**Third-party**<br>
 
 [![Static Badge](https://img.shields.io/badge/Arch%20Linux-1793D1?style=flat&logo=archlinux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Faur.archlinux.org%2Fpackages%2Ffw-fanctrl-git)](https://aur.archlinux.org/packages/fw-fanctrl-git)
-
 [![Static Badge](https://img.shields.io/badge/Fedora-51A2DA?style=flat&logo=fedora&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2Ftulilirockz%2Ffw-fanctrl-rpm)](https://github.com/tulilirockz/fw-fanctrl-rpm)
+
+_You are a package manager? Add your platform here!_
 
 ## Description
 
@@ -38,14 +38,13 @@ If the service is paused or stopped, the fans will revert to their default behav
 
 <!-- TOC -->
 * [fw-fanctrl](#fw-fanctrl)
-  * [Additional platforms:](#additional-platforms)
-    * [Third-party maintained platforms:](#third-party-maintained-platforms)
+  * [Platforms:](#platforms)
   * [Description](#description)
   * [Table of Content](#table-of-content)
   * [Third-party projects](#third-party-projects)
   * [Documentation](#documentation)
   * [Installation](#installation)
-    * [Other Platforms](#other-platforms)
+    * [Platforms](#platforms-1)
     * [Requirements](#requirements)
     * [Dependencies](#dependencies)
     * [Instructions](#instructions)
@@ -68,26 +67,34 @@ More documentation could be found [here](./doc/README.md).
 
 ## Installation
 
-### Other Platforms
+### Platforms
 
-| name  | branch                                                                       | documentation                                                                                               |
-|-------|------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
-| NixOS | [packaging/nix](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix) | [packaging/nix/doc/nix-flake](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md) |
+| Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Package&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Branch&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Documentation                                                                                                     |
+|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| Linux&nbsp;/&nbsp;Global                                                                                         | [installation&nbsp;script](https://github.com/TamtamHero/fw-fanctrl/blob/main/install.sh)                           | [main](https://github.com/TamtamHero/fw-fanctrl/tree/main)                                                         | [instructions](https://github.com/TamtamHero/fw-fanctrl/tree/main?tab=readme-ov-file#instructions)                |
+| NixOS                                                                                                            | [module](https://github.com/TamtamHero/fw-fanctrl/blob/packaging/nix/nix/module.nix)                                | [packaging/nix](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix)                                       | [packaging/nix/doc/nix&#8209;flake](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md) |
+
+**Third-party**
+
+| Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Package&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Documentation                                                        |
+|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
+| Arch&nbsp;Linux                                                                                                  | [AUR](https://aur.archlinux.org/packages/fw-fanctrl-git)                                                            |                                                                      |
+| Fedora&nbsp;/&nbsp;RPM                                                                                           | [COPR](https://copr.fedorainfracloud.org/coprs/tulilirockz/fw-fanctrl/package/fw-fanctrl/)                          | [GIT&nbsp;repository](https://github.com/tulilirockz/fw-fanctrl-rpm) |
 
 ### Requirements
 
-| name   | version | url                                                                  |
-|--------|---------|----------------------------------------------------------------------|
-| Python | 3.12.x  | [https://www.python.org/downloads](https://www.python.org/downloads) |
+| Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Version&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Url                                                                  |
+|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
+| Python                                                                                                           | \>= 3.12.x                                                                                                                | [https://www.python.org/downloads](https://www.python.org/downloads) |
 
 ### Dependencies
 
 Dependencies are downloaded and installed automatically, but can be excluded from the installation script if you wish to
 do this manually.
 
-| name           | version   | url                                                                                  | sub-dependencies | exclusion argument |
-|----------------|-----------|--------------------------------------------------------------------------------------|------------------|--------------------|
-| DHowett@ectool | build#899 | [https://gitlab.howett.net/DHowett/ectool](https://gitlab.howett.net/DHowett/ectool) | libftdi          | `--no-ectool`      |
+| Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Version&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Url &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Sub&#8209;dependencies | Exclusion&nbsp;argument |
+|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|------------------------|-------------------------|
+| DHowett@ectool                                                                                                   | build#899                                                                                                                 | [https://gitlab.howett.net/DHowett/ectool](https://gitlab.howett.net/DHowett/ectool)                             | libftdi                | `--no-ectool`           |
 
 ### Instructions
 
