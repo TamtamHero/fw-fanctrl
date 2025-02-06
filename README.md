@@ -98,9 +98,6 @@ do this manually.
 
 ### Instructions
 
-First, make sure that you have disabled secure boot in your BIOS/UEFI settings.
-(more details on why [here](https://www.howett.net/posts/2021-12-framework-ec/#using-fw-ectool))
-
 [Download the repo](https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip) and extract it manually, or
 download/clone it with the appropriate tools:
 
