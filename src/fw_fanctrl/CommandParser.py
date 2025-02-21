@@ -88,7 +88,7 @@ class CommandParser:
         use_command = commands_sub_parser.add_parser("use", description="change the current strategy")
         use_command.add_argument(
             "strategy",
-            help='name of the strategy to use e.g: "lazy". (use `print strategies` to list available strategies)',
+            help='name of the strategy to use e.g: "lazy". (use `print list` to list available strategies)',
         )
 
         commands_sub_parser.add_parser("reset", description="reset to the default strategy")
