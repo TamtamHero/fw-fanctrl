@@ -1,5 +1,7 @@
 import json
 from json import JSONDecodeError
+from os.path import isfile
+from shutil import copyfile
 
 import jsonschema
 
@@ -40,6 +42,8 @@ class Configuration:
             raise ConfigurationParsingException(f"Error parsing configuration file: {e}")
 
     def reload(self):
+        if not isfile(self.path):
+            copyfile(ORIGINAL_CONFIG_PATH, self.path)
         with open(self.path, "r") as fp:
             raw_config = fp.read()
         self.data = self.parse(raw_config)
