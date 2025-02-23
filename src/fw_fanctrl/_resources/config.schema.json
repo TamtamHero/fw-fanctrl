@@ -87,10 +87,10 @@
                         "properties": {
                             "temp": {
                                 "type": "number",
-                                "multipleOf" : 0.1,
+                                "multipleOf" : 0.01,
                                 "minimum": 0,
                                 "maximum": 100,
-                                "description": "Temperature threshold (in degrees Celsius) up to single digit precision (e.g. 15.3)."
+                                "description": "Temperature threshold (in degrees Celsius) up to two digit precision (e.g. 15.23)."
                             },
                             "speed": {
                                 "type": "integer",

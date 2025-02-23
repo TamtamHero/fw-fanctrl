@@ -91,7 +91,7 @@ And, at least have the `speedCurve` property defined.
 
 It represents by the curve points for `f(temperature) = fan(s) speed`.
 
-The `temp` field value is a number with precision of up to 0.1°C (e.g., 15.3),
+The `temp` field value is a number with precision of up to 0.01°C (e.g., 15.23),
 while the `speed` is a positive integer between 0 and 100 %.
 
 It should contain at least a single temperature point.

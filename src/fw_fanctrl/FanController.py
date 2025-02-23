@@ -133,11 +133,11 @@ class FanController:
         sliced_temp_history = [x for x in self.temp_history if x > 0][-time_interval:]
         if len(sliced_temp_history) == 0:
             return self.get_actual_temperature()
-        return float(round(sum(sliced_temp_history) / len(sliced_temp_history), 1))
+        return float(round(sum(sliced_temp_history) / len(sliced_temp_history), 2))
 
     def get_effective_temperature(self, current_temp, time_interval):
         # the moving average temperature count for 2/3 of the effective temperature
-        return float(round(min(self.get_moving_average_temperature(time_interval), current_temp), 1))
+        return float(round(min(self.get_moving_average_temperature(time_interval), current_temp), 2))
 
     def adapt_speed(self, current_temp):
         current_strategy = self.get_current_strategy()
