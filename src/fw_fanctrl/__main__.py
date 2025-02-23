@@ -1,3 +1,4 @@
+import shlex
 import sys
 
 from fw_fanctrl.CommandParser import CommandParser
@@ -11,7 +12,7 @@ from fw_fanctrl.socketController.UnixSocketController import UnixSocketControlle
 
 def main():
     try:
-        args = CommandParser().parse_args()
+        args = CommandParser().parse_args(shlex.split(shlex.join(sys.argv[1:])))
     except Exception as e:
         _cre = CommandResult(CommandStatus.ERROR, str(e))
         print(_cre.to_output_format(OutputFormat.NATURAL), file=sys.stderr)
@@ -36,7 +37,7 @@ def main():
         fan.run(debug=not args.silent)
     else:
         try:
-            command_result = socket_controller.send_via_client_socket(" ".join(sys.argv[1:]))
+            command_result = socket_controller.send_via_client_socket(shlex.join(sys.argv[1:]))
             if command_result:
                 print(command_result)
         except Exception as e:
