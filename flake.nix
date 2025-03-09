@@ -2,7 +2,7 @@
   description = "A simple systemd service to better control Framework Laptop's fan(s)";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
 
     flake-compat = {
       url = "github:edolstra/flake-compat";

@@ -1,0 +1,132 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "file://config.schema.json",
+    "title": "fw-fanctrl configuration",
+    "description": "Configuration for the fw-fanctrl service, defining fan control strategies based on temperature thresholds.",
+    "type": "object",
+    "patternProperties": {
+        "^\\$schema$": {
+            "type": "string",
+            "format": "uri",
+            "description": "Points to the JSON Schema to use for validation.",
+            "pattern": "^\\./config\\.schema\\.json$"
+        }
+    },
+    "properties": {
+        "defaultStrategy": {
+            "description": "The default strategy to use.",
+            "$comment": "Must match a key in the `strategies` object.",
+            "$ref": "#/$defs/strategyKey"
+        },
+        "strategyOnDischarging": {
+            "description": "The strategy to use when the system is on battery power. Use an empty string to disable special behavior.",
+            "oneOf": [
+                {
+                    "type": "string",
+                    "const": "",
+                    "description": "Disables battery-specific behavior (use default strategy)."
+                },
+                {
+                    "$comment": "Must match a key in the `strategies` object.",
+                    "$ref": "#/$defs/strategyKey"
+                }
+            ]
+        },
+        "strategies": {
+            "description": "A collection of named fan control strategies.",
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+                "$ref": "#/$defs/strategy"
+            },
+            "propertyNames": {
+                "$ref": "#/$defs/strategyKey"
+            }
+        }
+    },
+    "required": [
+        "defaultStrategy",
+        "strategyOnDischarging",
+        "strategies",
+        "$schema"
+    ],
+    "additionalProperties": false,
+    "$defs": {
+        "strategyKey": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "description": "A unique identifier for a strategy (alphanumeric, underscores, and hyphens allowed).",
+            "examples": [
+                "lazy",
+                "agile",
+                "deaf"
+            ]
+        },
+        "strategy": {
+            "type": "object",
+            "description": "A strategy defines how fan speed is adjusted based on temperature readings.",
+            "properties": {
+                "fanSpeedUpdateFrequency": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "How frequently (in seconds) to update the fan speed."
+                },
+                "movingAverageInterval": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "The time window (in seconds) over which temperature readings are averaged."
+                },
+                "speedCurve": {
+                    "type": "array",
+                    "minItems": 1,
+                    "description": "A list of temperature-speed pairs defining the fan response curve. Should be sorted by ascending `temp`.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "temp": {
+                                "type": "number",
+                                "multipleOf" : 0.01,
+                                "minimum": 0,
+                                "maximum": 100,
+                                "description": "Temperature threshold (in degrees Celsius) up to two digit precision (e.g. 15.23)."
+                            },
+                            "speed": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100,
+                                "description": "Fan speed (in percent) to set when the temperature reaches this threshold."
+                            }
+                        },
+                        "required": [
+                            "temp",
+                            "speed"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "uniqueItems": true,
+                    "minProperties": 1,
+                    "examples": [
+                        {
+                            "temp": 0,
+                            "speed": 0
+                        },
+                        {
+                            "temp": 65,
+                            "speed": 25
+                        },
+                        {
+                            "temp": 85,
+                            "speed": 100
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "speedCurve"
+            ],
+            "additionalProperties": false
+        }
+    }
+}

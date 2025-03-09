@@ -1,4 +1,7 @@
+import importlib.resources
 import os
+
+INTERNAL_RESOURCES_PATH = importlib.resources.files("fw_fanctrl").joinpath("_resources")
 
 DEFAULT_CONFIGURATION_FILE_PATH = "/etc/fw-fanctrl/config.json"
 SOCKETS_FOLDER_PATH = "/run/fw-fanctrl"

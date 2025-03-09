@@ -1,4 +1,4 @@
-{ 
+{
 lib,
 python3Packages,
 python3,
@@ -36,13 +36,12 @@ python3Packages.buildPythonPackage rec{
 
   nativeBuildInputs = [
     python3
-    getopt
-    bash
   ];
 
-  propagatedBuildInputs = [
+  propagatedBuildInputs = with python3Packages; [
     fw-ectool
     setuptools_75_8_0
+    jsonschema
   ];
 
   doCheck = false;
