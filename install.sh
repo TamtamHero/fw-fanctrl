@@ -171,9 +171,10 @@ function install() {
         if [[ $? -eq 0 ]]; then
             PYTHON_SCRIPT_INSTALLATION_PATH="$actual_installation_path"
         fi
-        echo "script installation path is '$PYTHON_SCRIPT_INSTALLATION_PATH'"
         rm -rf "dist/" 2> "/dev/null" || true
     fi
+
+    echo "script installation path is '$PYTHON_SCRIPT_INSTALLATION_PATH'"
 
     cp -pn "./src/fw_fanctrl/_resources/config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
     cp -f "./src/fw_fanctrl/_resources/config.schema.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
