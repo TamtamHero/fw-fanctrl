@@ -70,6 +70,22 @@ while true; do
   shift
 done
 
+if [ "$NO_PIP_INSTALL" = false ]; then
+    if ! python -m pip -h 1>/dev/null 2>&1; then
+        echo "Missing python package 'pip'!"
+        exit 1
+    fi
+fi
+
+if [ "$SHOULD_REMOVE" = false ]; then
+    if ! python -m build -h 1>/dev/null 2>&1; then
+        echo "Missing python package 'build'!"
+        exit 1
+    fi
+fi
+
+PYTHON_SCRIPT_INSTALLATION_PATH="$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
+
 # Root check
 if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]
   then echo "This program requires root permissions or use the '--no-sudo' option"
@@ -165,8 +181,14 @@ function install() {
         echo "installing python package"
         python -m pip install --prefix="$DEST_DIR$PREFIX_DIR" dist/*.tar.gz
         which python
+        actual_installation_path="$(which 'fw-fanctrl' 2>/dev/null)"
+        if [[ $? -eq 0 ]]; then
+            PYTHON_SCRIPT_INSTALLATION_PATH="$actual_installation_path"
+        fi
         rm -rf "dist/" 2> "/dev/null" || true
     fi
+
+    echo "script installation path is '$PYTHON_SCRIPT_INSTALLATION_PATH'"
 
     cp -pn "./src/fw_fanctrl/_resources/config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
     cp -f "./src/fw_fanctrl/_resources/config.schema.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
@@ -187,7 +209,7 @@ function install() {
             systemctl stop "$SERVICE"
         fi
         echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION'"
-        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | sed -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
+        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | sed -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
     done
 
     # add program services sub-configurations based on the sub-configurations present in the './services' folder
@@ -208,7 +230,7 @@ function install() {
         for SUBCONFIG in $SUBCONFIGS ; do
             SUBCONFIG=$(sanitizePath "$SUBCONFIG")
             echo "adding '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
-            cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
+            cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
             chmod +x "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG"
         done
     done
