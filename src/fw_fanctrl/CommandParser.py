@@ -88,7 +88,7 @@ class CommandParser:
         use_command = commands_sub_parser.add_parser("use", description="change the current strategy")
         use_command.add_argument(
             "strategy",
-            help='name of the strategy to use e.g: "lazy". (use `print strategies` to list available strategies)',
+            help='name of the strategy to use e.g: "lazy". (use `print list` to list available strategies)',
         )
 
         commands_sub_parser.add_parser("reset", description="reset to the default strategy")
@@ -110,6 +110,15 @@ class CommandParser:
             default="all",
         )
 
+        set_config_command = commands_sub_parser.add_parser(
+            "set_config", description="replace the service configuration with the provided one"
+        )
+        set_config_command.add_argument(
+            "provided_config",
+            help="must be a valid JSON configuration",
+            type=str,
+        )
+
     def init_legacy_parser(self):
         self.legacy_parser = argparse.ArgumentParser(add_help=False)
 
@@ -123,6 +132,7 @@ class CommandParser:
                 "pause",
                 "resume",
                 "print",
+                "set_config",
             ]:
                 raise argparse.ArgumentTypeError("%s is an excluded value" % value)
             return value

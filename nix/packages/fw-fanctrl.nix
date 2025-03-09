@@ -1,4 +1,4 @@
-{ 
+{
 lib,
 python3Packages,
 python3,
@@ -10,9 +10,6 @@ fetchFromGitHub
 }:
 
 let
-  pversion = "20-04-2024";
-  description = "A simple systemd service to better control Framework Laptop's fan(s)";
-  url = "https://github.com/TamtamHero/fw-fanctrl";
   setuptools_75_8_0 = python3Packages.setuptools.overrideAttrs (old: {
     version = "75.8.0";
     src = fetchFromGitHub {
@@ -26,7 +23,7 @@ let
 in
 python3Packages.buildPythonPackage rec{
   pname = "fw-fanctrl";
-  version = pversion;
+  version = "09-03-2025";
 
   src = ../../.;
 
@@ -36,21 +33,20 @@ python3Packages.buildPythonPackage rec{
 
   nativeBuildInputs = [
     python3
-    getopt
-    bash
   ];
 
-  propagatedBuildInputs = [
+  propagatedBuildInputs = with python3Packages; [
     fw-ectool
     setuptools_75_8_0
+    jsonschema
   ];
 
   doCheck = false;
 
   meta = with lib; {
     mainProgram = "fw-fanctrl";
-    homepage = url;
-    description = description;
+    homepage = "https://github.com/TamtamHero/fw-fanctrl";
+    description = "A simple systemd service to better control Framework Laptop's fan(s)";
     platforms = with platforms; linux;
     license = licenses.bsd3;
     maintainers = with maintainers; [ "Svenum" ];

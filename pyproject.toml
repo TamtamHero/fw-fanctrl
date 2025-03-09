@@ -17,7 +17,6 @@ exclude = '''
   | services
   | fetch
   | \.temp
-  | result
 )/
 '''
 
@@ -27,7 +26,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fw-fanctrl"
-version = "1.0.0"
+version = "1.0.1"
 description = "A simple systemd service to better control Framework Laptop's fan(s)."
 keywords = ["framework", "laptop", "fan", "control", "cli", "service"]
 readme = "README.md"
@@ -46,7 +45,9 @@ classifiers = [
     "Topic :: System :: Hardware",
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "jsonschema~=4.23.0"
+]
 optional-dependencies = { dev = [
     "black==24.8.0",
     "build>=1.2.2.post1",
@@ -61,6 +62,9 @@ Issues = "https://github.com/TamtamHero/fw-fanctrl/issues"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
+
+[tool.setuptools.package-data]
+"fw_fanctrl" = ["_resources/**/*"]
 
 [project.scripts]
 fw-fanctrl = "fw_fanctrl.__main__:main"

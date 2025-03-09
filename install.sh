@@ -92,6 +92,7 @@ function sanitizePath() {
 
 function build() {
     echo "building package"
+    rm -rf "dist/" 2> "/dev/null" || true
     python -m build -s
     find . -type d -name "*.egg-info" -exec rm -rf {} + 2> "/dev/null" || true
 }
@@ -167,7 +168,8 @@ function install() {
         rm -rf "dist/" 2> "/dev/null" || true
     fi
 
-    cp -n "./config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
+    cp -pn "./src/fw_fanctrl/_resources/config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
+    cp -f "./src/fw_fanctrl/_resources/config.schema.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
 
     # add --no-battery-sensors flag to the fanctrl service if specified
     if [ "$NO_BATTERY_SENSOR" = true ]; then
