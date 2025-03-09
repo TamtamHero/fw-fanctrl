@@ -70,6 +70,20 @@ while true; do
   shift
 done
 
+if [ "$NO_PIP_INSTALL" = false ]; then
+    if ! python -m pip -h 1>/dev/null 2>&1; then
+        echo "Missing python package 'pip'!"
+        exit 1
+    fi
+fi
+
+if [ "$SHOULD_REMOVE" = false ]; then
+    if ! python -m build -h 1>/dev/null 2>&1; then
+        echo "Missing python package 'build'!"
+        exit 1
+    fi
+fi
+
 PYTHON_SCRIPT_INSTALLATION_PATH="$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
 
 # Root check
