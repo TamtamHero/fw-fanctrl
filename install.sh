@@ -70,6 +70,11 @@ while true; do
   shift
 done
 
+if ! python -h 1>/dev/null 2>&1; then
+    echo "Missing package 'python'!"
+    exit 1
+fi
+
 if [ "$NO_PIP_INSTALL" = false ]; then
     if ! python -m pip -h 1>/dev/null 2>&1; then
         echo "Missing python package 'pip'!"
