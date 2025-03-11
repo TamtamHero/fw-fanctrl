@@ -1,4 +1,5 @@
 {
+    "$schema": "./config.schema.json",
     "defaultStrategy": "lazy",
     "strategyOnDischarging" : "",
     "strategies": {
