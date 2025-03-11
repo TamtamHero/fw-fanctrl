@@ -208,7 +208,7 @@ function install() {
         for SUBCONFIG in $SUBCONFIGS ; do
             SUBCONFIG=$(sanitizePath "$SUBCONFIG")
             echo "adding '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
-            cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
+            cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | sed -e "s/%PREFIX_DIRECTORY%/${PREFIX_DIR//\//\\/}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
             chmod +x "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG"
         done
     done
