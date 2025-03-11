@@ -5,7 +5,7 @@ with lib.types;
 let
   cfg = config.programs.fw-fanctrl;
   fw-fanctrl = pkgs.callPackage ./packages/fw-fanctrl.nix {};
-  defaultConfig = builtins.fromJSON (builtins.readFile ../config.json);
+  defaultConfig = builtins.fromJSON (builtins.readFile ../src/fw_fanctrl/_resources/config.json);
 in
 {
   options.programs.fw-fanctrl = {
