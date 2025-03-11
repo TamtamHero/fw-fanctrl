@@ -1,11 +1,9 @@
 # fw-fanctrl
 
-[![Static Badge](https://img.shields.io/badge/Linux%E2%80%AF%2F%E2%80%AFGlobal-FCC624?style=flat&logo=linux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fmain)](https://github.com/TamtamHero/fw-fanctrl/tree/main)
+[![Static Badge](https://img.shields.io/badge/NixOS-5277C3?style=flat&logo=nixos&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fnix)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md)
 ![Static Badge](https://img.shields.io/badge/no%20binary%20blobs-30363D?style=flat&logo=GitHub-Sponsors&logoColor=4dff61)
 
-[![Static Badge](https://img.shields.io/badge/Python%203.12-FFDE57?style=flat&label=Requirement&link=https%3A%2F%2Fwww.python.org%2Fdownloads)](https://www.python.org/downloads)
-
-## Platforms
+## Platforms:
 
 [![Static Badge](https://img.shields.io/badge/Linux%E2%80%AF%2F%E2%80%AFGlobal-FCC624?style=flat&logo=linux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fmain)](https://github.com/TamtamHero/fw-fanctrl/tree/main)
 [![Static Badge](https://img.shields.io/badge/NixOS-5277C3?style=flat&logo=nixos&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FTamtamHero%2Ffw-fanctrl%2Ftree%2Fpackaging%2Fnix)](https://github.com/TamtamHero/fw-fanctrl/tree/packaging/nix/doc/nix-flake.md)
@@ -38,7 +36,7 @@ If the service is paused or stopped, the fans will revert to their default behav
 
 <!-- TOC -->
 * [fw-fanctrl](#fw-fanctrl)
-  * [Platforms](#platforms)
+  * [Platforms:](#platforms)
   * [Description](#description)
   * [Table of Content](#table-of-content)
   * [Third-party projects](#third-party-projects)
@@ -57,9 +55,9 @@ If the service is paused or stopped, the fans will revert to their default behav
 
 _Have some cool project to show? Add yours to the list!_
 
-| Name                                                                                                              | Description                                                                                                         | Picture                                                                                                                                                                                                                   |
-|-------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [fw&#8209;fanctrl&#8209;gui](https://github.com/leopoldhub/fw-fanctrl-gui)                                        | Simple customtkinter python gui with system tray for fw&#8209;fanctrl                                               | [<img src="https://github.com/leopoldhub/fw-fanctrl-gui/blob/master/doc/screenshots/tray.png?raw=true" width="200">](https://github.com/leopoldhub/fw-fanctrl-gui)                                                        |
+| Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description                                                           | Picture                                                                                                                                                            |
+|------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [fw&#8209;fanctrl&#8209;gui](https://github.com/leopoldhub/fw-fanctrl-gui)                                       | Simple customtkinter python gui with system tray for fw&#8209;fanctrl | [<img src="https://github.com/leopoldhub/fw-fanctrl-gui/blob/master/doc/screenshots/tray.png?raw=true" width="200">](https://github.com/leopoldhub/fw-fanctrl-gui) |
 | [fw-fanctrl-revived-gnome-shell-extension](https://github.com/ghostdevv/fw-fanctrl-revived-gnome-shell-extension) | A Gnome extension that provides a convenient way to control your framework laptop fan profile when using fw-fanctrl | [<img src="https://raw.githubusercontent.com/ghostdevv/fw-fanctrl-revived-gnome-shell-extension/refs/heads/main/.github/example.png" width="200">](https://github.com/ghostdevv/fw-fanctrl-revived-gnome-shell-extension) |
 
 ## Documentation
@@ -86,7 +84,6 @@ More documentation could be found [here](./doc/README.md).
 
 | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Version&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Url                                                                  |
 |------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
-| Linux kernel                                                                                                     | \>= 6.11.x                                                                                                                |                                                                      |
 | Python                                                                                                           | \>= 3.12.x                                                                                                                | [https://www.python.org/downloads](https://www.python.org/downloads) |
 
 ### Dependencies
