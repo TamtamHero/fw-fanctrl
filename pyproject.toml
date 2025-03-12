@@ -17,6 +17,8 @@ exclude = '''
   | services
   | fetch
   | \.temp
+  | src/fw_fanctrl/_resources
+  | src/fw_fanctrl_setup/_resources
 )/
 '''
 
@@ -65,6 +67,8 @@ package-dir = { "" = "src" }
 
 [tool.setuptools.package-data]
 "fw_fanctrl" = ["_resources/**/*"]
+"fw_fanctrl_setup" = ["_resources/**/*"]
 
 [project.scripts]
 fw-fanctrl = "fw_fanctrl.__main__:main"
+fw-fanctrl-setup = "fw_fanctrl_setup.__main__:main"

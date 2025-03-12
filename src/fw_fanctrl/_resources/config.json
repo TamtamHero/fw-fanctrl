@@ -1,7 +1,7 @@
 {
     "$schema": "./config.schema.json",
     "defaultStrategy": "lazy",
-    "strategyOnDischarging" : "",
+    "strategyOnDischarging": "",
     "strategies": {
         "laziest": {
             "fanSpeedUpdateFrequency": 5,
