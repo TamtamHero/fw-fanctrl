@@ -8,3 +8,7 @@ charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
 end_of_line = lf
+
+[{src/fw_fanctrl/_resources/**/*,src/fw_fanctrl_setup/_resources/**/*}]
+ij_formatter_enabled = false
+insert_final_newline = false

@@ -14,13 +14,13 @@ trap 'rm -rf $TEMP_FOLDER' EXIT
 
 PREFIX_DIR="/usr"
 DEST_DIR=""
-SYSCONF_DIR="/etc"
-SHOULD_INSTALL_ECTOOL=true
-SHOULD_PRE_UNINSTALL=true
-SHOULD_POST_INSTALL=true
+SYSCONF_DIR=
+SHOULD_INSTALL_ECTOOL=
+SHOULD_PRE_UNINSTALL=
+SHOULD_POST_INSTALL=
+NO_BATTERY_SENSOR=
+NO_SUDO=
 SHOULD_REMOVE=false
-NO_BATTERY_SENSOR=false
-NO_SUDO=false
 NO_PIP_INSTALL=false
 DEFAULT_PYTHON_PATH="/usr/bin/python3"
 PIPX=false
@@ -101,201 +101,107 @@ if [ "$SHOULD_REMOVE" = false ]; then
     fi
 fi
 
-PYTHON_SCRIPT_INSTALLATION_PATH="$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
-
 # Root check
 if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]
   then echo "This program requires root permissions or use the '--no-sudo' option"
   exit 1
 fi
 
-SERVICES_DIR="./services"
-SERVICE_EXTENSION=".service"
+function generate_args() {
+    ARGS=()
 
-SERVICES="$(cd "$SERVICES_DIR" && find . -maxdepth 1 -maxdepth 1 -type f -name "*$SERVICE_EXTENSION" -exec basename {} "$SERVICE_EXTENSION" \;)"
-SERVICES_SUBCONFIGS="$(cd "$SERVICES_DIR" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
+    if [ "$SHOULD_REMOVE" == "true" ]; then
+        ARGS+=("--remove")
+    fi
+    if [ -n "$PREFIX_DIR" ]; then
+        ARGS+=("--prefix-dir=$(printf '%q' "$PREFIX_DIR")")
+    fi
+    if [ -n "$DEST_DIR" ]; then
+        ARGS+=("--dest-dir=$(printf '%q' "$DEST_DIR")")
+    fi
+    if [ -n "$SYSCONF_DIR" ]; then
+        ARGS+=("--sysconf-dir=$(printf '%q' "$SYSCONF_DIR")")
+    fi
+    if [ "$NO_SUDO" == "true" ]; then
+        ARGS+=("--no-sudo")
+    fi
+    if [ "$SHOULD_INSTALL_ECTOOL" == "false" ]; then
+        ARGS+=("--no-ectool")
+    fi
+    if [ "$SHOULD_PRE_UNINSTALL" == "false" ]; then
+        ARGS+=("--no-pre-uninstall")
+    fi
+    if [ "$SHOULD_POST_INSTALL" == "false" ]; then
+        ARGS+=("--no-post-install")
+    fi
+    if [ "$NO_BATTERY_SENSOR" == "true" ]; then
+        ARGS+=("--no-battery-sensors")
+    fi
+    ARGS+=("--executable-path=$(printf '%q' "$(which 'fw-fanctrl')")")
 
-function sanitizePath() {
-    local SANITIZED_PATH="$1"
-    local SANITIZED_PATH=${SANITIZED_PATH//..\//}
-    local SANITIZED_PATH=${SANITIZED_PATH#./}
-    local SANITIZED_PATH=${SANITIZED_PATH#/}
-    echo "$SANITIZED_PATH"
+    echo "${ARGS[*]}"
+}
+
+function uninstall() {
+    if "fw-fanctrl-setup" -h 1>/dev/null 2>&1; then
+        ARGS=()
+
+        ARGS+=("--remove")
+        if [ -n "$PREFIX_DIR" ]; then
+            ARGS+=("--prefix-dir=$(printf '%q' "$PREFIX_DIR")")
+        fi
+        if [ -n "$DEST_DIR" ]; then
+            ARGS+=("--dest-dir=$(printf '%q' "$DEST_DIR")")
+        fi
+        if [ -n "$SYSCONF_DIR" ]; then
+            ARGS+=("--sysconf-dir=$(printf '%q' "$SYSCONF_DIR")")
+        fi
+        if [ -n "$SHOULD_INSTALL_ECTOOL" ]; then
+            ARGS+=("--no-ectool=$(printf '%q' "$([ "$SHOULD_INSTALL_ECTOOL" == "true" ] && echo "false" || echo "true")")")
+        fi
+        if [ -n "$SHOULD_PRE_UNINSTALL" ]; then
+            ARGS+=("--no-pre-uninstall=$(printf '%q' "$([ "$SHOULD_PRE_UNINSTALL" == "true" ] && echo "false" || echo "true")")")
+        fi
+        if [ -n "$SHOULD_POST_INSTALL" ]; then
+            ARGS+=("--no-post-install=$(printf '%q' "$([ "$SHOULD_POST_INSTALL" == "true" ] && echo "false" || echo "true")")")
+        fi
+        if [ -n "$NO_BATTERY_SENSOR" ]; then
+            ARGS+=("--no-battery-sensors=$(printf '%q' "$NO_BATTERY_SENSOR")")
+        fi
+        if which 'fw-fanctrl' 1>/dev/null 2>&1; then
+            ARGS+=("--executable-path=$(printf '%q' "$(which 'fw-fanctrl')")")
+        fi
+
+        "fw-fanctrl-setup" run ${ARGS[*]}
+    fi
+
+    if [ "$NO_PIP_INSTALL" = false ]; then
+        echo "Uninstalling python package"
+        python -m pip uninstall -y fw-fanctrl 2> "/dev/null" || true
+    fi
 }
 
 function build() {
-    echo "building package"
+    echo "Building package"
     rm -rf "dist/" 2> "/dev/null" || true
     python -m build -s
     find . -type d -name "*.egg-info" -exec rm -rf {} + 2> "/dev/null" || true
 }
 
-# remove remaining legacy files
-function uninstall_legacy() {
-    echo "removing legacy files"
-    rm "/usr/local/bin/fw-fanctrl" 2> "/dev/null" || true
-    rm "/usr/local/bin/ectool" 2> "/dev/null" || true
-    rm "/usr/local/bin/fanctrl.py" 2> "/dev/null" || true
-    rm "/etc/systemd/system/fw-fanctrl.service" 2> "/dev/null" || true
-    rm "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl" 2> "/dev/null" || true
-}
-
-function uninstall() {
-    if [ "$SHOULD_PRE_UNINSTALL" = true ]; then
-        ./pre-uninstall.sh "$([ "$NO_SUDO" = true ] && echo "--no-sudo")"
-    fi
-    # remove program services based on the services present in the './services' folder
-    echo "removing services"
-    for SERVICE in $SERVICES ; do
-        SERVICE=$(sanitizePath "$SERVICE")
-        # be EXTRA CAREFUL about the validity of the paths (dont wanna delete something important, right?... O_O)
-        rm -rf "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION"
-    done
-
-    # remove program services sub-configurations based on the sub-configurations present in the './services' folder
-    echo "removing services sub-configurations"
-    for SERVICE in $SERVICES_SUBCONFIGS ; do
-        SERVICE=$(sanitizePath "$SERVICE")
-        echo "removing sub-configurations for [$SERVICE]"
-        SUBCONFIGS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -type f)"
-        for SUBCONFIG in $SUBCONFIGS ; do
-            SUBCONFIG=$(sanitizePath "$SUBCONFIG")
-            echo "removing '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
-            rm -rf "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" 2> "/dev/null" || true
-        done
-    done
-
-    if [ "$NO_PIP_INSTALL" = false ]; then
-        echo "uninstalling python package"
-        if [ "$PIPX" = false ]; then
-            python -m pip uninstall -y fw-fanctrl 2> "/dev/null" || true
-        else
-            pipx --global uinistall fw-fanctrl 2> "/dev/null" || true
-        fi
-    fi
-
-    ectool autofanctrl 2> "/dev/null" || true # restore default fan manager
-    if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
-        rm "$DEST_DIR$PREFIX_DIR/bin/ectool" 2> "/dev/null" || true
-    fi
-    rm -rf "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
-    rm -rf "/run/fw-fanctrl" 2> "/dev/null" || true
-
-    uninstall_legacy
-}
-
 function install() {
-    uninstall_legacy
-
-    rm -rf "$TEMP_FOLDER"
-    mkdir -p "$DEST_DIR$PREFIX_DIR/bin"
-    if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
-        mkdir "$TEMP_FOLDER"
-        installEctool "$TEMP_FOLDER" || (echo "an error occurred when installing ectool." && echo "please check your internet connection or consider installing it manually and using --no-ectool on the installation script." && exit 1)
-        rm -rf "$TEMP_FOLDER"
-    fi
-    mkdir -p "$DEST_DIR$SYSCONF_DIR/fw-fanctrl"
-
     build
 
     if [ "$NO_PIP_INSTALL" = false ]; then
-        echo "installing python package"
-        if [ "$PIPX" = false ]; then
-            python -m pip install --prefix="$DEST_DIR$PREFIX_DIR" dist/*.tar.gz
-            which python
-        else
-            pipx install --global --force dist/*.tar.gz
-            DEFAULT_PYTHON_PATH=""
-        fi
-        actual_installation_path="$(which 'fw-fanctrl' 2>/dev/null)"
-        if [[ $? -eq 0 ]]; then
-            PYTHON_SCRIPT_INSTALLATION_PATH="$actual_installation_path"
-        fi
+        echo "Installing python package"
+        python -m pip install --prefix="$DEST_DIR$PREFIX_DIR" dist/*.tar.gz
+        which python
         rm -rf "dist/" 2> "/dev/null" || true
     fi
 
-    echo "script installation path is '$PYTHON_SCRIPT_INSTALLATION_PATH'"
+    echo "Script installation path is '$(which 'fw-fanctrl')'"
+    echo "Script installation setup path is '$(which 'fw-fanctrl-setup')'"
 
-    cp -pn "./src/fw_fanctrl/_resources/config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
-    cp -f "./src/fw_fanctrl/_resources/config.schema.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
-
-    # add --no-battery-sensors flag to the fanctrl service if specified
-    if [ "$NO_BATTERY_SENSOR" = true ]; then
-        NO_BATTERY_SENSOR_OPTION="--no-battery-sensors"
-    fi
-
-    # create program services based on the services present in the './services' folder
-    echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/system'"
-    mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/system"
-    echo "creating services"
-    for SERVICE in $SERVICES ; do
-        SERVICE=$(sanitizePath "$SERVICE")
-        if [ "$SHOULD_PRE_UNINSTALL" = true ] && [ "$(systemctl is-active "$SERVICE")" == "active" ]; then
-            echo "stopping [$SERVICE]"
-            systemctl stop "$SERVICE"
-        fi
-        echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION'"
-        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%DEFAULT_PYTHON_PATH%/${DEFAULT_PYTHON_PATH}/" | sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | sed -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
-    done
-
-    # add program services sub-configurations based on the sub-configurations present in the './services' folder
-    echo "adding services sub-configurations"
-    for SERVICE in $SERVICES_SUBCONFIGS ; do
-        SERVICE=$(sanitizePath "$SERVICE")
-        echo "adding sub-configurations for [$SERVICE]"
-        SUBCONFIG_FOLDERS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
-        # ensure folders exists
-        mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE"
-        for SUBCONFIG_FOLDER in $SUBCONFIG_FOLDERS ; do
-            SUBCONFIG_FOLDER=$(sanitizePath "$SUBCONFIG_FOLDER")
-            echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER'"
-            mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER"
-        done
-        SUBCONFIGS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -type f)"
-        # add sub-configurations
-        for SUBCONFIG in $SUBCONFIGS ; do
-            SUBCONFIG=$(sanitizePath "$SUBCONFIG")
-            echo "adding '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
-            cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
-            chmod +x "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG"
-        done
-    done
-    if [ "$SHOULD_POST_INSTALL" = true ]; then
-        ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR" "$([ "$NO_SUDO" = true ] && echo "--no-sudo")"
-    fi
-}
-
-function installEctool() {
-    workingDirectory=$1
-    echo "installing ectool"
-
-    ectoolDestPath="$DEST_DIR$PREFIX_DIR/bin/ectool"
-
-    ectoolJobId="$(cat './fetch/ectool/linux/gitlab_job_id')"
-    ectoolSha256Hash="$(cat './fetch/ectool/linux/hash.sha256')"
-
-    artifactsZipFile="$workingDirectory/artifact.zip"
-
-    echo "downloading artifact from gitlab"
-    curl -s -S -o "$artifactsZipFile" -L "https://gitlab.howett.net/DHowett/ectool/-/jobs/${ectoolJobId}/artifacts/download?file_type=archive" || (echo "failed to download the artifact." && return 1)
-    if [[ $? -ne 0 ]]; then return 1; fi
-
-    echo "checking artifact sha256 sum"
-    actualEctoolSha256Hash=$(sha256sum "$artifactsZipFile" | cut -d ' ' -f 1)
-    if [[ "$actualEctoolSha256Hash" != "$ectoolSha256Hash" ]]; then
-        echo "Incorrect sha256 sum for ectool gitlab artifact '$ectoolJobId' : '$ectoolSha256Hash' != '$actualEctoolSha256Hash'"
-        return 1
-    fi
-
-    echo "extracting artifact"
-    {
-        unzip -q -j "$artifactsZipFile" '_build/src/ectool' -d "$workingDirectory" &&
-        cp "$workingDirectory/ectool" "$ectoolDestPath" &&
-        chmod +x "$ectoolDestPath"
-    } || (echo "failed to extract the artifact to its designated location." && return 1)
-    if [[ $? -ne 0 ]]; then return 1; fi
-
-    echo "ectool installed"
+    "fw-fanctrl-setup" run $(generate_args)
 }
 
 if [ "$SHOULD_REMOVE" = true ]; then
