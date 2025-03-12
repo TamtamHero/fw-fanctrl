@@ -87,7 +87,7 @@
                         "properties": {
                             "temp": {
                                 "type": "number",
-                                "multipleOf" : 0.01,
+                                "multipleOf": 0.01,
                                 "minimum": 0,
                                 "maximum": 100,
                                 "description": "Temperature threshold (in degrees Celsius) up to two digit precision (e.g. 15.23)."
