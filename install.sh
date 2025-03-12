@@ -102,9 +102,9 @@ if [ "$SHOULD_REMOVE" = false ]; then
 fi
 
 # Root check
-if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]
-  then echo "This program requires root permissions or use the '--no-sudo' option"
-  exit 1
+if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]; then
+    echo "This program requires root permissions or use the '--no-sudo' option"
+    exit 1
 fi
 
 function generate_args() {
@@ -144,35 +144,13 @@ function generate_args() {
 
 function uninstall() {
     if "fw-fanctrl-setup" -h 1>/dev/null 2>&1; then
-        ARGS=()
-
-        ARGS+=("--remove")
-        if [ -n "$PREFIX_DIR" ]; then
-            ARGS+=("--prefix-dir=$(printf '%q' "$PREFIX_DIR")")
+        "fw-fanctrl-setup" run $(generate_args)
+        if [[ $? -ne 0 ]]; then
+            echo "Failed to uninstall the project correctly."
+            echo "Please seek further assistance, or delete the remaining files manually,"
+            echo "and then uninstall the 'fw-fanctrl' python module with 'python -m pip uninstall -y fw-fanctrl'."
+            exit 1;
         fi
-        if [ -n "$DEST_DIR" ]; then
-            ARGS+=("--dest-dir=$(printf '%q' "$DEST_DIR")")
-        fi
-        if [ -n "$SYSCONF_DIR" ]; then
-            ARGS+=("--sysconf-dir=$(printf '%q' "$SYSCONF_DIR")")
-        fi
-        if [ -n "$SHOULD_INSTALL_ECTOOL" ]; then
-            ARGS+=("--no-ectool=$(printf '%q' "$([ "$SHOULD_INSTALL_ECTOOL" == "true" ] && echo "false" || echo "true")")")
-        fi
-        if [ -n "$SHOULD_PRE_UNINSTALL" ]; then
-            ARGS+=("--no-pre-uninstall=$(printf '%q' "$([ "$SHOULD_PRE_UNINSTALL" == "true" ] && echo "false" || echo "true")")")
-        fi
-        if [ -n "$SHOULD_POST_INSTALL" ]; then
-            ARGS+=("--no-post-install=$(printf '%q' "$([ "$SHOULD_POST_INSTALL" == "true" ] && echo "false" || echo "true")")")
-        fi
-        if [ -n "$NO_BATTERY_SENSOR" ]; then
-            ARGS+=("--no-battery-sensors=$(printf '%q' "$NO_BATTERY_SENSOR")")
-        fi
-        if which 'fw-fanctrl' 1>/dev/null 2>&1; then
-            ARGS+=("--executable-path=$(printf '%q' "$(which 'fw-fanctrl')")")
-        fi
-
-        "fw-fanctrl-setup" run ${ARGS[*]}
     fi
 
     if [ "$NO_PIP_INSTALL" = false ]; then
@@ -189,6 +167,16 @@ function build() {
 }
 
 function install() {
+    if "fw-fanctrl-setup" -h 1>/dev/null 2>&1; then
+        "fw-fanctrl-setup" run --remove --keep-config $(generate_args)
+        if [[ $? -ne 0 ]]; then
+            echo "Failed to uninstall the previous version correctly."
+            echo "Please seek further assistance, or delete the remaining files manually,"
+            echo "and then uninstall the 'fw-fanctrl' python module with 'python -m pip uninstall -y fw-fanctrl'."
+            exit 1;
+        fi
+    fi
+
     build
 
     if [ "$NO_PIP_INSTALL" = false ]; then

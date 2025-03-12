@@ -14,7 +14,9 @@ def uninstall(args, updating=False):
     if not args.no_pre_uninstall:
         stop_services()
     uninstall_services(str(pathlib.Path(args.dest_dir).joinpath(args.prefix_dir).joinpath("lib").joinpath("systemd")))
-    if not updating:
+    if args.keep_config:
+        print("Keeping configuration files")
+    else:
         uninstall_configs(str(pathlib.Path(args.dest_dir).joinpath(args.sysconf_dir).joinpath("fw-fanctrl")))
     ectool_auto_behaviour(
         str(pathlib.Path(args.dest_dir).joinpath(args.prefix_dir).joinpath("bin").joinpath("ectool")),
@@ -32,7 +34,10 @@ def main():
     print(args)
 
     if os.geteuid() != 0 and not args.no_sudo:
-        print("You must have root privileges to run this command, or disable the requirement with th `--no-sudo` argument.", file=sys.stderr)
+        print(
+            "You must have root privileges to run this command, or disable the requirement with th `--no-sudo` argument.",
+            file=sys.stderr,
+        )
         exit(1)
 
     if args.remove:
@@ -57,6 +62,8 @@ def main():
 
         if not args.no_post_install:
             start_services()
+
+    print("Success!")
 
 
 if __name__ == "__main__":

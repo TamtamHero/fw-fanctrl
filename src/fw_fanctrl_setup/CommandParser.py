@@ -48,6 +48,9 @@ class CommandParser:
             "--no-battery-sensors", help="disable checking battery temperature sensors", action="store_true"
         )
         run_command.add_argument("--executable-path", help="`fw-fanctrl` executable path", type=str)
+        run_command.add_argument(
+            "--keep-config", help="do not delete the existing configuration during uninstallation", action="store_true"
+        )
 
     def parse_args(self, args=None):
         parsed_args = self.parser.parse_args(args)
@@ -64,4 +67,6 @@ class CommandParser:
                 .joinpath("bin")
                 .joinpath("fw-fanctrl")
             )
+        if not parsed_args.remove:
+            parsed_args.keep_config = True
         return parsed_args
