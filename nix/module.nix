@@ -45,11 +45,6 @@ in
           { options, name, ... }:
           {
             options = {
-              name = mkOption {
-                type = str;
-                default = "";
-                description = "Name of the strategy";
-              };
               fanSpeedUpdateFrequency = mkOption {
                 type = int;
                 default = 5;
