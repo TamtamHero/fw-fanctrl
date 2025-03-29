@@ -121,11 +121,32 @@ function build() {
 # remove remaining legacy files
 function uninstall_legacy() {
     echo "removing legacy files"
-    rm "/usr/local/bin/fw-fanctrl" 2> "/dev/null" || true
-    rm "/usr/local/bin/ectool" 2> "/dev/null" || true
-    rm "/usr/local/bin/fanctrl.py" 2> "/dev/null" || true
-    rm "/etc/systemd/system/fw-fanctrl.service" 2> "/dev/null" || true
-    rm "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl" 2> "/dev/null" || true
+    if [ "$NO_SUDO" = true ]; then
+        files=(
+        "/usr/local/bin/fw-fanctrl"
+        "/usr/local/bin/ectool"
+        "/usr/local/bin/fanctrl.py"
+        "/etc/systemd/system/fw-fanctrl.service"
+        )
+        for file in "${files[@]}"; do
+            if [ -e "$file" ]; then
+                error=true
+            fi
+        done
+
+        if [ "$error" = true ]; then
+            echo "Installation aborted due to conflicting files."
+            echo "Please run:"
+            echo "    sudo ./install.sh --remove"
+            exit 1
+        fi
+    else
+        rm "/usr/local/bin/fw-fanctrl" 2> "/dev/null" || true
+        rm "/usr/local/bin/ectool" 2> "/dev/null" || true
+        rm "/usr/local/bin/fanctrl.py" 2> "/dev/null" || true
+        rm "/etc/systemd/system/fw-fanctrl.service" 2> "/dev/null" || true
+        rm "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl" 2> "/dev/null" || true
+    fi
 }
 
 function uninstall() {
@@ -185,10 +206,23 @@ function install() {
     if [ "$NO_PIP_INSTALL" = false ]; then
         echo "installing python package"
         python -m pip install --prefix="$DEST_DIR$PREFIX_DIR" dist/*.tar.gz
-        which python
-        actual_installation_path="$(which 'fw-fanctrl' 2>/dev/null)"
-        if [[ $? -eq 0 ]]; then
-            PYTHON_SCRIPT_INSTALLATION_PATH="$actual_installation_path"
+        if [ "$NO_SUDO" = true ]; then
+            # Attempting to uninstall fw-fanctrl (no sudo mode)
+            if ! python -m pip uninstall -y fw-fanctrl 2>/dev/null; then
+                echo
+                echo "Failed to uninstall 'fw-fanctrl'."
+                echo "You likely need root permissions to uninstall the system-installed version."
+                echo "Please run:"
+                echo "    sudo python -m pip uninstall fw-fanctrl or sudo ./install.sh --remove"
+                echo "Then re-run this installer."
+                exit 1
+            fi
+        else
+            which python
+            actual_installation_path="$(which 'fw-fanctrl' 2>/dev/null)"
+            if [[ $? -eq 0 ]]; then
+                PYTHON_SCRIPT_INSTALLATION_PATH="$actual_installation_path"
+            fi
         fi
         rm -rf "dist/" 2> "/dev/null" || true
     fi
