@@ -128,18 +128,18 @@ function uninstall_legacy() {
         "/usr/local/bin/fanctrl.py"
         "/etc/systemd/system/fw-fanctrl.service"
         )
+        
         for file in "${files[@]}"; do
             if [ -e "$file" ]; then
-                error=true
+                if ! yes | rm "$file"; then
+                    echo "Failed to remove: $file"
+                    echo "Please run:"
+                    echo "    sudo ./install.sh --remove"
+                    exit 1
+                fi
             fi
         done
-
-        if [ "$error" = true ]; then
-            echo "Installation aborted due to conflicting files."
-            echo "Please run:"
-            echo "    sudo ./install.sh --remove"
-            exit 1
-        fi
+        
     else
         rm "/usr/local/bin/fw-fanctrl" 2> "/dev/null" || true
         rm "/usr/local/bin/ectool" 2> "/dev/null" || true
