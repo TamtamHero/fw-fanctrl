@@ -186,7 +186,9 @@ function install() {
         echo "installing python package"
         python -m pip install --prefix="$DEST_DIR$PREFIX_DIR" dist/*.tar.gz
         which python
+        set +e
         actual_installation_path="$(which 'fw-fanctrl' 2>/dev/null)"
+        set -e
         if [[ $? -eq 0 ]]; then
             PYTHON_SCRIPT_INSTALLATION_PATH="$actual_installation_path"
         fi
