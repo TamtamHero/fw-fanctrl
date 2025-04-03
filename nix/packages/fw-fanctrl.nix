@@ -10,13 +10,13 @@ fetchFromGitHub
 }:
 
 let
-  setuptools_75_8_0 = python3Packages.setuptools.overrideAttrs (old: {
-    version = "75.8.0";
+  setuptools_custom = python3Packages.setuptools.overrideAttrs (old: rec {
+    version = "75.8.2";
     src = fetchFromGitHub {
       owner = "pypa";
       repo = "setuptools";
-      rev = "v75.8.0";
-      hash = "sha256-dSzsj0lnsc1Y+D/N0cnAPbS/ZYb+qC41b/KfPmL1zI4=";
+      rev = "v${version}";
+      hash = "sha256-nD6c2JOjBL/SfgNchBlNasuwnrRl6XIuppjOt6Hr7CE=";
     };
     patches = [];
   });
@@ -37,7 +37,7 @@ python3Packages.buildPythonPackage rec{
 
   propagatedBuildInputs = with python3Packages; [
     fw-ectool
-    setuptools_75_8_0
+    setuptools_custom
     jsonschema
   ];
 
