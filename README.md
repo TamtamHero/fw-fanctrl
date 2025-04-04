@@ -119,16 +119,17 @@ sudo ./install.sh
 
 You can add a number of arguments to the installation command to suit your needs
 
-| argument                                                                        | description                                                    |
-|---------------------------------------------------------------------------------|----------------------------------------------------------------|
-| `--dest-dir <installation destination directory (defaults to /)>`               | specify an installation destination directory                  |
-| `--prefix-dir <installation prefix directory (defaults to /usr)>`               | specify an installation prefix directory                       |
-| `--sysconf-dir <system configuration destination directory (defaults to /etc)>` | specify a default configuration directory                      |
-| `--no-ectool`                                                                   | disable ectool installation and service activation             |
-| `--no-post-install`                                                             | disable post-install process                                   |
-| `--no-pre-uninstall`                                                            | disable pre-uninstall process                                  |
-| `--no-battery-sensors`                                                          | disable checking battery temperature sensors                   |
-| `--no-pip-install`                                                              | disable the pip installation (should be done manually instead) |
+| argument                                                                        | description                                                                                     |
+|---------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| `--dest-dir <installation destination directory (defaults to /)>`               | specify an installation destination directory                                                   |
+| `--prefix-dir <installation prefix directory (defaults to /usr)>`               | specify an installation prefix directory                                                        |
+| `--sysconf-dir <system configuration destination directory (defaults to /etc)>` | specify a default configuration directory                                                       |
+| `--no-ectool`                                                                   | disable ectool installation and service activation                                              |
+| `--no-post-install`                                                             | disable post-install process                                                                    |
+| `--no-pre-uninstall`                                                            | disable pre-uninstall process                                                                   |
+| `--no-battery-sensors`                                                          | disable checking battery temperature sensors                                                    |
+| `--no-pip-install`                                                              | disable the pip installation (should be done manually instead)                                  |
+| `--pipx`                                                                        | install using pipx instead of pip (useful if os does not allow global pip install like debian ) |
 
 ## Update
 
