@@ -1,6 +1,0 @@
-#!/bin/sh
-
-case $1 in
-    pre)  /usr/bin/python3 "%PYTHON_SCRIPT_INSTALLATION_PATH%" pause ;;
-    post) /usr/bin/python3 "%PYTHON_SCRIPT_INSTALLATION_PATH%" resume ;;
-esac

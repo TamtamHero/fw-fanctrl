@@ -1,8 +1,16 @@
 # Commands
 
+<!-- TOC -->
+* [Commands](#commands)
+  * [fw-fanctrl](#fw-fanctrl)
+  * [fw-fanctrl-setup](#fw-fanctrl-setup)
+<!-- TOC -->
+
+## fw-fanctrl
+
 Here is a list of commands and options used to interact with the service.
 
-the base of all commands is the following
+The base of all commands is the following
 
 ```shell
 fw-fanctrl [commands and options]
@@ -17,7 +25,7 @@ First, the global options
 
 **run**
 
-run the service manually
+Run the service manually
 
 If you have installed it correctly, the systemd `fw-fanctrl.service` service will do this for you, so you probably will
 never need those.
@@ -32,7 +40,7 @@ never need those.
 
 **use**
 
-change the current strategy
+Change the current strategy
 
 | Option      | Optional | Description                     |
 |-------------|----------|---------------------------------|
@@ -40,23 +48,23 @@ change the current strategy
 
 **reset**
 
-reset to the default strategy
+Reset to the default strategy
 
 **reload**
 
-reload the configuration file
+Reload the configuration file
 
 **pause**
 
-pause the service
+Pause the service
 
 **resume**
 
-resume the service
+Resume the service
 
 **print**
 
-print the selected information
+Print the selected information
 
 | Option             | Optional | Choices                   | Default | Description            |
 |--------------------|----------|---------------------------|---------|------------------------|
@@ -68,3 +76,36 @@ print the selected information
 | current | The current strategy being used  |
 | list    | List available strategies        |
 | speed   | The current fan speed percentage |
+
+## fw-fanctrl-setup
+
+The `fw-fanctrl-setup` command allows the user to uninstall or re-install the current service version setup.
+
+> If you installed the service with a package manager,
+> please do not use this command and manage it with the package manager instead.
+
+The base of all commands is the following
+
+```shell
+fw-fanctrl-setup [commands and options]
+```
+
+**run**
+
+It takes a single command (`run`) and multiple options
+
+| Option               | Optional | Choices | Default                                  | Description                                                    |
+|----------------------|----------|---------|------------------------------------------|----------------------------------------------------------------|
+| --remove, -r         | yes      |         | false                                    | uninstall additional files from the system                     |
+| --prefix-dir, -p     | yes      |         | `/usr`                                   | specify an installation prefix directory                       |
+| --dest-dir, -d       | yes      |         |                                          | specify an installation destination directory                  |
+| --sysconf-dir, -s    | yes      |         | `/etc`                                   | specify a default configuration directory                      |
+| --no-sudo            | yes      |         | false                                    | disable root privilege requirement                             |
+| --no-ectool          | yes      |         | false                                    | disable ectool installation                                    |
+| --no-pre-uninstall   | yes      |         | false                                    | disable pre-uninstall process                                  |
+| --no-post-install    | yes      |         | false                                    | disable post-install process                                   |
+| --no-battery-sensors | yes      |         | false                                    | disable checking battery temperature sensors                   |
+| --python-path        | yes      |         | `/usr/bin/python3`                       | python executable path                                         |
+| --executable-path    | yes      |         | `[dest-dir]/[prefix-dir]/bin/fw-fanctrl` | `fw-fanctrl` executable path                                   |
+| --keep-config        | yes      |         | false                                    | do not delete the existing configuration during uninstallation |
+| --pipx               | yes      |         | false                                    | specify the use of pipx                                        |
