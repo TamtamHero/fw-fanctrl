@@ -28,7 +28,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fw-fanctrl"
-version = "1.0.1"
+version = "1.0.2"
 description = "A simple systemd service to better control Framework Laptop's fan(s)."
 keywords = ["framework", "laptop", "fan", "control", "cli", "service"]
 readme = "README.md"
@@ -39,9 +39,8 @@ maintainers = [
     { name = "TamtamHero" },
     { name = "leopoldhub" },
 ]
-license = { file = "LICENSE" }
+license-files = ["LICENSE"]
 classifiers = [
-    "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3",
     "Operating System :: POSIX :: Linux",
     "Topic :: System :: Hardware",

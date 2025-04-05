@@ -47,10 +47,12 @@ class CommandParser:
         run_command.add_argument(
             "--no-battery-sensors", help="disable checking battery temperature sensors", action="store_true"
         )
+        run_command.add_argument("--python-path", help="python executable path", type=str, default="/usr/bin/python3")
         run_command.add_argument("--executable-path", help="`fw-fanctrl` executable path", type=str)
         run_command.add_argument(
             "--keep-config", help="do not delete the existing configuration during uninstallation", action="store_true"
         )
+        run_command.add_argument("--pipx", help="specify the use of pipx", action="store_true")
 
     def parse_args(self, args=None):
         parsed_args = self.parser.parse_args(args)

@@ -35,7 +35,7 @@ def main():
 
     if os.geteuid() != 0 and not args.no_sudo:
         print(
-            "You must have root privileges to run this command, or disable the requirement with th `--no-sudo` argument.",
+            "You must have root privileges to run this command, or disable the requirement with the `--no-sudo` argument.",
             file=sys.stderr,
         )
         exit(1)
@@ -55,9 +55,11 @@ def main():
         install_configs(str(pathlib.Path(args.dest_dir).joinpath(args.sysconf_dir).joinpath("fw-fanctrl")))
         install_services(
             str(pathlib.Path(args.dest_dir).joinpath(args.prefix_dir).joinpath("lib").joinpath("systemd")),
+            args.python_path,
             args.executable_path,
             args.sysconf_dir,
             args.no_battery_sensors,
+            args.pipx,
         )
 
         if not args.no_post_install:

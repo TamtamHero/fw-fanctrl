@@ -137,16 +137,20 @@ function generate_args() {
     if [ "$NO_BATTERY_SENSOR" == "true" ]; then
         ARGS+=("--no-battery-sensors")
     fi
+    if [ "$PIPX" == "true" ]; then
+        ARGS+=("--pipx")
+    fi
     ARGS+=("--executable-path=$(printf '%q' "$(which 'fw-fanctrl')")")
 
     echo "${ARGS[*]}"
 }
 
 function uninstall() {
+    echo "$@"
     if "fw-fanctrl-setup" -h 1>/dev/null 2>&1; then
-        "fw-fanctrl-setup" run $(generate_args)
+        "fw-fanctrl-setup" run $(generate_args) "$@"
         if [[ $? -ne 0 ]]; then
-            echo "Failed to uninstall the project correctly."
+            echo "Failed to uninstall the existing version correctly."
             echo "Please seek further assistance, or delete the remaining files manually,"
             echo "and then uninstall the 'fw-fanctrl' python module with 'python -m pip uninstall -y fw-fanctrl'."
             exit 1;
@@ -155,7 +159,11 @@ function uninstall() {
 
     if [ "$NO_PIP_INSTALL" = false ]; then
         echo "Uninstalling python package"
-        python -m pip uninstall -y fw-fanctrl 2> "/dev/null" || true
+        if [ "$PIPX" = false ]; then
+            python -m pip uninstall -y fw-fanctrl 2> "/dev/null" || true
+        else
+            pipx --global uinistall fw-fanctrl 2> "/dev/null" || true
+        fi
     fi
 }
 
@@ -167,23 +175,19 @@ function build() {
 }
 
 function install() {
-    if "fw-fanctrl-setup" -h 1>/dev/null 2>&1; then
-        "fw-fanctrl-setup" run --remove --keep-config $(generate_args)
-        if [[ $? -ne 0 ]]; then
-            echo "Failed to uninstall the previous version correctly."
-            echo "Please seek further assistance, or delete the remaining files manually,"
-            echo "and then uninstall the 'fw-fanctrl' python module with 'python -m pip uninstall -y fw-fanctrl'."
-            exit 1;
-        fi
-    fi
+    uninstall --keep-config
 
     build
 
     if [ "$NO_PIP_INSTALL" = false ]; then
         echo "Installing python package"
-        python -m pip install --prefix="$DEST_DIR$PREFIX_DIR" dist/*.tar.gz
-        which python
-        rm -rf "dist/" 2> "/dev/null" || true
+        if [ "$PIPX" = false ]; then
+            python -m pip install --prefix="$DEST_DIR$PREFIX_DIR" dist/*.tar.gz
+            which python
+        else
+            pipx install --global --force dist/*.tar.gz
+            DEFAULT_PYTHON_PATH=""
+        fi
     fi
 
     echo "Script installation path is '$(which 'fw-fanctrl')'"
