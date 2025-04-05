@@ -22,7 +22,6 @@ NO_BATTERY_SENSOR=
 NO_SUDO=
 SHOULD_REMOVE=false
 NO_PIP_INSTALL=false
-DEFAULT_PYTHON_PATH="/usr/bin/python3"
 PIPX=false
 
 eval set -- "$VALID_ARGS"
@@ -186,7 +185,6 @@ function install() {
             which python
         else
             pipx install --global --force dist/*.tar.gz
-            DEFAULT_PYTHON_PATH=""
         fi
     fi
 
