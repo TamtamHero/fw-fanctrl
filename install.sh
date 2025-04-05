@@ -173,6 +173,11 @@ function build() {
     find . -type d -name "*.egg-info" -exec rm -rf {} + 2> "/dev/null" || true
 }
 
+function cleanup() {
+    echo "Cleanup"
+    rm -rf "dist/" 2> "/dev/null" || true
+}
+
 function install() {
     uninstall --keep-config
 
@@ -187,6 +192,8 @@ function install() {
             pipx install --global --force dist/*.tar.gz
         fi
     fi
+
+    cleanup
 
     echo "Script installation path is '$(which 'fw-fanctrl')'"
     echo "Script installation setup path is '$(which 'fw-fanctrl-setup')'"
