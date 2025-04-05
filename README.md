@@ -114,23 +114,23 @@ curl -L "https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip" -
 
 Then run the installation script with administrator privileges
 
-```bash
+```shell
 sudo ./install.sh
 ```
 
 You can add a number of arguments to the installation command to suit your needs
 
-| argument                                                                        | description                                                                                     |
-|---------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
-| `--dest-dir <installation destination directory (defaults to /)>`               | specify an installation destination directory                                                   |
-| `--prefix-dir <installation prefix directory (defaults to /usr)>`               | specify an installation prefix directory                                                        |
-| `--sysconf-dir <system configuration destination directory (defaults to /etc)>` | specify a default configuration directory                                                       |
-| `--no-ectool`                                                                   | disable ectool installation and service activation                                              |
-| `--no-post-install`                                                             | disable post-install process                                                                    |
-| `--no-pre-uninstall`                                                            | disable pre-uninstall process                                                                   |
-| `--no-battery-sensors`                                                          | disable checking battery temperature sensors                                                    |
-| `--no-pip-install`                                                              | disable the pip installation (should be done manually instead)                                  |
-| `--pipx`                                                                        | install using pipx instead of pip (useful if os does not allow global pip install like debian ) |
+| argument                                                                        | description                                                                                          |
+|---------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| `--dest-dir <installation destination directory (defaults to /)>`               | specify an installation destination directory                                                        |
+| `--prefix-dir <installation prefix directory (defaults to /usr)>`               | specify an installation prefix directory                                                             |
+| `--sysconf-dir <system configuration destination directory (defaults to /etc)>` | specify a default configuration directory                                                            |
+| `--no-ectool`                                                                   | disable ectool installation and service activation                                                   |
+| `--no-post-install`                                                             | disable post-install process                                                                         |
+| `--no-pre-uninstall`                                                            | disable pre-uninstall process                                                                        |
+| `--no-battery-sensors`                                                          | disable checking battery temperature sensors                                                         |
+| `--no-pip-install`                                                              | disable the pip installation (should be done manually instead)                                       |
+| `--pipx`                                                                        | specify the use of pipx instead of pip (useful if os does not allow global pip install like debian ) |
 
 ## Update
 
@@ -138,10 +138,19 @@ To update, you can download or pull the appropriate branch from this repository,
 
 ## Uninstall
 
-To uninstall, run the installation script with the `--remove` argument, as well as other
+> If you installed the service with a package manager,
+> please do not use these commands and manage it with the package manager instead.
+
+If you have one of the most recent versions installed, you can use the following command with [other relevant arguments](./doc/commands.md#fw-fanctrl-setup)
+
+```shell
+sudo fw-fanctrl-setup run --remove
+```
+
+Otherwise, run the installation script with the `--remove` argument, as well as other
 corresponding [arguments if necessary](#instructions)
 
-```bash
+```shell
 sudo ./install.sh --remove
 ```
 
