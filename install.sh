@@ -130,7 +130,11 @@ function uninstall_legacy() {
 
 function uninstall() {
     if [ "$SHOULD_PRE_UNINSTALL" = true ]; then
-        ./pre-uninstall.sh "$([ "$NO_SUDO" = true ] && echo "--no-sudo")"
+        if ! ./pre-uninstall.sh "$([ "$NO_SUDO" = true ] && echo "--no-sudo")"; then
+            echo "Failed to run ./pre-uninstall.sh. Run the script with root permissions,"
+            echo "or skip this step by using the --no-pre-uninstall option."
+            exit 1
+        fi
     fi
     # remove program services based on the services present in the './services' folder
     echo "removing services"
@@ -242,7 +246,11 @@ function install() {
         done
     done
     if [ "$SHOULD_POST_INSTALL" = true ]; then
-        ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR" "$([ "$NO_SUDO" = true ] && echo "--no-sudo")"
+        if ! ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR" "$([ "$NO_SUDO" = true ] && echo "--no-sudo")"; then
+            echo "Failed to run ./post-install.sh. Run the script with root permissions,"
+            echo "or skip this step by using the --no-post-install option."
+            exit 1
+        fi
     fi
 }
 
