@@ -113,19 +113,32 @@ function sanitizePath() {
 
 function build() {
     echo "building package"
-    rm -rf "dist/" 2> "/dev/null" || true
+    remove_target "dist/"
     python -m build -s
     find . -type d -name "*.egg-info" -exec rm -rf {} + 2> "/dev/null" || true
+}
+
+# safe remove function
+function remove_target() {
+    local target="$1"
+    if [ -e "$target" ] || [ -L "$target" ]; then
+        if ! rm -rf "$target" 2> "/dev/null"; then
+            echo "Failed to remove: $target"
+            echo "Please run:"
+            echo "    sudo ./install.sh --remove"
+            exit 1
+        fi
+    fi
 }
 
 # remove remaining legacy files
 function uninstall_legacy() {
     echo "removing legacy files"
-    rm "/usr/local/bin/fw-fanctrl" 2> "/dev/null" || true
-    rm "/usr/local/bin/ectool" 2> "/dev/null" || true
-    rm "/usr/local/bin/fanctrl.py" 2> "/dev/null" || true
-    rm "/etc/systemd/system/fw-fanctrl.service" 2> "/dev/null" || true
-    rm "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl" 2> "/dev/null" || true
+    remove_target "/usr/local/bin/fw-fanctrl"
+    remove_target "/usr/local/bin/ectool"
+    remove_target "/usr/local/bin/fanctrl.py"
+    remove_target "/etc/systemd/system/fw-fanctrl.service"
+    remove_target "$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
 }
 
 function uninstall() {
@@ -141,7 +154,7 @@ function uninstall() {
     for SERVICE in $SERVICES ; do
         SERVICE=$(sanitizePath "$SERVICE")
         # be EXTRA CAREFUL about the validity of the paths (dont wanna delete something important, right?... O_O)
-        rm -rf "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION"
+        remove_target "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION"
     done
 
     # remove program services sub-configurations based on the sub-configurations present in the './services' folder
@@ -153,7 +166,7 @@ function uninstall() {
         for SUBCONFIG in $SUBCONFIGS ; do
             SUBCONFIG=$(sanitizePath "$SUBCONFIG")
             echo "removing '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
-            rm -rf "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" 2> "/dev/null" || true
+            remove_target "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG"
         done
     done
 
@@ -164,10 +177,10 @@ function uninstall() {
 
     ectool autofanctrl 2> "/dev/null" || true # restore default fan manager
     if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
-        rm "$DEST_DIR$PREFIX_DIR/bin/ectool" 2> "/dev/null" || true
+        remove_target "$DEST_DIR$PREFIX_DIR/bin/ectool"
     fi
-    rm -rf "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
-    rm -rf "/run/fw-fanctrl" 2> "/dev/null" || true
+    remove_target "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 
+    remove_target "/run/fw-fanctrl" 
 
     uninstall_legacy
 }
@@ -175,12 +188,12 @@ function uninstall() {
 function install() {
     uninstall_legacy
 
-    rm -rf "$TEMP_FOLDER"
+    remove_target "$TEMP_FOLDER"
     mkdir -p "$DEST_DIR$PREFIX_DIR/bin"
     if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
         mkdir "$TEMP_FOLDER"
         installEctool "$TEMP_FOLDER" || (echo "an error occurred when installing ectool." && echo "please check your internet connection or consider installing it manually and using --no-ectool on the installation script." && exit 1)
-        rm -rf "$TEMP_FOLDER"
+        remove_target "$TEMP_FOLDER"
     fi
     mkdir -p "$DEST_DIR$SYSCONF_DIR/fw-fanctrl"
 
@@ -196,7 +209,7 @@ function install() {
         if [[ $? -eq 0 ]]; then
             PYTHON_SCRIPT_INSTALLATION_PATH="$actual_installation_path"
         fi
-        rm -rf "dist/" 2> "/dev/null" || true
+        remove_target "dist/"
     fi
 
     echo "script installation path is '$PYTHON_SCRIPT_INSTALLATION_PATH'"
