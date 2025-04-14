@@ -3,7 +3,7 @@ set -e
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,no-pip-install,pipx,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,no-pip-install,no-pip-build,no-override-python-installation-path,pipx,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -22,6 +22,8 @@ SHOULD_REMOVE=false
 NO_BATTERY_SENSOR=false
 NO_SUDO=false
 NO_PIP_INSTALL=false
+NO_PIP_BUILD=false
+NO_OVERRIDE_PYTHON_INSTALLATION_PATH=false
 DEFAULT_PYTHON_PATH="/usr/bin/python3"
 PIPX=false
 
@@ -57,6 +59,13 @@ while true; do
         ;;
     '--no-sudo')
         NO_SUDO=true
+        ;;
+    '--no-pip-build')
+        NO_PIP_BUILD=true
+        NO_PIP_INSTALL=true
+        ;;
+    '--no-override-python-installation-path')
+        NO_OVERRIDE_PYTHON_INSTALLATION_PATH=true
         ;;
     '--no-pip-install')
         NO_PIP_INSTALL=true
@@ -94,7 +103,7 @@ if [ "$PIPX" = true ]; then
     fi
 fi
 
-if [ "$SHOULD_REMOVE" = false ]; then
+if [ "$SHOULD_REMOVE" = false ] && [ "$NO_PIP_BUILD" = false ]; then
     if ! python -m build -h 1>/dev/null 2>&1; then
         echo "Missing python package 'build'!"
         exit 1
@@ -102,7 +111,6 @@ if [ "$SHOULD_REMOVE" = false ]; then
 fi
 
 PYTHON_SCRIPT_INSTALLATION_PATH="$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
-
 # Root check
 if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]
   then echo "This program requires root permissions or use the '--no-sudo' option"
@@ -196,9 +204,11 @@ function install() {
     fi
     mkdir -p "$DEST_DIR$SYSCONF_DIR/fw-fanctrl"
 
-    build
+    if [ "$NO_PIP_BUILD" = false ] ; then 
+        build
+    fi
 
-    if [ "$NO_PIP_INSTALL" = false ]; then
+    if [ "$NO_PIP_INSTALL" = false ] && [ "$NO_PIP_BUILD" != false ]; then
         echo "installing python package"
         if [ "$PIPX" = false ]; then
             python -m pip install --prefix="$DEST_DIR$PREFIX_DIR" dist/*.tar.gz
@@ -235,7 +245,22 @@ function install() {
             systemctl stop "$SERVICE"
         fi
         echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION'"
-        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s,%DEFAULT_PYTHON_PATH%,${DEFAULT_PYTHON_PATH}," | sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | sed -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
+        if [ "$NO_OVERRIDE_PYTHON_INSTALLATION_PATH" = true ] ; then
+            OLD_SYSCONFDIR=$SYSCONFDIR
+            OLD_INSTALL_PATH="${PYTHON_SCRIPT_INSTALLATION_PATH}"
+            PYTHON_SCRIPT_INSTALLATION_PATH="/usr/bin/fw-fanctrl"
+            SYSCONF_DIR="/etc"
+        fi
+        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | \
+            sed -e "s,%DEFAULT_PYTHON_PATH%,${DEFAULT_PYTHON_PATH}," \
+                -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" \
+                -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" \
+                -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | \
+                tee "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
+        if [ "$NO_OVERRIDE_PYTHON_INSTALLATION_PATH" = true ] ; then
+            SYSCONF_DIR="${OLD_SYSCONFDIR}"
+            PYTHON_SCRIPT_INSTALLATION_PATH="${OLD_INSTALL_PATH}"
+        fi
     done
 
     # add program services sub-configurations based on the sub-configurations present in the './services' folder
@@ -256,7 +281,19 @@ function install() {
         for SUBCONFIG in $SUBCONFIGS ; do
             SUBCONFIG=$(sanitizePath "$SUBCONFIG")
             echo "adding '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
-            cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
+            if [ "$NO_OVERRIDE_PYTHON_INSTALLATION_PATH" = true ] ; then
+                OLD_SYSCONFDIR=$SYSCONFDIR
+                OLD_INSTALL_PATH="${PYTHON_SCRIPT_INSTALLATION_PATH}"
+                PYTHON_SCRIPT_INSTALLATION_PATH="/usr/bin/fw-fanctrl"
+                SYSCONF_DIR="/etc"
+            fi
+            cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | \
+                sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | \
+                tee "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
+            if [ "$NO_OVERRIDE_PYTHON_INSTALLATION_PATH" = true ] ; then
+                SYSCONF_DIR="${OLD_SYSCONFDIR}"
+                PYTHON_SCRIPT_INSTALLATION_PATH="${OLD_INSTALL_PATH}"
+            fi
             chmod +x "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG"
         done
     done
