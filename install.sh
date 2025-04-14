@@ -84,7 +84,7 @@ while true; do
   shift
 done
 
-if ! python -h 1>/dev/null 2>&1; then
+if ! python -h 1>/dev/null 2>&1 && [ "$NO_PIP_BUILD" = false ] ; then
     echo "Missing package 'python'!"
     exit 1
 fi
