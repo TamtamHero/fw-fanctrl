@@ -3,7 +3,7 @@ set -e
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,no-pip-install,pipx,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,no-pip-install,pipx,python-prefix-dir,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -22,8 +22,8 @@ SHOULD_REMOVE=false
 NO_BATTERY_SENSOR=false
 NO_SUDO=false
 NO_PIP_INSTALL=false
-DEFAULT_PYTHON_PATH="/usr/bin/python3"
 PIPX=false
+PYTHON_PREFIX_DIRECTORY_OVERRIDE=
 
 eval set -- "$VALID_ARGS"
 while true; do
@@ -64,8 +64,12 @@ while true; do
     '--pipx')
         PIPX=true
         ;;
+    '--python-prefix-dir')
+        PYTHON_PREFIX_DIRECTORY_OVERRIDE=$2
+        shift
+        ;;
     '--help' | '-h')
-        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo] [--no-pip-install] [--pipx]" 1>&2
+        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo] [--no-pip-install] [--pipx] [--python-prefix-dir (defaults to $DEST_DIR$PREFIX_DIR)]" 1>&2
         exit 0
         ;;
     --)
@@ -74,6 +78,12 @@ while true; do
   esac
   shift
 done
+
+PYTHON_PREFIX_DIRECTORY="$DEST_DIR$PREFIX_DIR"
+if [ -n "$PYTHON_PREFIX_DIRECTORY_OVERRIDE" ]; then
+    PYTHON_PREFIX_DIRECTORY=$PYTHON_PREFIX_DIRECTORY_OVERRIDE
+fi
+PYTHON_SCRIPT_INSTALLATION_PATH="$PYTHON_PREFIX_DIRECTORY/bin/fw-fanctrl"
 
 if ! python -h 1>/dev/null 2>&1; then
     echo "Missing package 'python'!"
@@ -100,8 +110,6 @@ if [ "$SHOULD_REMOVE" = false ]; then
         exit 1
     fi
 fi
-
-PYTHON_SCRIPT_INSTALLATION_PATH="$DEST_DIR$PREFIX_DIR/bin/fw-fanctrl"
 
 # Root check
 if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]
@@ -201,20 +209,14 @@ function install() {
     if [ "$NO_PIP_INSTALL" = false ]; then
         echo "installing python package"
         if [ "$PIPX" = false ]; then
-            python -m pip install --prefix="$DEST_DIR$PREFIX_DIR" dist/*.tar.gz
+            python -m pip install --prefix="$PYTHON_PREFIX_DIRECTORY" dist/*.tar.gz
             which python
         else
             pipx install --global --force dist/*.tar.gz
-            DEFAULT_PYTHON_PATH=""
         fi
-        actual_installation_path="$(which 'fw-fanctrl' 2>/dev/null)"
-        if [[ $? -eq 0 ]]; then
-            PYTHON_SCRIPT_INSTALLATION_PATH="$actual_installation_path"
-        fi
+        which 'fw-fanctrl' 2> "/dev/null" || true
         rm -rf "dist/" 2> "/dev/null" || true
     fi
-
-    echo "script installation path is '$PYTHON_SCRIPT_INSTALLATION_PATH'"
 
     cp -pn "./src/fw_fanctrl/_resources/config.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
     cp -f "./src/fw_fanctrl/_resources/config.schema.json" "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 2> "/dev/null" || true
@@ -235,7 +237,7 @@ function install() {
             systemctl stop "$SERVICE"
         fi
         echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION'"
-        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s,%DEFAULT_PYTHON_PATH%,${DEFAULT_PYTHON_PATH}," | sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | sed -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
+        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | sed -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
     done
 
     # add program services sub-configurations based on the sub-configurations present in the './services' folder

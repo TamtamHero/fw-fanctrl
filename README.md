@@ -61,7 +61,7 @@ _Have some cool project to show? Add yours to the list!_
 |-------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [fw&#8209;fanctrl&#8209;gui](https://github.com/leopoldhub/fw-fanctrl-gui)                                        | Simple customtkinter python gui with system tray for fw&#8209;fanctrl                                               | [<img src="https://github.com/leopoldhub/fw-fanctrl-gui/blob/master/doc/screenshots/tray.png?raw=true" width="200">](https://github.com/leopoldhub/fw-fanctrl-gui)                                                        |
 | [fw-fanctrl-revived-gnome-shell-extension](https://github.com/ghostdevv/fw-fanctrl-revived-gnome-shell-extension) | A Gnome extension that provides a convenient way to control your framework laptop fan profile when using fw-fanctrl | [<img src="https://raw.githubusercontent.com/ghostdevv/fw-fanctrl-revived-gnome-shell-extension/refs/heads/main/.github/example.png" width="200">](https://github.com/ghostdevv/fw-fanctrl-revived-gnome-shell-extension) |
-| [fw_fanctrl_applet](https://github.com/not-a-feature/fw_fanctrl_applet) | Cinnamon applet to control the framework fan-speed strategy using fw-fanctrl | [<img src="https://raw.githubusercontent.com/not-a-feature/fw_fanctrl_applet/main/screenshot.png" width="200">](https://github.com/not-a-feature/fw_fanctrl_applet)
+| [fw_fanctrl_applet](https://github.com/not-a-feature/fw_fanctrl_applet)                                           | Cinnamon applet to control the framework fan-speed strategy using fw-fanctrl                                        | [<img src="https://raw.githubusercontent.com/not-a-feature/fw_fanctrl_applet/main/screenshot.png" width="200">](https://github.com/not-a-feature/fw_fanctrl_applet)                                                       |
 
 ## Documentation
 
@@ -114,23 +114,26 @@ curl -L "https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip" -
 
 Then run the installation script with administrator privileges
 
+> ⚠ Linux Mint users, should add the `--python-prefix-dir "/usr/local"` option.
+
 ```bash
 sudo ./install.sh
 ```
 
 You can add a number of arguments to the installation command to suit your needs
 
-| argument                                                                        | description                                                                                     |
-|---------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
-| `--dest-dir <installation destination directory (defaults to /)>`               | specify an installation destination directory                                                   |
-| `--prefix-dir <installation prefix directory (defaults to /usr)>`               | specify an installation prefix directory                                                        |
-| `--sysconf-dir <system configuration destination directory (defaults to /etc)>` | specify a default configuration directory                                                       |
-| `--no-ectool`                                                                   | disable ectool installation and service activation                                              |
-| `--no-post-install`                                                             | disable post-install process                                                                    |
-| `--no-pre-uninstall`                                                            | disable pre-uninstall process                                                                   |
-| `--no-battery-sensors`                                                          | disable checking battery temperature sensors                                                    |
-| `--no-pip-install`                                                              | disable the pip installation (should be done manually instead)                                  |
-| `--pipx`                                                                        | install using pipx instead of pip (useful if os does not allow global pip install like debian ) |
+| argument                                                                               | description                                                                                     |
+|----------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| `--dest-dir <installation destination directory (defaults to /)>`                      | specify an installation destination directory                                                   |
+| `--prefix-dir <installation prefix directory (defaults to /usr)>`                      | specify an installation prefix directory                                                        |
+| `--sysconf-dir <system configuration destination directory (defaults to /etc)>`        | specify a default configuration directory                                                       |
+| `--no-ectool`                                                                          | disable ectool installation and service activation                                              |
+| `--no-post-install`                                                                    | disable post-install process                                                                    |
+| `--no-pre-uninstall`                                                                   | disable pre-uninstall process                                                                   |
+| `--no-battery-sensors`                                                                 | disable checking battery temperature sensors                                                    |
+| `--no-pip-install`                                                                     | disable the pip installation (should be done manually instead)                                  |
+| `--pipx`                                                                               | install using pipx instead of pip (useful if os does not allow global pip install like debian ) |
+| `--python-prefix-dir <python installation prefix directory (defaults to /usr)>`        | specify the python prefix directory for package installation                                    |
 
 ## Update
 
