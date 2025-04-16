@@ -3,7 +3,7 @@ set -e
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,no-pip-install,pipx,python-prefix-dir,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,no-pip-install,no-setup,pipx,python-prefix-dir,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -21,6 +21,7 @@ NO_BATTERY_SENSOR=
 NO_SUDO=
 SHOULD_REMOVE=false
 NO_PIP_INSTALL=false
+NO_SETUP=false
 PIPX=false
 PYTHON_PREFIX_DIRECTORY_OVERRIDE=
 
@@ -60,6 +61,9 @@ while true; do
     '--no-pip-install')
         NO_PIP_INSTALL=true
         ;;
+    '--no-setup')
+        NO_SETUP=true
+        ;;
     '--pipx')
         PIPX=true
         ;;
@@ -68,7 +72,7 @@ while true; do
         shift
         ;;
     '--help' | '-h')
-        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo] [--no-pip-install] [--pipx] [--python-prefix-dir (defaults to $DEST_DIR$PREFIX_DIR)]" 1>&2
+        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo] [--no-pip-install] [--no-setup] [--pipx] [--python-prefix-dir (defaults to $DEST_DIR$PREFIX_DIR)]" 1>&2
         exit 0
         ;;
     --)
@@ -148,7 +152,7 @@ function generate_args() {
 }
 
 function uninstall() {
-    if "$PYTHON_PREFIX_DIRECTORY/bin/fw-fanctrl-setup" -h 1>/dev/null 2>&1; then
+    if "$PYTHON_PREFIX_DIRECTORY/bin/fw-fanctrl-setup" -h 1>/dev/null 2>&1 && [ "$NO_SETUP" = false ]; then
         "$PYTHON_PREFIX_DIRECTORY/bin/fw-fanctrl-setup" run --remove $(generate_args) "$@"
         if [[ $? -ne 0 ]]; then
             echo "Failed to uninstall the existing version correctly."
@@ -197,7 +201,9 @@ function install() {
     echo "Script installation path is '$(which 'fw-fanctrl')'"
     echo "Script installation setup path is '$(which 'fw-fanctrl-setup')'"
 
-    "$PYTHON_PREFIX_DIRECTORY/bin/fw-fanctrl-setup" run $(generate_args)
+    if [ "$NO_SETUP" = false ]; then
+        "$PYTHON_PREFIX_DIRECTORY/bin/fw-fanctrl-setup" run $(generate_args)
+    fi
 }
 
 cleanup

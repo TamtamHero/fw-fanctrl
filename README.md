@@ -132,6 +132,7 @@ You can add a number of arguments to the installation command to suit your needs
 | `--no-pre-uninstall`                                                            | disable pre-uninstall process                                                                        |
 | `--no-battery-sensors`                                                          | disable checking battery temperature sensors                                                         |
 | `--no-pip-install`                                                              | disable the pip installation (should be done manually instead)                                       |
+| `--no-setup`                                                                    | disable the `fw-fanctrl-setup` script actions before uninstallation and after installation           |
 | `--pipx`                                                                        | specify the use of pipx instead of pip (useful if os does not allow global pip install like debian ) |
 | `--python-prefix-dir <python installation prefix directory (defaults to /usr)>` | specify the python prefix directory for package installation                                         |
 ## Update
@@ -147,6 +148,7 @@ If you have one of the most recent versions installed, you can use the following
 
 ```shell
 sudo fw-fanctrl-setup run --remove
+sudo pip uninstall fw_fanctrl
 ```
 
 Otherwise, run the installation script with the `--remove` argument, as well as other
