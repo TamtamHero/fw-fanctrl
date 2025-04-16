@@ -94,18 +94,17 @@ fw-fanctrl-setup [commands and options]
 
 It takes a single command (`run`) and multiple options
 
-| Option               | Optional | Choices | Default                                  | Description                                                    |
-|----------------------|----------|---------|------------------------------------------|----------------------------------------------------------------|
-| --remove, -r         | yes      |         | false                                    | uninstall additional files from the system                     |
-| --prefix-dir, -p     | yes      |         | `/usr`                                   | specify an installation prefix directory                       |
-| --dest-dir, -d       | yes      |         |                                          | specify an installation destination directory                  |
-| --sysconf-dir, -s    | yes      |         | `/etc`                                   | specify a default configuration directory                      |
-| --no-sudo            | yes      |         | false                                    | disable root privilege requirement                             |
-| --no-ectool          | yes      |         | false                                    | disable ectool installation                                    |
-| --no-pre-uninstall   | yes      |         | false                                    | disable pre-uninstall process                                  |
-| --no-post-install    | yes      |         | false                                    | disable post-install process                                   |
-| --no-battery-sensors | yes      |         | false                                    | disable checking battery temperature sensors                   |
-| --python-path        | yes      |         | `/usr/bin/python3`                       | python executable path                                         |
-| --executable-path    | yes      |         | `[dest-dir]/[prefix-dir]/bin/fw-fanctrl` | `fw-fanctrl` executable path                                   |
-| --keep-config        | yes      |         | false                                    | do not delete the existing configuration during uninstallation |
-| --pipx               | yes      |         | false                                    | specify the use of pipx                                        |
+| Option               | Optional | Choices | Default                            | Description                                                    |
+|----------------------|----------|---------|------------------------------------|----------------------------------------------------------------|
+| --remove, -r         | yes      |         | false                              | uninstall additional files from the system                     |
+| --prefix-dir, -p     | yes      |         | `/usr`                             | specify an installation prefix directory                       |
+| --dest-dir, -d       | yes      |         |                                    | specify an installation destination directory                  |
+| --sysconf-dir, -s    | yes      |         | `/etc`                             | specify a default configuration directory                      |
+| --no-sudo            | yes      |         | false                              | disable root privilege requirement                             |
+| --no-ectool          | yes      |         | false                              | disable ectool installation                                    |
+| --no-pre-uninstall   | yes      |         | false                              | disable pre-uninstall process                                  |
+| --no-post-install    | yes      |         | false                              | disable post-install process                                   |
+| --no-battery-sensors | yes      |         | false                              | disable checking battery temperature sensors                   |
+| --python-prefix-dir  | yes      |         | `[dest-dir]/[prefix-dir]`          | specify the python prefix directory of the installed package   |
+| --executable-path    | yes      |         | `[executable-path]/bin/fw-fanctrl` | `fw-fanctrl` executable path                                   |
+| --keep-config        | yes      |         | false                              | do not delete the existing configuration during uninstallation |

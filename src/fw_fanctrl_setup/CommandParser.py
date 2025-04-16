@@ -47,27 +47,29 @@ class CommandParser:
         run_command.add_argument(
             "--no-battery-sensors", help="disable checking battery temperature sensors", action="store_true"
         )
-        run_command.add_argument("--python-path", help="python executable path", type=str, default="/usr/bin/python3")
+        run_command.add_argument(
+            "--python-prefix-dir", help="specify the python prefix directory of the installed package", type=str
+        )
         run_command.add_argument("--executable-path", help="`fw-fanctrl` executable path", type=str)
         run_command.add_argument(
             "--keep-config", help="do not delete the existing configuration during uninstallation", action="store_true"
         )
-        run_command.add_argument("--pipx", help="specify the use of pipx", action="store_true")
 
     def parse_args(self, args=None):
-        parsed_args = self.parser.parse_args(args)
+        parsed_args, unknown = self.parser.parse_known_args(args)
+        if unknown:
+            print("Warning: Unknown arguments encountered:", unknown)
         if parsed_args.command is None:
             self.parser.error(
                 f"Error: Missing 'run' subcommand.{os.linesep}"
                 f"ONLY USE THIS COMMAND IF 'fw-fanctrl' WAS INSTALLED MANUALLY!{os.linesep}"
                 "OTHERWISE USE YOUR PACKAGE MANAGER TO MANAGE/REMOVE IT!"
             )
+        if parsed_args.python_prefix_dir is None:
+            parsed_args.python_prefix_dir = str(pathlib.Path(parsed_args.dest_dir).joinpath(parsed_args.prefix_dir))
         if parsed_args.executable_path is None:
             parsed_args.executable_path = str(
-                pathlib.Path(parsed_args.dest_dir)
-                .joinpath(parsed_args.prefix_dir)
-                .joinpath("bin")
-                .joinpath("fw-fanctrl")
+                pathlib.Path(parsed_args.python_prefix_dir).joinpath("bin").joinpath("fw-fanctrl")
             )
         if not parsed_args.remove:
             parsed_args.keep_config = True

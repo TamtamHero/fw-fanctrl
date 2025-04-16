@@ -55,11 +55,9 @@ def main():
         install_configs(str(pathlib.Path(args.dest_dir).joinpath(args.sysconf_dir).joinpath("fw-fanctrl")))
         install_services(
             str(pathlib.Path(args.dest_dir).joinpath(args.prefix_dir).joinpath("lib").joinpath("systemd")),
-            args.python_path,
             args.executable_path,
             args.sysconf_dir,
             args.no_battery_sensors,
-            args.pipx,
         )
 
         if not args.no_post_install:

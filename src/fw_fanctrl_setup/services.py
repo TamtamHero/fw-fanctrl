@@ -9,11 +9,9 @@ from fw_fanctrl_setup import SETUP_INTERNAL_RESOURCES_PATH
 def copy_service_file(
     service_file_path: str,
     dest_path: str,
-    python_path: str,
     python_script_installation_path: str,
     sysconf_dir: str,
     no_battery_sensor: bool,
-    pipx: bool,
 ):
     print(f"  > Copying `{service_file_path}` to `{dest_path}` ...")
     try:
@@ -27,7 +25,6 @@ def copy_service_file(
             service_content = service_content.replace(
                 "%NO_BATTERY_SENSOR_OPTION%", "--no-battery-sensors" if no_battery_sensor else ""
             )
-            service_content = service_content.replace("%PYTHON_PATH%", python_path if not pipx else "")
             fp.write(service_content)
         os.chmod(dest_path, os.stat(dest_path).st_mode | 0o111)
     except Exception as e:
@@ -36,11 +33,9 @@ def copy_service_file(
 
 def install_services(
     services_directory_path: str,
-    python_path: str,
     python_script_installation_path: str,
     sysconf_dir: str,
     no_battery_sensor: bool,
-    pipx: bool,
 ):
     print("Installing systemd services...")
     try:
@@ -52,11 +47,9 @@ def install_services(
             copy_service_file(
                 service,
                 str(pathlib.Path(services_directory_path).joinpath("system").joinpath(service.name)),
-                python_path,
                 python_script_installation_path,
                 sysconf_dir,
                 no_battery_sensor,
-                pipx,
             )
 
         for subservice in services_path.rglob("*"):
@@ -67,11 +60,9 @@ def install_services(
                 str(
                     pathlib.Path(services_directory_path).joinpath(pathlib.Path(subservice.relative_to(services_path)))
                 ),
-                python_path,
                 python_script_installation_path,
                 sysconf_dir,
                 no_battery_sensor,
-                pipx,
             )
     except Exception as e:
         raise RuntimeError("Failed to install systemd services") from e

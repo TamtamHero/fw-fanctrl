@@ -3,14 +3,13 @@ set -e
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,no-pip-install,pipx,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,no-pip-install,pipx,python-prefix-dir,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi
 
-TEMP_FOLDER='./.temp'
-trap 'rm -rf $TEMP_FOLDER' EXIT
+trap 'cleanup' EXIT
 
 PREFIX_DIR="/usr"
 DEST_DIR=""
@@ -23,6 +22,7 @@ NO_SUDO=
 SHOULD_REMOVE=false
 NO_PIP_INSTALL=false
 PIPX=false
+PYTHON_PREFIX_DIRECTORY_OVERRIDE=
 
 eval set -- "$VALID_ARGS"
 while true; do
@@ -63,8 +63,12 @@ while true; do
     '--pipx')
         PIPX=true
         ;;
+    '--python-prefix-dir')
+        PYTHON_PREFIX_DIRECTORY_OVERRIDE=$2
+        shift
+        ;;
     '--help' | '-h')
-        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo] [--no-pip-install] [--pipx]" 1>&2
+        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo] [--no-pip-install] [--pipx] [--python-prefix-dir (defaults to $DEST_DIR$PREFIX_DIR)]" 1>&2
         exit 0
         ;;
     --)
@@ -73,6 +77,11 @@ while true; do
   esac
   shift
 done
+
+PYTHON_PREFIX_DIRECTORY="$DEST_DIR$PREFIX_DIR"
+if [ -n "$PYTHON_PREFIX_DIRECTORY_OVERRIDE" ]; then
+    PYTHON_PREFIX_DIRECTORY=$PYTHON_PREFIX_DIRECTORY_OVERRIDE
+fi
 
 if ! python -h 1>/dev/null 2>&1; then
     echo "Missing package 'python'!"
@@ -109,9 +118,6 @@ fi
 function generate_args() {
     ARGS=()
 
-    if [ "$SHOULD_REMOVE" == "true" ]; then
-        ARGS+=("--remove")
-    fi
     if [ -n "$PREFIX_DIR" ]; then
         ARGS+=("--prefix-dir=$(printf '%q' "$PREFIX_DIR")")
     fi
@@ -136,18 +142,14 @@ function generate_args() {
     if [ "$NO_BATTERY_SENSOR" == "true" ]; then
         ARGS+=("--no-battery-sensors")
     fi
-    if [ "$PIPX" == "true" ]; then
-        ARGS+=("--pipx")
-    fi
-    ARGS+=("--executable-path=$(printf '%q' "$(which 'fw-fanctrl')")")
+    ARGS+=("--python-prefix-dir=$(printf '%q' "$PYTHON_PREFIX_DIRECTORY")")
 
     echo "${ARGS[*]}"
 }
 
 function uninstall() {
-    echo "$@"
-    if "fw-fanctrl-setup" -h 1>/dev/null 2>&1; then
-        "fw-fanctrl-setup" run $(generate_args) "$@"
+    if "$PYTHON_PREFIX_DIRECTORY/bin/fw-fanctrl-setup" -h 1>/dev/null 2>&1; then
+        "$PYTHON_PREFIX_DIRECTORY/bin/fw-fanctrl-setup" run --remove $(generate_args) "$@"
         if [[ $? -ne 0 ]]; then
             echo "Failed to uninstall the existing version correctly."
             echo "Please seek further assistance, or delete the remaining files manually,"
@@ -161,7 +163,7 @@ function uninstall() {
         if [ "$PIPX" = false ]; then
             python -m pip uninstall -y fw-fanctrl 2> "/dev/null" || true
         else
-            pipx --global uinistall fw-fanctrl 2> "/dev/null" || true
+            PIPX_GLOBAL_BIN_DIR="$PYTHON_PREFIX_DIRECTORY/bin" pipx uninstall --global fw-fanctrl 2> "/dev/null" || true
         fi
     fi
 }
@@ -170,12 +172,11 @@ function build() {
     echo "Building package"
     rm -rf "dist/" 2> "/dev/null" || true
     python -m build -s
-    find . -type d -name "*.egg-info" -exec rm -rf {} + 2> "/dev/null" || true
 }
 
 function cleanup() {
     echo "Cleanup"
-    rm -rf "dist/" 2> "/dev/null" || true
+    find . -type d -name "*.egg-info" -exec rm -rf {} + 2> "/dev/null" || true
 }
 
 function install() {
@@ -186,20 +187,20 @@ function install() {
     if [ "$NO_PIP_INSTALL" = false ]; then
         echo "Installing python package"
         if [ "$PIPX" = false ]; then
-            python -m pip install --prefix="$DEST_DIR$PREFIX_DIR" dist/*.tar.gz
+            python -m pip install --prefix="$PYTHON_PREFIX_DIRECTORY" dist/*.tar.gz
             which python
         else
-            pipx install --global --force dist/*.tar.gz
+            PIPX_GLOBAL_BIN_DIR="$PYTHON_PREFIX_DIRECTORY/bin" pipx install --global --force dist/*.tar.gz
         fi
     fi
-
-    cleanup
 
     echo "Script installation path is '$(which 'fw-fanctrl')'"
     echo "Script installation setup path is '$(which 'fw-fanctrl-setup')'"
 
-    "fw-fanctrl-setup" run $(generate_args)
+    "$PYTHON_PREFIX_DIRECTORY/bin/fw-fanctrl-setup" run $(generate_args)
 }
+
+cleanup
 
 if [ "$SHOULD_REMOVE" = true ]; then
     uninstall

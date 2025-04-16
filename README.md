@@ -114,6 +114,8 @@ curl -L "https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip" -
 
 Then run the installation script with administrator privileges
 
+> ⚠ Linux Mint users, should add the `--python-prefix-dir "/usr/local"` option.
+
 ```shell
 sudo ./install.sh
 ```
@@ -131,7 +133,7 @@ You can add a number of arguments to the installation command to suit your needs
 | `--no-battery-sensors`                                                          | disable checking battery temperature sensors                                                         |
 | `--no-pip-install`                                                              | disable the pip installation (should be done manually instead)                                       |
 | `--pipx`                                                                        | specify the use of pipx instead of pip (useful if os does not allow global pip install like debian ) |
-
+| `--python-prefix-dir <python installation prefix directory (defaults to /usr)>` | specify the python prefix directory for package installation                                         |
 ## Update
 
 To update, you can download or pull the appropriate branch from this repository, and run the installation script again.

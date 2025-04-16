@@ -1,6 +1,6 @@
 #!/bin/sh
 
 case $1 in
-    pre)  %PYTHON_PATH% "%PYTHON_SCRIPT_INSTALLATION_PATH%" pause ;;
-    post) %PYTHON_PATH% "%PYTHON_SCRIPT_INSTALLATION_PATH%" resume ;;
+    pre)  "%PYTHON_SCRIPT_INSTALLATION_PATH%" pause ;;
+    post) "%PYTHON_SCRIPT_INSTALLATION_PATH%" resume ;;
 esac
