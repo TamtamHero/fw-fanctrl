@@ -3,7 +3,7 @@ set -e
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,no-pip-install,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,no-pip-install,pipx,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -22,6 +22,8 @@ SHOULD_REMOVE=false
 NO_BATTERY_SENSOR=false
 NO_SUDO=false
 NO_PIP_INSTALL=false
+DEFAULT_PYTHON_PATH="/usr/bin/python3"
+PIPX=false
 
 eval set -- "$VALID_ARGS"
 while true; do
@@ -59,8 +61,11 @@ while true; do
     '--no-pip-install')
         NO_PIP_INSTALL=true
         ;;
+    '--pipx')
+        PIPX=true
+        ;;
     '--help' | '-h')
-        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo] [--no-pip-install]" 1>&2
+        echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo] [--no-pip-install] [--pipx]" 1>&2
         exit 0
         ;;
     --)
@@ -78,6 +83,13 @@ fi
 if [ "$NO_PIP_INSTALL" = false ]; then
     if ! python -m pip -h 1>/dev/null 2>&1; then
         echo "Missing python package 'pip'!"
+        exit 1
+    fi
+fi
+
+if [ "$PIPX" = true ]; then
+    if ! pipx -h >/dev/null 2>&1; then
+        echo "Missing package 'pipx'!"
         exit 1
     fi
 fi
@@ -172,7 +184,11 @@ function uninstall() {
 
     if [ "$NO_PIP_INSTALL" = false ]; then
         echo "uninstalling python package"
-        python -m pip uninstall -y fw-fanctrl 2> "/dev/null" || true
+        if [ "$PIPX" = false ]; then
+            python -m pip uninstall -y fw-fanctrl 2> "/dev/null" || true
+        else
+            pipx --global uinistall fw-fanctrl 2> "/dev/null" || true
+        fi
     fi
 
     ectool autofanctrl 2> "/dev/null" || true # restore default fan manager
@@ -201,8 +217,13 @@ function install() {
 
     if [ "$NO_PIP_INSTALL" = false ]; then
         echo "installing python package"
-        python -m pip install --prefix="$DEST_DIR$PREFIX_DIR" dist/*.tar.gz
-        which python
+        if [ "$PIPX" = false ]; then
+            python -m pip install --prefix="$DEST_DIR$PREFIX_DIR" dist/*.tar.gz
+            which python
+        else
+            pipx install --global --force dist/*.tar.gz
+            DEFAULT_PYTHON_PATH=""
+        fi
         set +e
         actual_installation_path="$(which 'fw-fanctrl' 2>/dev/null)"
         set -e
@@ -233,7 +254,7 @@ function install() {
             systemctl stop "$SERVICE"
         fi
         echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION'"
-        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | sed -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
+        cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s,%DEFAULT_PYTHON_PATH%,${DEFAULT_PYTHON_PATH}," | sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | sed -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
     done
 
     # add program services sub-configurations based on the sub-configurations present in the './services' folder
