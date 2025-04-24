@@ -21,9 +21,42 @@ from fw_fanctrl.exception.InvalidStrategyException import InvalidStrategyExcepti
 from fw_fanctrl.exception.UnknownCommandException import UnknownCommandException
 
 
+class FanSpeedController(threading.Thread):
+    def __init__(self, hardware_controller):
+        super().__init__()
+        self.daemon = True
+
+        self.hardware_controller = hardware_controller
+        self.current_speed = 0
+        self.desired_speed = 0
+        self.ramp_duration = 10
+        self.step_time = 0.2
+        self.reset = False
+
+    def set_speed(self, speed, ramp_duration):
+        if speed != self.current_speed:
+            self.desired_speed = speed
+            self.ramp_duration = ramp_duration
+            self.reset = True
+
+    def run(self):
+        while True:
+            self.reset = False
+            steps = int(self.ramp_duration / self.step_time)
+            step_change = round((self.desired_speed - self.current_speed) / steps)
+
+            for i in range(steps):
+                if self.reset:
+                    break
+                self.current_speed += step_change
+                self.hardware_controller.set_speed(self.current_speed)
+                sleep(0.2)
+
+
 class FanController:
     hardware_controller = None
     socket_controller = None
+    fan_speed_controller = None
     configuration = None
     overwritten_strategy = None
     output_format = None
@@ -42,6 +75,9 @@ class FanController:
 
         self.output_format = output_format
 
+        self.fan_speed_controller = FanSpeedController(hardware_controller)
+        self.fan_speed_controller.start()
+
         t = threading.Thread(
             target=self.socket_controller.start_server_socket,
             args=[self.command_manager],
@@ -53,8 +89,13 @@ class FanController:
         return self.hardware_controller.get_temperature()
 
     def set_speed(self, speed):
+        if speed > self.speed:
+            # speed increase, quickly jump up
+            self.fan_speed_controller.set_speed(speed, 1)
+        else:
+            # speed decrease, slowly ramp down
+            self.fan_speed_controller.set_speed(speed, 5)
         self.speed = speed
-        self.hardware_controller.set_speed(speed)
 
     def is_on_ac(self):
         return self.hardware_controller.is_on_ac()
