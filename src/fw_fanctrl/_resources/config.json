@@ -52,11 +52,11 @@
             ]
         },
         "very-agile": {
-            "fanSpeedUpdateFrequency": 2,
+            "fanSpeedUpdateFrequency": 1,
             "movingAverageInterval": 5,
             "speedCurve": [
                 { "temp": 0, "speed": 15 },
-                { "temp": 40, "speed": 15 },
+                { "temp": 40, "speed": 20 },
                 { "temp": 60, "speed": 30 },
                 { "temp": 70, "speed": 40 },
                 { "temp": 75, "speed": 80 },
