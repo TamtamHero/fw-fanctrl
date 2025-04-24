@@ -45,7 +45,7 @@ class FanSpeedController(threading.Thread):
             steps = int(self.ramp_duration / self.step_time)
             step_change = round((self.desired_speed - self.current_speed) / steps)
 
-            for i in range(steps):
+            for _ in range(steps):
                 if self.reset:
                     break
                 self.current_speed += step_change
