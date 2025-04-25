@@ -29,11 +29,11 @@ class FanSpeedController(threading.Thread):
         self.hardware_controller = hardware_controller
         self.current_speed = 0
         self.desired_speed = 0
-        self.ramp_duration = 10
+        self.ramp_duration = 2
         self.step_time = 0.2
         self.reset = False
 
-    def set_speed(self, speed, ramp_duration):
+    def set_speed(self, speed, ramp_duration=2):
         if speed != self.current_speed:
             self.desired_speed = speed
             self.ramp_duration = ramp_duration
@@ -41,16 +41,17 @@ class FanSpeedController(threading.Thread):
 
     def run(self):
         while True:
-            self.reset = False
             steps = int(self.ramp_duration / self.step_time)
             step_change = round((self.desired_speed - self.current_speed) / steps)
 
             for _ in range(steps):
                 if self.reset:
+                    self.reset = False
                     break
-                self.current_speed += step_change
-                self.hardware_controller.set_speed(self.current_speed)
-                sleep(0.2)
+                new_speed = self.current_speed + step_change
+                self.hardware_controller.set_speed(new_speed)
+                self.current_speed = new_speed
+                sleep(self.step_time)
 
 
 class FanController:
@@ -91,10 +92,10 @@ class FanController:
     def set_speed(self, speed):
         if speed > self.speed:
             # speed increase, quickly jump up
-            self.fan_speed_controller.set_speed(speed, 1)
+            self.fan_speed_controller.set_speed(speed, 3)
         else:
             # speed decrease, slowly ramp down
-            self.fan_speed_controller.set_speed(speed, 5)
+            self.fan_speed_controller.set_speed(speed, 10)
         self.speed = speed
 
     def is_on_ac(self):
