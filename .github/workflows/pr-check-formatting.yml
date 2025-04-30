@@ -1,0 +1,31 @@
+name: Check Formatting on PR
+
+on:
+  pull_request:
+    types:
+      - synchronize
+    branches:
+      - main
+
+jobs:
+  check:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout shallow repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -e ".[dev]"
+
+      - name: Check formatting
+        run: |
+          black --check --diff .
