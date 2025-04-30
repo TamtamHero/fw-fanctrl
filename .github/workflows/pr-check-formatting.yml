@@ -28,4 +28,4 @@ jobs:
 
       - name: Check formatting
         run: |
-          black --diff .
+          black --check --diff .
