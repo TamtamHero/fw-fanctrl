@@ -26,7 +26,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fw-fanctrl"
-version = "1.0.2"
+version = "1.0.3"
 description = "A simple systemd service to better control Framework Laptop's fan(s)."
 keywords = ["framework", "laptop", "fan", "control", "cli", "service"]
 readme = "README.md"
