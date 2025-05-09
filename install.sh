@@ -3,7 +3,7 @@ set -e
 
 # Argument parsing
 SHORT=r,d:,p:,s:,h
-LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,no-pip-install,pipx,python-prefix-dir,help
+LONG=remove,dest-dir:,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-post-install,no-battery-sensors,no-sudo,no-pip-install,pipx,python-prefix-dir:,effective-installation-dir:,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -24,6 +24,7 @@ NO_SUDO=false
 NO_PIP_INSTALL=false
 PIPX=false
 PYTHON_PREFIX_DIRECTORY_OVERRIDE=
+EFFECTIVE_INSTALLATION_DIRECTORY_OVERRIDE=
 
 eval set -- "$VALID_ARGS"
 while true; do
@@ -68,6 +69,10 @@ while true; do
         PYTHON_PREFIX_DIRECTORY_OVERRIDE=$2
         shift
         ;;
+    '--effective-installation-dir')
+        EFFECTIVE_INSTALLATION_DIRECTORY_OVERRIDE=$2
+        shift
+        ;;
     '--help' | '-h')
         echo "Usage: $0 [--remove,-r] [--dest-dir,-d <installation destination directory (defaults to $DEST_DIR)>] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-post-install] [--no-pre-uninstall] [--no-sudo] [--no-pip-install] [--pipx] [--python-prefix-dir (defaults to $DEST_DIR$PREFIX_DIR)]" 1>&2
         exit 0
@@ -83,7 +88,13 @@ PYTHON_PREFIX_DIRECTORY="$DEST_DIR$PREFIX_DIR"
 if [ -n "$PYTHON_PREFIX_DIRECTORY_OVERRIDE" ]; then
     PYTHON_PREFIX_DIRECTORY=$PYTHON_PREFIX_DIRECTORY_OVERRIDE
 fi
-PYTHON_SCRIPT_INSTALLATION_PATH="$PYTHON_PREFIX_DIRECTORY/bin/fw-fanctrl"
+
+INSTALLATION_DIRECTORY="$PYTHON_PREFIX_DIRECTORY/bin"
+if [ -n "$EFFECTIVE_INSTALLATION_DIRECTORY_OVERRIDE" ]; then
+    INSTALLATION_DIRECTORY=$EFFECTIVE_INSTALLATION_DIRECTORY_OVERRIDE
+fi
+
+PYTHON_SCRIPT_INSTALLATION_PATH="$INSTALLATION_DIRECTORY/fw-fanctrl"
 
 if ! python -h 1>/dev/null 2>&1; then
     echo "Missing package 'python'!"
