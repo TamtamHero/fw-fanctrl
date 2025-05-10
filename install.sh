@@ -96,13 +96,13 @@ fi
 
 PYTHON_SCRIPT_INSTALLATION_PATH="$INSTALLATION_DIRECTORY/fw-fanctrl"
 
-if ! python -h 1>/dev/null 2>&1; then
-    echo "Missing package 'python'!"
+if ! python3 -h 1>/dev/null 2>&1; then
+    echo "Missing package 'python3'!"
     exit 1
 fi
 
 if [ "$NO_PIP_INSTALL" = false ]; then
-    if ! python -m pip -h 1>/dev/null 2>&1; then
+    if ! python3 -m pip -h 1>/dev/null 2>&1; then
         echo "Missing python package 'pip'!"
         exit 1
     fi
@@ -116,7 +116,7 @@ if [ "$PIPX" = true ]; then
 fi
 
 if [ "$SHOULD_REMOVE" = false ]; then
-    if ! python -m build -h 1>/dev/null 2>&1; then
+    if ! python3 -m build -h 1>/dev/null 2>&1; then
         echo "Missing python package 'build'!"
         exit 1
     fi
@@ -145,7 +145,7 @@ function sanitizePath() {
 function build() {
     echo "building package"
     remove_target "dist/"
-    python -m build -s
+    python3 -m build -s
     find . -type d -name "*.egg-info" -exec rm -rf {} + 2> "/dev/null" || true
 }
 
@@ -204,7 +204,7 @@ function uninstall() {
     if [ "$NO_PIP_INSTALL" = false ]; then
         echo "uninstalling python package"
         if [ "$PIPX" = false ]; then
-            python -m pip uninstall -y fw-fanctrl 2> "/dev/null" || true
+            python3 -m pip uninstall -y fw-fanctrl 2> "/dev/null" || true
         else
             pipx --global uinistall fw-fanctrl 2> "/dev/null" || true
         fi
@@ -214,8 +214,8 @@ function uninstall() {
     if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
         remove_target "$DEST_DIR$PREFIX_DIR/bin/ectool"
     fi
-    remove_target "$DEST_DIR$SYSCONF_DIR/fw-fanctrl" 
-    remove_target "/run/fw-fanctrl" 
+    remove_target "$DEST_DIR$SYSCONF_DIR/fw-fanctrl"
+    remove_target "/run/fw-fanctrl"
 
     uninstall_legacy
 }
@@ -237,8 +237,8 @@ function install() {
     if [ "$NO_PIP_INSTALL" = false ]; then
         echo "installing python package"
         if [ "$PIPX" = false ]; then
-            python -m pip install --prefix="$PYTHON_PREFIX_DIRECTORY" dist/*.tar.gz
-            which python
+            python3 -m pip install --prefix="$PYTHON_PREFIX_DIRECTORY" dist/*.tar.gz
+            which python3
         else
             pipx install --global --force dist/*.tar.gz
         fi
