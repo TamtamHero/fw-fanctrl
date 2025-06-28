@@ -20,7 +20,7 @@ _You are a package manager? Add your platform here!_
 ## Description
 
 Fw-fanctrl is a simple Python CLI service that controls Framework Laptop's fan(s)
-speed according to a configurable speed/temperature curve.
+speed according to a configurable speed/temperature curve. In addition, there are configurable options for a fan speed "ramp up time" and "ramp down time" which will control how smoothly the fan speeds increase or decrease.
 
 Its default strategy aims for very quiet fan operation, but you can choose amongst the other provided strategies, or
 easily configure your own for a different comfort/performance trade-off.
@@ -37,20 +37,20 @@ If the service is paused or stopped, the fans will revert to their default behav
 ## Table of Content
 
 <!-- TOC -->
-* [fw-fanctrl](#fw-fanctrl)
-  * [Platforms](#platforms)
-  * [Description](#description)
-  * [Table of Content](#table-of-content)
-  * [Third-party projects](#third-party-projects)
-  * [Documentation](#documentation)
-  * [Installation](#installation)
-    * [Platforms](#platforms-1)
-    * [Requirements](#requirements)
-    * [Dependencies](#dependencies)
-    * [Instructions](#instructions)
-  * [Update](#update)
-  * [Uninstall](#uninstall)
-  * [Development Setup](#development-setup)
+- [fw-fanctrl](#fw-fanctrl)
+  - [Platforms](#platforms)
+  - [Description](#description)
+  - [Table of Content](#table-of-content)
+  - [Third-party projects](#third-party-projects)
+  - [Documentation](#documentation)
+  - [Installation](#installation)
+    - [Platforms](#platforms-1)
+    - [Requirements](#requirements)
+    - [Dependencies](#dependencies)
+    - [Instructions](#instructions)
+  - [Update](#update)
+  - [Uninstall](#uninstall)
+  - [Development Setup](#development-setup)
 <!-- TOC -->
 
 ## Third-party projects

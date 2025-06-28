@@ -121,6 +121,36 @@
                             "speed": 100
                         }
                     ]
+                },
+                "rampUpTime": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10,
+                    "description": "Time in seconds for the fan to ramp up to a higher speed."
+                },
+                "rampDownTime": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10,
+                    "description": "Time in seconds for the fan to ramp down to a lower speed."
+                },
+                "rampQuicklyTemperature": {
+                    "type": "integer",
+                    "minimum": 60,
+                    "maximum": 100,
+                    "description": "Temperature threshold (in degrees Celsius) at which fan speed ramps quickly."
+                },
+                "rampQuicklyTime": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "description": "Time in seconds for quickly ramping fan speed changes."
+                },
+                "criticalTemperature": {
+                    "type": "integer",
+                    "minimum": 70,
+                    "maximum": 100,
+                    "description": "Critical temperature threshold (in degrees Celsius) to begin ramping immediately."
                 }
             },
             "required": [
