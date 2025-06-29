@@ -10,7 +10,7 @@
             "rampDownTime": 4,
             "rampQuicklyTemperature": 85,
             "rampQuicklyTime": 1,
-            "criticalTemperature": 95,
+            "criticalTemperature": 100,
             "speedCurve": [
                 { "temp": 0, "speed": 0 },
                 { "temp": 45, "speed": 0 },
@@ -27,7 +27,7 @@
             "rampDownTime": 4,
             "rampQuicklyTemperature": 85,
             "rampQuicklyTime": 1,
-            "criticalTemperature": 95,
+            "criticalTemperature": 100,
             "speedCurve": [
                 { "temp": 0, "speed": 15 },
                 { "temp": 50, "speed": 15 },
@@ -44,7 +44,7 @@
             "rampDownTime": 4,
             "rampQuicklyTemperature": 85,
             "rampQuicklyTime": 1,
-            "criticalTemperature": 95,
+            "criticalTemperature": 100,
             "speedCurve": [
                 { "temp": 0, "speed": 15 },
                 { "temp": 40, "speed": 15 },
@@ -61,7 +61,7 @@
             "rampDownTime": 3,
             "rampQuicklyTemperature": 85,
             "rampQuicklyTime": 1,
-            "criticalTemperature": 95,
+            "criticalTemperature": 100,
             "speedCurve": [
                 { "temp": 0, "speed": 15 },
                 { "temp": 40, "speed": 15 },
@@ -78,7 +78,7 @@
             "rampDownTime": 2,
             "rampQuicklyTemperature": 85,
             "rampQuicklyTime": 0,
-            "criticalTemperature": 95,
+            "criticalTemperature": 100,
             "speedCurve": [
                 { "temp": 0, "speed": 15 },
                 { "temp": 40, "speed": 15 },
@@ -95,7 +95,7 @@
             "rampDownTime": 3,
             "rampQuicklyTemperature": 85,
             "rampQuicklyTime": 1,
-            "criticalTemperature": 95,
+            "criticalTemperature": 100,
             "speedCurve": [
                 { "temp": 0, "speed": 20 },
                 { "temp": 40, "speed": 30 },
@@ -110,7 +110,7 @@
             "rampDownTime": 3,
             "rampQuicklyTemperature": 85,
             "rampQuicklyTime": 1,
-            "criticalTemperature": 95,
+            "criticalTemperature": 100,
             "speedCurve": [
                 { "temp": 0, "speed": 20 },
                 { "temp": 40, "speed": 50 },
