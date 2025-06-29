@@ -97,7 +97,7 @@ class FanController:
             # speed decrease, change gradually over ramp_down_time
             ramp_time = current_strategy.ramp_down_time or 0
         elif ramp_quickly:
-            # ramping up quickly
+            # speed increase, ramping quickly
             ramp_time = current_strategy.ramp_quickly_time or 0
         else:
             # speed increase, increase gradually over ramp_up_time
@@ -186,10 +186,11 @@ class FanController:
         return float(round(sum(sliced_temp_history) / len(sliced_temp_history), 2))
 
     def get_effective_temperature(self, current_temp, time_interval):
-        # the moving average temperature count for 2/3 of the effective temperature
         if current_temp >= self.get_current_strategy().critical_temperature:
-            # ignore moving average if we have hit critical temperature so we immediately ramp
-            return current_temp
+            # if we have hit critical temperature, then weight the moving average
+            # to cause a fast increase in fan speed
+            self.temp_history.extend([current_temp] * time_interval)
+        # the moving average temperature counts for 2/3 of the effective temperature
         return float(round(min(self.get_moving_average_temperature(time_interval), current_temp), 2))
 
     def adapt_speed(self, current_temp):
