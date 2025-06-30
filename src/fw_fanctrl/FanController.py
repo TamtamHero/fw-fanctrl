@@ -31,28 +31,36 @@ class FanSpeedController(threading.Thread):
         self.desired_speed = 0
         self.ramp_duration = 2
         self.step_time = 0.2
+        self.new_speed_requested = threading.Event()
         self.reset = False
 
     def set_speed(self, speed, ramp_duration):
         if speed != self.current_speed:
             self.desired_speed = speed
             self.ramp_duration = ramp_duration
-            self.reset = True
+            self.new_speed_requested.set()
+
+    def _ramp_to_desired_speed(self):
+        self.new_speed_requested.wait()
+        self.new_speed_requested.clear()
+
+        steps = int(self.ramp_duration / self.step_time) or 1
+        step_change = (self.desired_speed - self.current_speed) / steps
+
+        _current_speed_float = float(self.current_speed)
+        for _ in range(steps):
+            if self.new_speed_requested.is_set():
+                # since desired speed has changed, cancel this ramp and start again
+                break
+            _current_speed_float += step_change
+            _current_speed_int = int(_current_speed_float)
+            self.current_speed = _current_speed_int
+            self.hardware_controller.set_speed(_current_speed_int)
+            sleep(self.step_time)
 
     def run(self):
         while True:
-            steps = int(self.ramp_duration / self.step_time) or 1
-            step_change = round((self.desired_speed - self.current_speed) / steps)
-
-            for _ in range(steps):
-                if self.reset:
-                    # we have a new desired speed so cancel the current ramp-up/down
-                    self.reset = False
-                    break
-                new_speed = self.current_speed + step_change
-                self.hardware_controller.set_speed(new_speed)
-                self.current_speed = new_speed
-                sleep(self.step_time)
+            self._ramp_to_desired_speed()
 
 
 class FanController:
