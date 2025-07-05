@@ -21,9 +21,52 @@ from fw_fanctrl.exception.InvalidStrategyException import InvalidStrategyExcepti
 from fw_fanctrl.exception.UnknownCommandException import UnknownCommandException
 
 
+class FanSpeedController(threading.Thread):
+    def __init__(self, hardware_controller):
+        super().__init__()
+        self.daemon = True
+
+        self.hardware_controller = hardware_controller
+        self.current_speed = 0
+        self.desired_speed = 0
+        self.ramp_duration = 2
+        self.step_time = 0.2
+        self.new_speed_requested = threading.Event()
+        self.reset = False
+
+    def set_speed(self, speed, ramp_duration):
+        if speed != self.current_speed:
+            self.desired_speed = speed
+            self.ramp_duration = ramp_duration
+            self.new_speed_requested.set()
+
+    def _ramp_to_desired_speed(self):
+        self.new_speed_requested.wait()
+        self.new_speed_requested.clear()
+
+        steps = int(self.ramp_duration / self.step_time) or 1
+        step_change = (self.desired_speed - self.current_speed) / steps
+
+        _current_speed_float = float(self.current_speed)
+        for _ in range(steps):
+            if self.new_speed_requested.is_set():
+                # since desired speed has changed, cancel this ramp and start again
+                break
+            _current_speed_float += step_change
+            _current_speed_int = int(_current_speed_float)
+            self.current_speed = _current_speed_int
+            self.hardware_controller.set_speed(_current_speed_int)
+            sleep(self.step_time)
+
+    def run(self):
+        while True:
+            self._ramp_to_desired_speed()
+
+
 class FanController:
     hardware_controller = None
     socket_controller = None
+    fan_speed_controller = None
     configuration = None
     overwritten_strategy = None
     output_format = None
@@ -42,6 +85,9 @@ class FanController:
 
         self.output_format = output_format
 
+        self.fan_speed_controller = FanSpeedController(hardware_controller)
+        self.fan_speed_controller.start()
+
         t = threading.Thread(
             target=self.socket_controller.start_server_socket,
             args=[self.command_manager],
@@ -52,9 +98,21 @@ class FanController:
     def get_actual_temperature(self):
         return self.hardware_controller.get_temperature()
 
-    def set_speed(self, speed):
-        self.speed = speed
-        self.hardware_controller.set_speed(speed)
+    def set_speed(self, desired_speed, ramp_quickly=False):
+        current_strategy = self.get_current_strategy()
+
+        if desired_speed < self.speed:
+            # speed decrease, change gradually over ramp_down_time
+            ramp_time = current_strategy.ramp_down_time or 0
+        elif ramp_quickly:
+            # speed increase, ramping quickly
+            ramp_time = current_strategy.ramp_quickly_time or 0
+        else:
+            # speed increase, increase gradually over ramp_up_time
+            ramp_time = current_strategy.ramp_up_time or 0
+
+        self.fan_speed_controller.set_speed(desired_speed, ramp_time)
+        self.speed = desired_speed
 
     def is_on_ac(self):
         return self.hardware_controller.is_on_ac()
@@ -136,7 +194,11 @@ class FanController:
         return float(round(sum(sliced_temp_history) / len(sliced_temp_history), 2))
 
     def get_effective_temperature(self, current_temp, time_interval):
-        # the moving average temperature count for 2/3 of the effective temperature
+        if current_temp >= self.get_current_strategy().critical_temperature:
+            # if we have hit critical temperature, then weight the moving average
+            # to cause a fast increase in fan speed
+            self.temp_history.extend([current_temp] * time_interval)
+        # the moving average temperature counts for 2/3 of the effective temperature
         return float(round(min(self.get_moving_average_temperature(time_interval), current_temp), 2))
 
     def adapt_speed(self, current_temp):
@@ -157,7 +219,10 @@ class FanController:
             slope = (max_point["speed"] - min_point["speed"]) / (max_point["temp"] - min_point["temp"])
             new_speed = int(min_point["speed"] + (current_temp - min_point["temp"]) * slope)
         if self.active:
-            self.set_speed(new_speed)
+            ramp_quickly = False
+            if current_temp >= self.get_current_strategy().ramp_quickly_temperature:
+                ramp_quickly = True
+            self.set_speed(new_speed, ramp_quickly)
 
     def dump_details(self):
         current_strategy = self.get_current_strategy()
@@ -184,6 +249,7 @@ class FanController:
             while True:
                 if self.active:
                     temp = self.get_actual_temperature()
+
                     # update fan speed every "fanSpeedUpdateFrequency" seconds
                     if self.timecount % self.get_current_strategy().fan_speed_update_frequency == 0:
                         self.adapt_speed(temp)
