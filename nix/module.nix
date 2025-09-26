@@ -79,15 +79,27 @@ in
   };
 
   config = mkIf cfg.enable {
-    # Install package
-    environment.systemPackages = with pkgs; [
-      fw-fanctrl
-      fw-ectool
-    ];
+    # Warning
+    warnings = ["The fw-fanctrl Flake will be deprecated by the release of NixOS 25-11! Please switch to the modules `hardware.fw-fanctrl` from nixpkgs!"];
 
-    # Create config
-    environment.etc."fw-fanctrl/config.json" = {
-      text = builtins.toJSON cfg.config;
+    # Install package
+    environment = {
+      systemPackages = with pkgs; [
+        fw-fanctrl
+        fw-ectool
+      ];
+      etc = {
+        # Create config
+        "fw-fanctrl/config.json" = {
+          text = builtins.toJSON cfg.config;
+        };
+        # Create suspend config
+        "systemd/system-sleep/fw-fanctrl-suspend.sh".source = pkgs.writeShellScript "fw-fanctrl-suspend" (
+           builtins.replaceStrings [ ''/usr/bin/python3 "%PREFIX_DIRECTORY%/bin/fw-fanctrl"'' "/bin/bash" ] [ "${fw-fanctrl}/bin/fw-fanctrl" "" ] (
+             builtins.readFile ../services/system-sleep/fw-fanctrl-suspend
+           )
+        );
+      };
     };
 
     # Create Service
@@ -103,12 +115,5 @@ in
       enable = true;
       wantedBy = [ "multi-user.target" ];
     };
-
-    # Create suspend config
-    environment.etc."systemd/system-sleep/fw-fanctrl-suspend.sh".source = pkgs.writeShellScript "fw-fanctrl-suspend" (
-      builtins.replaceStrings [ ''/usr/bin/python3 "%PREFIX_DIRECTORY%/bin/fw-fanctrl"'' "/bin/bash" ] [ "${fw-fanctrl}/bin/fw-fanctrl" "" ] (
-        builtins.readFile ../services/system-sleep/fw-fanctrl-suspend
-      )
-    );
   };
 }
