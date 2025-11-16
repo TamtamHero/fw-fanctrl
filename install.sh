@@ -94,8 +94,6 @@ if [ -n "$EFFECTIVE_INSTALLATION_DIRECTORY_OVERRIDE" ]; then
     INSTALLATION_DIRECTORY=$EFFECTIVE_INSTALLATION_DIRECTORY_OVERRIDE
 fi
 
-PYTHON_SCRIPT_INSTALLATION_PATH="$INSTALLATION_DIRECTORY/fw-fanctrl"
-
 if ! python3 -h 1>/dev/null 2>&1; then
     echo "Missing package 'python3'!"
     exit 1
@@ -242,7 +240,13 @@ function install() {
         else
             pipx install --global --force dist/*.tar.gz
         fi
-        which 'fw-fanctrl' 2> "/dev/null" || true
+        PYTHON_SCRIPT_INSTALLATION_PATH=$(which 'fw-fanctrl' 2> "/dev/null" || true)
+        if [ -n "$PYTHON_SCRIPT_INSTALLATION_PATH" ]; then
+            echo "successfully installed at $PYTHON_SCRIPT_INSTALLATION_PATH"
+        else
+            echo "Installation failed. No installation location found. Please consider running 'sudo ./install.sh --remove', if you do not wish to proceed with the installation."
+            exit 1
+        fi
         remove_target "dist/"
     fi
 
