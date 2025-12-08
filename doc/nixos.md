@@ -1,10 +1,10 @@
 # Module and Package
-For [NixOS](https://nixos.org/) verion >25.05 this package (derivation) is in the offical [Nixpkgs](https://github.com/NixOS/nixpkgs/).
+For [NixOS](https://nixos.org/) this package (derivation) is in the offical [Nixpkgs](https://github.com/NixOS/nixpkgs/).
 In addition we created a module to configure it via nix.
 
 NixOS Search:
-- [Module](https://search.nixos.org/options?channel=unstable&show=hardware.fw-fanctrl.enable&from=0&size=50&sort=relevance&type=packages&query=fw-fanctrl)
-- [Package](https://search.nixos.org/packages?channel=unstable&show=fw-fanctrl&from=0&size=50&sort=relevance&type=packages&query=fw-fanctrl)
+- [Module](https://search.nixos.org/options?channel=25.11&show=hardware.fw-fanctrl)
+- [Package](https://search.nixos.org/packages?channel=25.11&show=fw-fanctrl)
 
 # Installation
 Here is an example how you could configure `fw-fanctrl`:
