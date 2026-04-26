@@ -1,0 +1,10 @@
+[Unit]
+Description=Framework Fan Controller Suspend Helper
+
+[Service]
+Type=simple
+ExecStart="%PYTHON_SCRIPT_INSTALLATION_PATH%" pause
+ExecStop="%PYTHON_SCRIPT_INSTALLATION_PATH%" resume
+
+[Install]
+WantedBy=suspend.target
