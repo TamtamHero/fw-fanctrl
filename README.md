@@ -73,10 +73,10 @@ More documentation could be found [here](./doc/README.md).
 
 ### Platforms
 
-| Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Package&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |  Documentation                                                                                                     |
-|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| Linux&nbsp;/&nbsp;Global                                                                                         | [installation&nbsp;script](https://github.com/TamtamHero/fw-fanctrl/blob/main/install.sh)                           | [instructions](https://github.com/TamtamHero/fw-fanctrl/tree/main?tab=readme-ov-file#instructions)                |
-| NixOS                                                                                                 | [derivation](https://search.nixos.org/packages?channel=25.11&show=fw-fanctrl&from=0&size=50&sort=relevance&type=packages) / [module](https://search.nixos.org/options?channel=25.11&show=hardware.fw-fanctrl)|[doc/nixos](https://github.com/TamtamHero/fw-fanctrl/tree/main/doc/nixos.md)|
+| Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Package&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;                                                                                           | Documentation                                                                                      |
+|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| Linux&nbsp;/&nbsp;Global                                                                                         | [installation&nbsp;script](https://github.com/TamtamHero/fw-fanctrl/blob/main/install.sh)                                                                                                                     | [instructions](https://github.com/TamtamHero/fw-fanctrl/tree/main?tab=readme-ov-file#instructions) |
+| NixOS                                                                                                            | [derivation](https://search.nixos.org/packages?channel=25.11&show=fw-fanctrl&from=0&size=50&sort=relevance&type=packages) / [module](https://search.nixos.org/options?channel=25.11&show=hardware.fw-fanctrl) | [doc/nixos](https://github.com/TamtamHero/fw-fanctrl/tree/main/doc/nixos.md)                       |
 
 **Third-party**
 
@@ -114,30 +114,27 @@ git clone "https://github.com/TamtamHero/fw-fanctrl.git"
 curl -L "https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip" -o "./fw-fanctrl.zip" && unzip "./fw-fanctrl.zip" -d "./fw-fanctrl" && rm -rf "./fw-fanctrl.zip"
 ```
 
-Then run the installation script with administrator privileges
+Run the installation script with administrator privileges
 
-> ⚠ **Linux Mint** users should add the `--effective-installation-dir "/usr/local/bin"` option.
->
-> ⚠ **Fedora Atomic desktops** users should add the `--prefix-dir "/var/usrlocal/"` option.
+> ⚠ **Linux Mint** and **Atomic desktops** users should add the `--prefix-dir "/usr/local"` option.
 
-```bash
+```shell
 sudo ./install.sh
 ```
 
 You can add a number of arguments to the installation command to suit your needs
 
-| argument                                                                                          | description                                                                                     |
-|---------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
-| `--dest-dir <installation destination directory (defaults to /)>`                                 | specify an installation destination directory                                                   |
-| `--prefix-dir <installation prefix directory (defaults to /usr)>`                                 | specify an installation prefix directory                                                        |
-| `--sysconf-dir <system configuration destination directory (defaults to /etc)>`                   | specify a default configuration directory                                                       |
-| `--ignore-tool <tool id (e.g. framework_tool)>`                                                   | ignore tool installation/uninstallation and service activation/deactivation                     |
-| `--no-post-install`                                                                               | disable post-install process                                                                    |
-| `--no-pre-uninstall`                                                                              | disable pre-uninstall process                                                                   |
-| `--no-pip-install`                                                                                | disable the pip installation (should be done manually instead)                                  |
-| `--pipx`                                                                                          | install using pipx instead of pip (useful if os does not allow global pip install like debian ) |
-| `--python-prefix-dir <python installation prefix directory (defaults to [dest-dir][prefix-dir])>` | specify the python prefix directory for package installation                                    |
-| `--effective-installation-dir <directory (defaults to [python-prefix-dir]/bin)>`                  | overrides the installation in which our `fw-fanctrl` executable is                              |
+| argument                                                                         | description                                                                     |
+|----------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `--prefix-dir <installation prefix directory (defaults to /usr)>`                | specify an installation prefix directory                                        |
+| `--sysconf-dir <system configuration destination directory (defaults to /etc)>`  | specify a default configuration directory                                       |
+| `--ignore-tool <tool id (e.g. framework_tool)>`                                  | ignore tool installation/uninstallation and service activation/deactivation     |
+| `--no-post-install`                                                              | disable post-install process                                                    |
+| `--no-pre-uninstall`                                                             | disable pre-uninstall process                                                   |
+| `--no-sudo`                                                                      | do not invoke `sudo`, you must run the script with the required privileges      |
+| `--manual-env`                                                                   | do not create virtualenv or install dependencies, you must manage them yourself |
+| `--remove`                                                                       | uninstall                                                                       |
+| `--effective-installation-dir <directory (defaults to [python-prefix-dir]/bin)>` | overrides the installation in which our `fw-fanctrl` executable is              |
 
 ## Update
 
@@ -159,7 +156,9 @@ sudo ./install.sh --remove
 Install the development dependencies with the following command:
 
 ```shell
-pip install -e ".[dev]"
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -e ".[dev]"
 ```
 
 The project uses the [black](https://github.com/psf/black) formatter.

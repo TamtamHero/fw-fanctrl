@@ -8,8 +8,8 @@ After=fw-fanctrl.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart="%PYTHON_SCRIPT_INSTALLATION_PATH%" pause
-ExecStop="%PYTHON_SCRIPT_INSTALLATION_PATH%" resume
+ExecStart="%EXECUTABLE_INSTALLATION_PATH%" pause
+ExecStop="%EXECUTABLE_INSTALLATION_PATH%" resume
 
 [Install]
 WantedBy=sleep.target
