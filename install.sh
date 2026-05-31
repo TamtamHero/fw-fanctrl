@@ -132,7 +132,6 @@ SERVICES_DIR="./services"
 SERVICE_EXTENSION=".service"
 
 SERVICES="$(cd "$SERVICES_DIR" && find . -maxdepth 1 -maxdepth 1 -type f -name "*$SERVICE_EXTENSION" -exec basename {} "$SERVICE_EXTENSION" \;)"
-SERVICES_SUBCONFIGS="$(cd "$SERVICES_DIR" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
 
 function sanitizePath() {
     local SANITIZED_PATH="$1"
@@ -186,19 +185,6 @@ function uninstall() {
         SERVICE=$(sanitizePath "$SERVICE")
         # be EXTRA CAREFUL about the validity of the paths (dont wanna delete something important, right?... O_O)
         remove_target "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION"
-    done
-
-    # remove program services sub-configurations based on the sub-configurations present in the './services' folder
-    echo "removing services sub-configurations"
-    for SERVICE in $SERVICES_SUBCONFIGS ; do
-        SERVICE=$(sanitizePath "$SERVICE")
-        echo "removing sub-configurations for [$SERVICE]"
-        SUBCONFIGS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -type f)"
-        for SUBCONFIG in $SUBCONFIGS ; do
-            SUBCONFIG=$(sanitizePath "$SUBCONFIG")
-            echo "removing '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
-            remove_target "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG"
-        done
     done
 
     if [ "$NO_PIP_INSTALL" = false ]; then
@@ -268,28 +254,6 @@ function install() {
         cat "$SERVICES_DIR/$SERVICE$SERVICE_EXTENSION" | sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | sed -e "s/%SYSCONF_DIRECTORY%/${SYSCONF_DIR//\//\\/}/" | sed -e "s/%NO_BATTERY_SENSOR_OPTION%/${NO_BATTERY_SENSOR_OPTION}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION" > "/dev/null"
     done
 
-    # add program services sub-configurations based on the sub-configurations present in the './services' folder
-    echo "adding services sub-configurations"
-    for SERVICE in $SERVICES_SUBCONFIGS ; do
-        SERVICE=$(sanitizePath "$SERVICE")
-        echo "adding sub-configurations for [$SERVICE]"
-        SUBCONFIG_FOLDERS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
-        # ensure folders exists
-        mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE"
-        for SUBCONFIG_FOLDER in $SUBCONFIG_FOLDERS ; do
-            SUBCONFIG_FOLDER=$(sanitizePath "$SUBCONFIG_FOLDER")
-            echo "creating '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER'"
-            mkdir -p "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG_FOLDER"
-        done
-        SUBCONFIGS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -type f)"
-        # add sub-configurations
-        for SUBCONFIG in $SUBCONFIGS ; do
-            SUBCONFIG=$(sanitizePath "$SUBCONFIG")
-            echo "adding '$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
-            cat "$SERVICES_DIR/$SERVICE/$SUBCONFIG" | sed -e "s/%PYTHON_SCRIPT_INSTALLATION_PATH%/${PYTHON_SCRIPT_INSTALLATION_PATH//\//\\/}/" | tee "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG" > "/dev/null"
-            chmod +x "$DEST_DIR$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG"
-        done
-    done
     if [ "$SHOULD_POST_INSTALL" = true ]; then
         if ! ./post-install.sh --dest-dir "$DEST_DIR" --sysconf-dir "$SYSCONF_DIR" "$([ "$NO_SUDO" = true ] && echo "--no-sudo")"; then
             echo "Failed to run ./post-install.sh. Run the script with root permissions,"
