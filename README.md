@@ -14,6 +14,7 @@
 
 [![Static Badge](https://img.shields.io/badge/Arch%20Linux-1793D1?style=flat&logo=archlinux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Faur.archlinux.org%2Fpackages%2Ffw-fanctrl-git)](https://aur.archlinux.org/packages/fw-fanctrl-git)
 [![Static Badge](https://img.shields.io/badge/Fedora-51A2DA?style=flat&logo=fedora&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2Ftulilirockz%2Ffw-fanctrl-rpm)](https://github.com/tulilirockz/fw-fanctrl-rpm)
+[![Static Badge](https://img.shields.io/badge/Void%20Linux-478061?style=flat&logo=voidlinux&logoColor=FFFFFF&label=Platform&link=https%3A%2F%2Fgithub.com%2FMeganerdNL%2Ffw-fanctrl-runit-files)](https://github.com/MeganerdNL/fw-fanctrl-runit-files)
 
 _You are a package manager? Add your platform here!_
 
