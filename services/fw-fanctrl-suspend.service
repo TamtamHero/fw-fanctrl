@@ -1,0 +1,13 @@
+[Unit]
+Description=Framework Fan Controller sleep hook
+Before=sleep.target
+StopWhenUnneeded=yes
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart="%PYTHON_SCRIPT_INSTALLATION_PATH%" pause
+ExecStop="%PYTHON_SCRIPT_INSTALLATION_PATH%" resume
+
+[Install]
+WantedBy=sleep.target
