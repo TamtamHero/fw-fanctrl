@@ -27,7 +27,7 @@ never need those.
 | \<strategy>                 | yes      |                | the default strategy | the name of the strategy to use                                                   |
 | --config                    | yes      | \[CONFIG_PATH] |                      | the configuration file path                                                       |
 | --silent, -s                | yes      |                |                      | disable printing speed/temp status to stdout                                      |
-| --hardware-controller, --hc | yes      | ectool         | ectool               | the hardware controller to use for fetching and setting the temp and fan(s) speed |
+| --hardware-controller, --hc | yes      | framework_tool | framework_tool       | the hardware controller to use for fetching and setting the temp and fan(s) speed |
 | --no-battery-sensors        | yes      |                |                      | disable checking battery temperature sensors (for mainboards without batteries)   |
 
 **use**

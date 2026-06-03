@@ -76,13 +76,8 @@ class CommandParser:
                 "--hc",
                 help="the hardware controller to use for fetching and setting the temp and fan(s) speed",
                 type=str,
-                choices=["ectool"],
-                default="ectool",
-            )
-            run_command.add_argument(
-                "--no-battery-sensors",
-                help="disable checking battery temperature sensors",
-                action="store_true",
+                choices=["framework_tool"],
+                default="framework_tool",
             )
 
         use_command = commands_sub_parser.add_parser("use", description="change the current strategy")
@@ -155,8 +150,8 @@ class CommandParser:
             "--hardware-controller",
             "--hc",
             type=str,
-            choices=["ectool"],
-            default="ectool",
+            choices=["framework_tool"],
+            default="framework_tool",
         )
         command_group.add_argument(
             "--socket-controller",
