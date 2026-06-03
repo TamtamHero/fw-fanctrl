@@ -134,7 +134,6 @@ You can add a number of arguments to the installation command to suit your needs
 | `--ignore-tool <tool id (e.g. framework_tool)>`                                                   | ignore tool installation/uninstallation and service activation/deactivation                     |
 | `--no-post-install`                                                                               | disable post-install process                                                                    |
 | `--no-pre-uninstall`                                                                              | disable pre-uninstall process                                                                   |
-| `--no-battery-sensors`                                                                            | disable checking battery temperature sensors                                                    |
 | `--no-pip-install`                                                                                | disable the pip installation (should be done manually instead)                                  |
 | `--pipx`                                                                                          | install using pipx instead of pip (useful if os does not allow global pip install like debian ) |
 | `--python-prefix-dir <python installation prefix directory (defaults to [dest-dir][prefix-dir])>` | specify the python prefix directory for package installation                                    |
