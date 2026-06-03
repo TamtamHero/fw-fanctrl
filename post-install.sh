@@ -73,6 +73,8 @@ for SERVICE in $SERVICES ; do
     SERVICE=$(sanitizePath "$SERVICE")
     echo "enabling [$SERVICE]"
     systemctl enable "$SERVICE"
-    echo "starting [$SERVICE]"
-    systemctl start "$SERVICE"
+    if [[ $SERVICE != *-suspend ]]; then
+        echo "starting [$SERVICE]"
+        systemctl start "$SERVICE"
+    fi
 done

@@ -2,6 +2,8 @@
 Description=Framework Fan Controller sleep hook
 Before=sleep.target
 StopWhenUnneeded=yes
+Requires=fw-fanctrl.service
+After=fw-fanctrl.service
 
 [Service]
 Type=oneshot
