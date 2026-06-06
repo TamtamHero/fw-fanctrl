@@ -4,7 +4,7 @@ source ./scripts/shared/common.sh
 
 # Argument parsing
 SHORT=r,p:,s:,h
-LONG=remove,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-pre-install,no-post-install,no-sudo,manual-env,effective-installation-dir:,ignore-tool:,help
+LONG=remove,prefix-dir:,sysconf-dir:,no-ectool,no-pre-uninstall,no-pre-install,no-post-install,no-sudo,manual-env,no-build,effective-installation-dir:,ignore-tool:,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -18,6 +18,7 @@ SHOULD_PRE_INSTALL=true
 SHOULD_POST_INSTALL=true
 SHOULD_REMOVE=false
 IS_MANUAL_ENV=false
+SHOULD_BUILD=true
 NO_SUDO=false
 EFFECTIVE_INSTALLATION_DIRECTORY_OVERRIDE=
 
@@ -54,6 +55,9 @@ while true; do
     '--manual-env')
         IS_MANUAL_ENV=true
         ;;
+    '--no-build')
+        SHOULD_BUILD=false
+        ;;
     '--effective-installation-dir')
         EFFECTIVE_INSTALLATION_DIRECTORY_OVERRIDE=$2
         shift
@@ -63,7 +67,7 @@ while true; do
         shift
         ;;
     '--help' | '-h')
-        echo "Usage: $0 [--remove,-r] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s <system configuration destination directory (defaults to $SYSCONF_DIR)>] [--ignore-tool <tool id to ignore (e.g. 'framework_tool')>] [--no-pre-install] [--no-post-install] [--no-pre-uninstall] [--no-sudo] [--manual-env]" 1>&2
+        echo "Usage: $0 [--remove,-r] [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s <system configuration destination directory (defaults to $SYSCONF_DIR)>] [--ignore-tool <tool id to ignore (e.g. 'framework_tool')>] [--no-pre-install] [--no-post-install] [--no-pre-uninstall] [--no-sudo] [--manual-env] [--no-build]" 1>&2
         exit 0
         ;;
     --)
@@ -123,17 +127,17 @@ function uninstall() {
 }
 
 function install() {
-    BUILD_ARGS=()
-    if [ "$IS_MANUAL_ENV" = true ]; then
-        BUILD_ARGS+=(--manual-env)
-    fi
+    if [ "$SHOULD_BUILD" = true ]; then
+        BUILD_ARGS=()
+        if [ "$IS_MANUAL_ENV" = true ]; then
+            BUILD_ARGS+=(--manual-env)
+        fi
 
-    if ! sh ./scripts/build.sh "${BUILD_ARGS[@]}"; then
-        echo "Failed to run ./scripts/build.sh, aborting."
-        exit 1
+        if ! sh ./scripts/build.sh "${BUILD_ARGS[@]}"; then
+            echo "Failed to run ./scripts/build.sh, aborting."
+            exit 1
+        fi
     fi
-
-    which python
 
     if [ "$SHOULD_PRE_INSTALL" = true ]; then
         PRE_INSTALL_ARGS=()
@@ -154,7 +158,7 @@ function install() {
         --effective-installation-dir "$INSTALLATION_DIRECTORY"
     )
     for TOOL in "${IGNORED_TOOLS[@]}"; do
-        PRIVILEGED_UNINSTALL_ARGS+=(--ignore-tool "$TOOL")
+        PRIVILEGED_INSTALL_ARGS+=(--ignore-tool "$TOOL")
     done
     if [ "$NO_SUDO" = true ]; then
         PRIVILEGED_INSTALL_ARGS+=(--no-sudo)

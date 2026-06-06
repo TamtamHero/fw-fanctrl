@@ -48,7 +48,8 @@ If the service is paused or stopped, the fans will revert to their default behav
     * [Platforms](#platforms-1)
     * [Requirements](#requirements)
     * [Dependencies](#dependencies)
-    * [Instructions](#instructions)
+    * [Prebuilt binary install](#prebuilt-binary-install)
+    * [Build from source](#build-from-source)
   * [Update](#update)
   * [Uninstall](#uninstall)
   * [Development Setup](#development-setup)
@@ -101,7 +102,23 @@ do this manually.
 |------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
 | FrameworkComputer@framework-system (framework_tool)                                                              | v0.6.4                                                                                                                    | [https://github.com/FrameworkComputer/framework-system](https://github.com/FrameworkComputer/framework-system)   | `--ignore-tool framework_tool`                                                                   |
 
-### Instructions
+### Prebuilt binary install
+
+Install the latest prebuilt release with:
+
+```shell
+curl -fsSL "https://raw.githubusercontent.com/TamtamHero/fw-fanctrl/main/scripts/install-prebuilt.sh" | sh
+```
+
+> ⚠ **Linux Mint** and **Atomic desktops** users should add the `--prefix-dir "/usr/local"` option.
+
+```shell
+curl -fsSL "https://raw.githubusercontent.com/TamtamHero/fw-fanctrl/main/scripts/install-prebuilt.sh" | sh -s -- --prefix-dir "/usr/local"
+```
+
+You can pass the same installation arguments as the source installer.
+
+### Build from source
 
 [Download the repo](https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip) and extract it manually, or
 download/clone it with the appropriate tools:
@@ -116,10 +133,14 @@ curl -L "https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip" -
 
 Run the installation script with administrator privileges
 
+```shell
+./install.sh
+```
+
 > ⚠ **Linux Mint** and **Atomic desktops** users should add the `--prefix-dir "/usr/local"` option.
 
 ```shell
-./install.sh
+./install.sh --prefix-dir "/usr/local"
 ```
 
 You can add a number of arguments to the installation command to suit your needs
@@ -131,6 +152,7 @@ You can add a number of arguments to the installation command to suit your needs
 | `--sysconf-dir <system configuration destination directory (defaults to /etc)>` | specify a default configuration directory                                       |
 | `--ignore-tool <tool id (e.g. framework_tool)>`                                 | ignore tool installation/uninstallation and service activation/deactivation     |
 | `--manual-env`                                                                  | do not create virtualenv or install dependencies, you must manage them yourself |
+| `--no-build`                                                                    | do not build, you must place the executable here `./build/nuitka/fw-fanctrl`    |
 | `--no-sudo`                                                                     | do not invoke `sudo`, you must run the script with the required privileges      |
 | `--no-pre-install`                                                              | disable pre-install process                                                     |
 | `--no-post-install`                                                             | disable post-install process                                                    |

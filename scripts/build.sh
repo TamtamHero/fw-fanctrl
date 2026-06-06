@@ -16,7 +16,6 @@ while true; do
   case "$1" in
     '--manual-env')
         IS_MANUAL_ENV=true
-        shift
         ;;
     '--help' | '-h')
         echo "Usage: $0 [--manual-env]" 1>&2

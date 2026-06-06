@@ -82,7 +82,7 @@ jobs:
 
       - name: Build native Nuitka artifact
         run: |
-          sh ./scripts/build.sh --manual-env
+          bash ./scripts/build.sh --manual-env
           mkdir -p dist
           cp build/nuitka/fw-fanctrl "dist/fw-fanctrl-v${{ needs.tag.outputs.current_version }}-${{ matrix.artifact_system }}-${{ matrix.artifact_arch }}"
 
