@@ -28,7 +28,7 @@ easily configure your own for a different comfort/performance trade-off.
 
 It also is possible to assign separate strategies depending on whether the laptop is charging or discharging.
 
-Under the hood, it uses [ectool](https://gitlab.howett.net/DHowett/ectool)
+Under the hood, it uses [framework_tool](https://github.com/FrameworkComputer/framework-system)
 to change parameters in Framework's embedded controller (EC).
 
 It is compatible with all 13" and 16" models, both AMD/Intel CPUs, with or without a discrete GPU.
@@ -97,9 +97,9 @@ More documentation could be found [here](./doc/README.md).
 Dependencies are downloaded and installed automatically, but can be excluded from the installation script if you wish to
 do this manually.
 
-| Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Version&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Url &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Sub&#8209;dependencies | Exclusion&nbsp;argument |
-|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|------------------------|-------------------------|
-| DHowett@ectool                                                                                                   | build#899                                                                                                                 | [https://gitlab.howett.net/DHowett/ectool](https://gitlab.howett.net/DHowett/ectool)                             | libftdi                | `--no-ectool`           |
+| Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Version&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Url &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Exclusion&nbsp;argument &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| FrameworkComputer@framework-system (framework_tool)                                                              | v0.6.4                                                                                                                    | [https://github.com/FrameworkComputer/framework-system](https://github.com/FrameworkComputer/framework-system)   | `--ignore-tool framework_tool`                                                                   |
 
 ### Instructions
 
@@ -131,10 +131,9 @@ You can add a number of arguments to the installation command to suit your needs
 | `--dest-dir <installation destination directory (defaults to /)>`                                 | specify an installation destination directory                                                   |
 | `--prefix-dir <installation prefix directory (defaults to /usr)>`                                 | specify an installation prefix directory                                                        |
 | `--sysconf-dir <system configuration destination directory (defaults to /etc)>`                   | specify a default configuration directory                                                       |
-| `--no-ectool`                                                                                     | disable ectool installation and service activation                                              |
+| `--ignore-tool <tool id (e.g. framework_tool)>`                                                   | ignore tool installation/uninstallation and service activation/deactivation                     |
 | `--no-post-install`                                                                               | disable post-install process                                                                    |
 | `--no-pre-uninstall`                                                                              | disable pre-uninstall process                                                                   |
-| `--no-battery-sensors`                                                                            | disable checking battery temperature sensors                                                    |
 | `--no-pip-install`                                                                                | disable the pip installation (should be done manually instead)                                  |
 | `--pipx`                                                                                          | install using pipx instead of pip (useful if os does not allow global pip install like debian ) |
 | `--python-prefix-dir <python installation prefix directory (defaults to [dest-dir][prefix-dir])>` | specify the python prefix directory for package installation                                    |

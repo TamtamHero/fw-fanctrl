@@ -6,7 +6,7 @@ from fw_fanctrl.FanController import FanController
 from fw_fanctrl.dto.command_result.CommandResult import CommandResult
 from fw_fanctrl.enum.CommandStatus import CommandStatus
 from fw_fanctrl.enum.OutputFormat import OutputFormat
-from fw_fanctrl.hardwareController.EctoolHardwareController import EctoolHardwareController
+from fw_fanctrl.hardwareController.FrameworkToolHardwareController import FrameworkToolHardwareController
 from fw_fanctrl.socketController.UnixSocketController import UnixSocketController
 
 
@@ -23,9 +23,9 @@ def main():
         socket_controller = UnixSocketController()
 
     if args.command == "run":
-        hardware_controller = EctoolHardwareController(no_battery_sensor_mode=args.no_battery_sensors)
-        if args.hardware_controller == "ectool":
-            hardware_controller = EctoolHardwareController(no_battery_sensor_mode=args.no_battery_sensors)
+        hardware_controller = FrameworkToolHardwareController()
+        if args.hardware_controller == "framework_tool":
+            hardware_controller = FrameworkToolHardwareController()
 
         fan = FanController(
             hardware_controller=hardware_controller,
