@@ -19,10 +19,10 @@ The service uses these configuration files by default:
 - Main configuration: `/etc/fw-fanctrl/config.json`
 - JSON Schema: `/etc/fw-fanctrl/config.schema.json`
 
-For custom installations using dest-dir or sysconf-dir parameters:
+For custom installations using the `--sysconf-dir` parameter:
 
-- `[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.json`
-- `[dest-dir(/)][sysconf-dir(/etc)]/fw-fanctrl/config.schema.json`
+- `[sysconf-dir]/fw-fanctrl/config.json`
+- `[sysconf-dir]/fw-fanctrl/config.schema.json`
 
 The configuration contains a list of strategies, ranked from the quietest to loudest,
 as well as the default and discharging strategies.

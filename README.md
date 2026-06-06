@@ -48,7 +48,8 @@ If the service is paused or stopped, the fans will revert to their default behav
     * [Platforms](#platforms-1)
     * [Requirements](#requirements)
     * [Dependencies](#dependencies)
-    * [Instructions](#instructions)
+    * [Prebuilt binary install](#prebuilt-binary-install)
+    * [Build from source](#build-from-source)
   * [Update](#update)
   * [Uninstall](#uninstall)
   * [Development Setup](#development-setup)
@@ -73,10 +74,10 @@ More documentation could be found [here](./doc/README.md).
 
 ### Platforms
 
-| Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Package&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |  Documentation                                                                                                     |
-|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| Linux&nbsp;/&nbsp;Global                                                                                         | [installation&nbsp;script](https://github.com/TamtamHero/fw-fanctrl/blob/main/install.sh)                           | [instructions](https://github.com/TamtamHero/fw-fanctrl/tree/main?tab=readme-ov-file#instructions)                |
-| NixOS                                                                                                 | [derivation](https://search.nixos.org/packages?channel=25.11&show=fw-fanctrl&from=0&size=50&sort=relevance&type=packages) / [module](https://search.nixos.org/options?channel=25.11&show=hardware.fw-fanctrl)|[doc/nixos](https://github.com/TamtamHero/fw-fanctrl/tree/main/doc/nixos.md)|
+| Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Package&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;                                                                                           | Documentation                                                                                      |
+|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| Linux&nbsp;/&nbsp;Global                                                                                         | [installation&nbsp;script](https://github.com/TamtamHero/fw-fanctrl/blob/main/install.sh)                                                                                                                     | [instructions](https://github.com/TamtamHero/fw-fanctrl/tree/main?tab=readme-ov-file#instructions) |
+| NixOS                                                                                                            | [derivation](https://search.nixos.org/packages?channel=25.11&show=fw-fanctrl&from=0&size=50&sort=relevance&type=packages) / [module](https://search.nixos.org/options?channel=25.11&show=hardware.fw-fanctrl) | [doc/nixos](https://github.com/TamtamHero/fw-fanctrl/tree/main/doc/nixos.md)                       |
 
 **Third-party**
 
@@ -101,7 +102,23 @@ do this manually.
 |------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
 | FrameworkComputer@framework-system (framework_tool)                                                              | v0.6.4                                                                                                                    | [https://github.com/FrameworkComputer/framework-system](https://github.com/FrameworkComputer/framework-system)   | `--ignore-tool framework_tool`                                                                   |
 
-### Instructions
+### Prebuilt binary install
+
+Install the latest prebuilt release with:
+
+```shell
+curl -fsSL "https://raw.githubusercontent.com/TamtamHero/fw-fanctrl/main/scripts/install-prebuilt.sh" | sh
+```
+
+> ⚠ **Linux Mint** and **Atomic desktops** users should add the `--prefix-dir "/usr/local"` option.
+
+```shell
+curl -fsSL "https://raw.githubusercontent.com/TamtamHero/fw-fanctrl/main/scripts/install-prebuilt.sh" | sh -s -- --prefix-dir "/usr/local"
+```
+
+You can pass the same installation arguments as the source installer.
+
+### Build from source
 
 [Download the repo](https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip) and extract it manually, or
 download/clone it with the appropriate tools:
@@ -114,30 +131,33 @@ git clone "https://github.com/TamtamHero/fw-fanctrl.git"
 curl -L "https://github.com/TamtamHero/fw-fanctrl/archive/refs/heads/main.zip" -o "./fw-fanctrl.zip" && unzip "./fw-fanctrl.zip" -d "./fw-fanctrl" && rm -rf "./fw-fanctrl.zip"
 ```
 
-Then run the installation script with administrator privileges
+Run the installation script with administrator privileges
 
-> ⚠ **Linux Mint** users should add the `--effective-installation-dir "/usr/local/bin"` option.
->
-> ⚠ **Fedora Atomic desktops** users should add the `--prefix-dir "/var/usrlocal/"` option.
+```shell
+./install.sh
+```
 
-```bash
-sudo ./install.sh
+> ⚠ **Linux Mint** and **Atomic desktops** users should add the `--prefix-dir "/usr/local"` option.
+
+```shell
+./install.sh --prefix-dir "/usr/local"
 ```
 
 You can add a number of arguments to the installation command to suit your needs
 
-| argument                                                                                          | description                                                                                     |
-|---------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
-| `--dest-dir <installation destination directory (defaults to /)>`                                 | specify an installation destination directory                                                   |
-| `--prefix-dir <installation prefix directory (defaults to /usr)>`                                 | specify an installation prefix directory                                                        |
-| `--sysconf-dir <system configuration destination directory (defaults to /etc)>`                   | specify a default configuration directory                                                       |
-| `--ignore-tool <tool id (e.g. framework_tool)>`                                                   | ignore tool installation/uninstallation and service activation/deactivation                     |
-| `--no-post-install`                                                                               | disable post-install process                                                                    |
-| `--no-pre-uninstall`                                                                              | disable pre-uninstall process                                                                   |
-| `--no-pip-install`                                                                                | disable the pip installation (should be done manually instead)                                  |
-| `--pipx`                                                                                          | install using pipx instead of pip (useful if os does not allow global pip install like debian ) |
-| `--python-prefix-dir <python installation prefix directory (defaults to [dest-dir][prefix-dir])>` | specify the python prefix directory for package installation                                    |
-| `--effective-installation-dir <directory (defaults to [python-prefix-dir]/bin)>`                  | overrides the installation in which our `fw-fanctrl` executable is                              |
+| argument                                                                        | description                                                                     |
+|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `--prefix-dir <installation prefix directory (defaults to /usr)>`               | specify an installation prefix directory                                        |
+| `--effective-installation-dir <directory (defaults to [prefix-dir]/bin)>`       | overrides the installation for the `fw-fanctrl` executable is                   |
+| `--sysconf-dir <system configuration destination directory (defaults to /etc)>` | specify a default configuration directory                                       |
+| `--ignore-tool <tool id (e.g. framework_tool)>`                                 | ignore tool installation/uninstallation and service activation/deactivation     |
+| `--manual-env`                                                                  | do not create virtualenv or install dependencies, you must manage them yourself |
+| `--no-build`                                                                    | do not build, you must place the executable here `./build/nuitka/fw-fanctrl`    |
+| `--no-sudo`                                                                     | do not invoke `sudo`, you must run the script with the required privileges      |
+| `--no-pre-install`                                                              | disable pre-install process                                                     |
+| `--no-post-install`                                                             | disable post-install process                                                    |
+| `--no-pre-uninstall`                                                            | disable pre-uninstall process                                                   |
+| `--remove`                                                                      | uninstall                                                                       |
 
 ## Update
 
@@ -149,7 +169,7 @@ To uninstall, run the installation script with the `--remove` argument, as well 
 corresponding [arguments if necessary](#instructions)
 
 ```bash
-sudo ./install.sh --remove
+./install.sh --remove
 ```
 
 ## Development Setup
@@ -159,7 +179,9 @@ sudo ./install.sh --remove
 Install the development dependencies with the following command:
 
 ```shell
-pip install -e ".[dev]"
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -e ".[dev]"
 ```
 
 The project uses the [black](https://github.com/psf/black) formatter.

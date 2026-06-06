@@ -4,7 +4,7 @@ After=multi-user.target
 [Service]
 Type=simple
 Restart=always
-ExecStart="%PYTHON_SCRIPT_INSTALLATION_PATH%" --output-format "JSON" run --config "%SYSCONF_DIRECTORY%/fw-fanctrl/config.json" --silent
+ExecStart="%EXECUTABLE_INSTALLATION_PATH%" --output-format "JSON" run --config "%SYSCONF_DIRECTORY%/fw-fanctrl/config.json" --silent
 ExecStopPost=/bin/sh -c "framework_tool --autofanctrl"
 [Install]
 WantedBy=multi-user.target

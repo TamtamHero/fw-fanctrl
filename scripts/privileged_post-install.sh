@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
+source ./scripts/shared/common.sh
 
 # Argument parsing
 NO_SUDO=false
-SHORT=h
-LONG=no-sudo,help
+SHORT=d:,s:,h
+LONG=dest-dir:,sysconf-dir:,no-sudo,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -27,6 +28,7 @@ while true; do
   shift
 done
 
+# Root check
 if [ "$EUID" -ne 0 ] && [ "$NO_SUDO" = false ]
   then echo "This program requires root permissions or use the '--no-sudo' option"
   exit 1
@@ -37,20 +39,14 @@ SERVICE_EXTENSION=".service"
 
 SERVICES="$(cd "$SERVICES_DIR" && find . -maxdepth 1 -maxdepth 1 -type f -name "*$SERVICE_EXTENSION" -exec basename {} "$SERVICE_EXTENSION" \;)"
 
-function sanitizePath() {
-    local SANITIZED_PATH="$1"
-    local SANITIZED_PATH=${SANITIZED_PATH//..\//}
-    local SANITIZED_PATH=${SANITIZED_PATH#./}
-    local SANITIZED_PATH=${SANITIZED_PATH#/}
-    echo "$SANITIZED_PATH"
-}
-
-echo "disabling services"
+echo "enabling services"
 systemctl daemon-reload
 for SERVICE in $SERVICES ; do
     SERVICE=$(sanitizePath "$SERVICE")
-    echo "stopping [$SERVICE]"
-    systemctl stop "$SERVICE" 2> "/dev/null" || true
-    echo "disabling [$SERVICE]"
-    systemctl disable "$SERVICE" 2> "/dev/null" || true
+    echo "enabling [$SERVICE]"
+    systemctl enable "$SERVICE"
+    if [[ $SERVICE != *-suspend ]]; then
+        echo "starting [$SERVICE]"
+        systemctl start "$SERVICE"
+    fi
 done
