@@ -1,14 +1,15 @@
 #!/bin/bash
 set -e
+source ./scripts/shared/common.sh
 
 PREFIX_DIR="/usr"
 SYSCONF_DIR="/etc"
-SHOULD_INSTALL_ECTOOL=true
+IGNORED_TOOLS=()
 NO_SUDO=false
 EFFECTIVE_INSTALLATION_DIRECTORY_OVERRIDE=
 
 SHORT=p:,s:,h
-LONG=prefix-dir:,sysconf-dir:,no-ectool,no-sudo,effective-installation-dir:,help
+LONG=prefix-dir:,sysconf-dir:,no-sudo,effective-installation-dir:,ignore-tool:,help
 VALID_ARGS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -25,8 +26,9 @@ while true; do
         SYSCONF_DIR=$2
         shift
         ;;
-    '--no-ectool')
-        SHOULD_INSTALL_ECTOOL=false
+    '--ignore-tool')
+        IGNORED_TOOLS+=("$2")
+        shift
         ;;
     '--no-sudo')
         NO_SUDO=true
@@ -36,7 +38,7 @@ while true; do
         shift
         ;;
     '--help' | '-h')
-        echo "Usage: $0 [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-ectool] [--no-sudo] [--effective-installation-dir <directory (defaults to [prefix-dir]/bin)>]" 1>&2
+        echo "Usage: $0 [--prefix-dir,-p <installation prefix directory (defaults to $PREFIX_DIR)>] [--sysconf-dir,-s system configuration destination directory (defaults to $SYSCONF_DIR)] [--no-sudo] [--effective-installation-dir <directory (defaults to [prefix-dir]/bin)>] [--ignore-tool <tool id to ignore (e.g. 'framework_tool')>]" 1>&2
         exit 0
         ;;
     --)
@@ -61,68 +63,23 @@ fi
 SERVICES_DIR="./services"
 SERVICE_EXTENSION=".service"
 
-function sanitizePath() {
-    local SANITIZED_PATH="$1"
-    local SANITIZED_PATH=${SANITIZED_PATH//..\//}
-    local SANITIZED_PATH=${SANITIZED_PATH#./}
-    local SANITIZED_PATH=${SANITIZED_PATH#/}
-    echo "$SANITIZED_PATH"
-}
-
 SERVICES="$(cd "$SERVICES_DIR" && find . -maxdepth 1 -maxdepth 1 -type f -name "*$SERVICE_EXTENSION" -exec basename {} "$SERVICE_EXTENSION" \;)"
-SERVICES_SUBCONFIGS="$(cd "$SERVICES_DIR" && find . -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)"
-
-# safe remove function
-function remove_target() {
-    local target="$1"
-    if [ -e "$target" ] || [ -L "$target" ]; then
-        if ! rm -rf "$target" 2> "/dev/null"; then
-            echo "Failed to remove: $target"
-            echo "Please run:"
-            echo "    sudo ./install.sh --remove"
-            exit 1
-        fi
-    fi
-}
-
-# remove remaining legacy files
-function uninstall_legacy() {
-    echo "removing legacy files"
-    remove_target "/usr/local/bin/fw-fanctrl"
-    remove_target "/usr/local/bin/ectool"
-    remove_target "/usr/local/bin/fanctrl.py"
-    remove_target "/etc/systemd/system/fw-fanctrl.service"
-    remove_target "$PREFIX_DIR/bin/fw-fanctrl"
-}
 
 function privileged_uninstall() {
     # remove program services based on the services present in the './services' folder
     echo "removing services"
     for SERVICE in $SERVICES ; do
         SERVICE=$(sanitizePath "$SERVICE")
-        # be EXTRA CAREFUL about the validity of the paths (dont wanna delete something important, right?... O_O)
         remove_target "$PREFIX_DIR/lib/systemd/system/$SERVICE$SERVICE_EXTENSION"
     done
 
-    # remove program services sub-configurations based on the sub-configurations present in the './services' folder
-    echo "removing services sub-configurations"
-    for SERVICE in $SERVICES_SUBCONFIGS ; do
-        SERVICE=$(sanitizePath "$SERVICE")
-        echo "removing sub-configurations for [$SERVICE]"
-        SUBCONFIGS="$(cd "$SERVICES_DIR/$SERVICE" && find . -mindepth 1 -type f)"
-        for SUBCONFIG in $SUBCONFIGS ; do
-            SUBCONFIG=$(sanitizePath "$SUBCONFIG")
-            echo "removing '$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG'"
-            remove_target "$PREFIX_DIR/lib/systemd/$SERVICE/$SUBCONFIG"
-        done
-    done
+    remove_target "$EXECUTABLE_INSTALLATION_PATH"
 
-    rm -f "$EXECUTABLE_INSTALLATION_PATH"
-
-    ectool autofanctrl 2> "/dev/null" || true # restore default fan manager
-    if [ "$SHOULD_INSTALL_ECTOOL" = true ]; then
-        remove_target "$PREFIX_DIR/bin/ectool"
+    reset_tool "framework_tool" "$PREFIX_DIR/bin"
+    if ! contains "framework_tool" "${IGNORED_TOOLS[@]}"; then
+        uninstall_tool "framework_tool" "$PREFIX_DIR/bin"
     fi
+
     remove_target "$SYSCONF_DIR/fw-fanctrl"
     remove_target "/run/fw-fanctrl"
 

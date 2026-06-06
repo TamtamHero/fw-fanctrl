@@ -119,22 +119,23 @@ Run the installation script with administrator privileges
 > ⚠ **Linux Mint** and **Atomic desktops** users should add the `--prefix-dir "/usr/local"` option.
 
 ```shell
-sudo ./install.sh
+./install.sh
 ```
 
 You can add a number of arguments to the installation command to suit your needs
 
-| argument                                                                         | description                                                                     |
-|----------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| `--prefix-dir <installation prefix directory (defaults to /usr)>`                | specify an installation prefix directory                                        |
-| `--sysconf-dir <system configuration destination directory (defaults to /etc)>`  | specify a default configuration directory                                       |
-| `--ignore-tool <tool id (e.g. framework_tool)>`                                  | ignore tool installation/uninstallation and service activation/deactivation     |
-| `--no-post-install`                                                              | disable post-install process                                                    |
-| `--no-pre-uninstall`                                                             | disable pre-uninstall process                                                   |
-| `--no-sudo`                                                                      | do not invoke `sudo`, you must run the script with the required privileges      |
-| `--manual-env`                                                                   | do not create virtualenv or install dependencies, you must manage them yourself |
-| `--remove`                                                                       | uninstall                                                                       |
-| `--effective-installation-dir <directory (defaults to [python-prefix-dir]/bin)>` | overrides the installation in which our `fw-fanctrl` executable is              |
+| argument                                                                        | description                                                                     |
+|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `--prefix-dir <installation prefix directory (defaults to /usr)>`               | specify an installation prefix directory                                        |
+| `--effective-installation-dir <directory (defaults to [prefix-dir]/bin)>`       | overrides the installation for the `fw-fanctrl` executable is                   |
+| `--sysconf-dir <system configuration destination directory (defaults to /etc)>` | specify a default configuration directory                                       |
+| `--ignore-tool <tool id (e.g. framework_tool)>`                                 | ignore tool installation/uninstallation and service activation/deactivation     |
+| `--manual-env`                                                                  | do not create virtualenv or install dependencies, you must manage them yourself |
+| `--no-sudo`                                                                     | do not invoke `sudo`, you must run the script with the required privileges      |
+| `--no-pre-install`                                                              | disable pre-install process                                                     |
+| `--no-post-install`                                                             | disable post-install process                                                    |
+| `--no-pre-uninstall`                                                            | disable pre-uninstall process                                                   |
+| `--remove`                                                                      | uninstall                                                                       |
 
 ## Update
 
@@ -146,7 +147,7 @@ To uninstall, run the installation script with the `--remove` argument, as well 
 corresponding [arguments if necessary](#instructions)
 
 ```bash
-sudo ./install.sh --remove
+./install.sh --remove
 ```
 
 ## Development Setup
