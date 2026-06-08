@@ -1,6 +1,6 @@
 {
     "$schema": "./config.schema.json",
-    "defaultStrategy": "lazy",
+    "defaultStrategy": "laziest",
     "strategyOnDischarging" : "",
     "strategies": {
         "laziest": {
@@ -8,9 +8,9 @@
             "movingAverageInterval": 40,
             "rampUpTime": 3,
             "rampDownTime": 4,
-            "rampQuicklyTemperature": 85,
+            "rampQuicklyTemperature": 100,
             "rampQuicklyTime": 1,
-            "criticalTemperature": 98,
+            "criticalTemperature": 100,
             "speedCurve": [
                 { "temp": 0, "speed": 0 },
                 { "temp": 45, "speed": 0 },
