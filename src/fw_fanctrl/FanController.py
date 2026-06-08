@@ -22,41 +22,37 @@ from fw_fanctrl.exception.UnknownCommandException import UnknownCommandException
 
 
 class FanSpeedController(threading.Thread):
+    STEP_TIME = 0.2
+
     def __init__(self, hardware_controller):
         super().__init__()
         self.daemon = True
-
         self.hardware_controller = hardware_controller
         self.current_speed = 0
         self.desired_speed = 0
-        self.ramp_duration = 2
-        self.step_time = 0.2
+        self.ramp_duration = 0
         self.new_speed_requested = threading.Event()
-        self.reset = False
 
-    def set_speed(self, speed, ramp_duration):
-        if speed != self.current_speed:
-            self.desired_speed = speed
-            self.ramp_duration = ramp_duration
-            self.new_speed_requested.set()
+    def ramp_to_speed(self, speed, ramp_duration):
+        self.desired_speed = speed
+        self.ramp_duration = ramp_duration
+        self.new_speed_requested.set()
 
     def _ramp_to_desired_speed(self):
         self.new_speed_requested.wait()
         self.new_speed_requested.clear()
 
-        steps = int(self.ramp_duration / self.step_time) or 1
+        steps = max(1, int(self.ramp_duration / self.STEP_TIME))
         step_change = (self.desired_speed - self.current_speed) / steps
 
-        _current_speed_float = float(self.current_speed)
+        current_speed_float = float(self.current_speed)
         for _ in range(steps):
             if self.new_speed_requested.is_set():
-                # since desired speed has changed, cancel this ramp and start again
                 break
-            _current_speed_float += step_change
-            _current_speed_int = int(_current_speed_float)
-            self.current_speed = _current_speed_int
-            self.hardware_controller.set_speed(_current_speed_int)
-            sleep(self.step_time)
+            current_speed_float += step_change
+            self.current_speed = int(current_speed_float)
+            self.hardware_controller.set_speed(self.current_speed)
+            sleep(self.STEP_TIME)
 
     def run(self):
         while True:
@@ -98,21 +94,10 @@ class FanController:
     def get_actual_temperature(self):
         return self.hardware_controller.get_temperature()
 
-    def set_speed(self, desired_speed, ramp_quickly=False):
-        current_strategy = self.get_current_strategy()
-
-        if desired_speed < self.speed:
-            # speed decrease, change gradually over ramp_down_time
-            ramp_time = current_strategy.ramp_down_time or 0
-        elif ramp_quickly:
-            # speed increase, ramping quickly
-            ramp_time = current_strategy.ramp_quickly_time or 0
-        else:
-            # speed increase, increase gradually over ramp_up_time
-            ramp_time = current_strategy.ramp_up_time or 0
-
-        self.fan_speed_controller.set_speed(desired_speed, ramp_time)
-        self.speed = desired_speed
+    def set_speed(self, speed):
+        ramp_duration = self.get_current_strategy().ramp_duration
+        self.speed = speed
+        self.fan_speed_controller.ramp_to_speed(speed, ramp_duration)
 
     def is_on_ac(self):
         return self.hardware_controller.is_on_ac()
@@ -194,35 +179,32 @@ class FanController:
         return float(round(sum(sliced_temp_history) / len(sliced_temp_history), 2))
 
     def get_effective_temperature(self, current_temp, time_interval):
-        if current_temp >= self.get_current_strategy().critical_temperature:
-            # if we have hit critical temperature, then weight the moving average
-            # to cause a fast increase in fan speed
-            self.temp_history.extend([current_temp] * time_interval)
-        # the moving average temperature counts for 2/3 of the effective temperature
         return float(round(min(self.get_moving_average_temperature(time_interval), current_temp), 2))
 
-    def adapt_speed(self, current_temp):
+    def get_target_speed(self, effective_temp):
         current_strategy = self.get_current_strategy()
-        current_temp = self.get_effective_temperature(current_temp, current_strategy.moving_average_interval)
         min_point = current_strategy.speed_curve[0]
         max_point = current_strategy.speed_curve[-1]
         for e in current_strategy.speed_curve:
-            if current_temp > e["temp"]:
+            if effective_temp > e["temp"]:
                 min_point = e
             else:
                 max_point = e
                 break
 
         if min_point == max_point:
-            new_speed = min_point["speed"]
+            return min_point["speed"]
         else:
             slope = (max_point["speed"] - min_point["speed"]) / (max_point["temp"] - min_point["temp"])
-            new_speed = int(min_point["speed"] + (current_temp - min_point["temp"]) * slope)
+            return int(min_point["speed"] + (effective_temp - min_point["temp"]) * slope)
+
+    def adapt_speed(self, current_temp):
+        current_strategy = self.get_current_strategy()
+        effective_temp = self.get_effective_temperature(current_temp, current_strategy.moving_average_interval)
+        target_speed = self.get_target_speed(effective_temp)
+
         if self.active:
-            ramp_quickly = False
-            if current_temp >= self.get_current_strategy().ramp_quickly_temperature:
-                ramp_quickly = True
-            self.set_speed(new_speed, ramp_quickly)
+            self.set_speed(target_speed)
 
     def dump_details(self):
         current_strategy = self.get_current_strategy()
