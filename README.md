@@ -20,7 +20,7 @@ _You are a package manager? Add your platform here!_
 ## Description
 
 Fw-fanctrl is a simple Python CLI service that controls Framework Laptop's fan(s)
-speed according to a configurable speed/temperature curve. In addition, there are configurable options for a fan speed "ramp up time" and "ramp down time" which will control how smoothly the fan speeds increase or decrease.
+speed according to a configurable speed/temperature curve. In addition, there is a configuration option for a fan speed "ramp time" which will control how smoothly the fan speeds increase or decrease.
 
 Its default strategy aims for very quiet fan operation, but you can choose amongst the other provided strategies, or
 easily configure your own for a different comfort/performance trade-off.
