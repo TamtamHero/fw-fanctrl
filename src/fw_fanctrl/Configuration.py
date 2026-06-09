@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 from json import JSONDecodeError
 from os.path import isfile
 from shutil import copyfile
@@ -25,10 +26,13 @@ class Configuration:
     def parse(self, raw_config):
         try:
             config = json.loads(raw_config)
+            validation_config = json.loads(raw_config, parse_float=Decimal)
             if "$schema" not in config:
                 original_config = json.load(ORIGINAL_CONFIG_PATH.open("r"))
                 config["$schema"] = original_config["$schema"]
-            jsonschema.Draft202012Validator(json.load(VALIDATION_SCHEMA_PATH.open("r"))).validate(config)
+                validation_config["$schema"] = original_config["$schema"]
+            validation_schema = json.load(VALIDATION_SCHEMA_PATH.open("r"), parse_float=Decimal)
+            jsonschema.Draft202012Validator(validation_schema).validate(validation_config)
             if config["defaultStrategy"] not in config["strategies"]:
                 raise ConfigurationParsingException(
                     f"Default strategy '{config["defaultStrategy"]}' is not a valid strategy."
