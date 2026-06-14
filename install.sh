@@ -102,16 +102,16 @@ if ! python3 -h 1>/dev/null 2>&1; then
 fi
 
 if [ "$NO_PIP_INSTALL" = false ]; then
-    if ! python3 -m pip -h 1>/dev/null 2>&1; then
-        echo "Missing python package 'pip'!"
-        exit 1
-    fi
-fi
-
-if [ "$PIPX" = true ]; then
-    if ! pipx -h >/dev/null 2>&1; then
-        echo "Missing package 'pipx'!"
-        exit 1
+    if [ "$PIPX" = true ]; then
+        if ! pipx -h >/dev/null 2>&1; then
+            echo "Missing package 'pipx'!"
+            exit 1
+        fi
+    else
+        if ! python3 -m pip -h 1>/dev/null 2>&1; then
+            echo "Missing python package 'pip'!"
+            exit 1
+        fi
     fi
 fi
 
@@ -241,6 +241,29 @@ function install() {
             which python3
         else
             pipx install --global --force dist/*.tar.gz
+            FW_FANCTRL_BIN=""
+            PIPX_BIN_DIR="$(pipx environment --value PIPX_BIN_DIR --global 2>/dev/null || true)"
+            if [ -n "$PIPX_BIN_DIR" ] && [ -f "$PIPX_BIN_DIR/fw-fanctrl" ]; then
+                FW_FANCTRL_BIN="$PIPX_BIN_DIR/fw-fanctrl"
+            elif [ -f "$PYTHON_SCRIPT_INSTALLATION_PATH" ]; then
+                FW_FANCTRL_BIN="$PYTHON_SCRIPT_INSTALLATION_PATH"
+            fi
+            if [ -n "$FW_FANCTRL_BIN" ]; then
+                SHEBANG_PYTHON="$(head -1 "$FW_FANCTRL_BIN" | sed 's|^#!||')"
+                RESOLVED_PYTHON="$(readlink -f "$SHEBANG_PYTHON" 2>/dev/null || echo "$SHEBANG_PYTHON")"
+                if [[ "$RESOLVED_PYTHON" == /home/* ]]; then
+                    echo ""
+                    echo "⚠  WARNING: the pipx venv is using a Python interpreter under /home ($RESOLVED_PYTHON)."
+                    echo "   This is likely Homebrew Python. On SELinux-enforcing systems, systemd will be"
+                    echo "   unable to execute the service. To fix, create a dedicated venv with the system Python:"
+                    echo ""
+                    echo "   sudo /usr/bin/python3 -m venv /opt/fw-fanctrl-venv"
+                    echo "   sudo /opt/fw-fanctrl-venv/bin/pip install fw-fanctrl"
+                    echo "   sudo ln -sf /opt/fw-fanctrl-venv/bin/fw-fanctrl /var/usrlocal/bin/fw-fanctrl"
+                    echo "   sudo systemctl restart fw-fanctrl"
+                    echo ""
+                fi
+            fi
         fi
         which 'fw-fanctrl' 2> "/dev/null" || true
         remove_target "dist/"
