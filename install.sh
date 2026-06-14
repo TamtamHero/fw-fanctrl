@@ -206,7 +206,7 @@ function uninstall() {
         if [ "$PIPX" = false ]; then
             python3 -m pip uninstall -y fw-fanctrl 2> "/dev/null" || true
         else
-            pipx --global uinistall fw-fanctrl 2> "/dev/null" || true
+            pipx --global uninstall fw-fanctrl 2> "/dev/null" || true
         fi
     fi
 
