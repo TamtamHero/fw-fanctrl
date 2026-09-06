@@ -3,6 +3,7 @@ class Strategy:
     fan_speed_update_frequency = None
     moving_average_interval = None
     speed_curve = None
+    ramp_duration = None
 
     def __init__(self, name, parameters):
         self.name = name
@@ -13,3 +14,4 @@ class Strategy:
         if self.moving_average_interval is None or self.moving_average_interval == "":
             self.moving_average_interval = 20
         self.speed_curve = parameters["speedCurve"]
+        self.ramp_duration = parameters.get("rampDuration", 2)

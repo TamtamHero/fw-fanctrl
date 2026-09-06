@@ -121,6 +121,12 @@
                             "speed": 100
                         }
                     ]
+                },
+                "rampDuration": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10,
+                    "description": "Time in seconds for the fan RPM to ramp up or down to the desired target speed. Defaults to 2."
                 }
             },
             "required": [
